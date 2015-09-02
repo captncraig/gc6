@@ -74,12 +74,16 @@ func init() {
 	RootCmd.PersistentFlags().IntP("times", "t", 1, "times to solve the laybrinth")
 	RootCmd.PersistentFlags().IntP("max-steps", "m", 500, "Maximum steps before giving up")
 
+	RootCmd.PersistentFlags().Bool("mouse", false, "Use random mouse solver")
+
 	// Bind viper to these flags so viper can read flag values along with config, env, etc.
 	viper.BindPFlag("width", RootCmd.PersistentFlags().Lookup("width"))
 	viper.BindPFlag("height", RootCmd.PersistentFlags().Lookup("height"))
 	viper.BindPFlag("port", RootCmd.PersistentFlags().Lookup("port"))
 	viper.BindPFlag("times", RootCmd.PersistentFlags().Lookup("times"))
 	viper.BindPFlag("max-steps", RootCmd.PersistentFlags().Lookup("max-steps"))
+
+	viper.BindPFlag("mouse", RootCmd.PersistentFlags().Lookup("mouse"))
 }
 
 // Read in config file and ENV variables if set.

@@ -16,7 +16,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -30,21 +29,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Maze struct {
-	rooms      [][]mazelib.Room
-	start      mazelib.Coordinate
-	end        mazelib.Coordinate
-	icarus     mazelib.Coordinate
-	StepsTaken int
-}
-
 // Tracking the current maze being solved
 
 // WARNING: This approach is not safe for concurrent use
 // This server is only intended to have a single client at a time
 // We would need a different and more complex approach if we wanted
 // concurrent connections than these simple package variables
-var currentMaze *Maze
+var currentMaze *mazelib.Maze
 var scores []int
 
 // Defining the daedalus command.
@@ -106,7 +97,7 @@ func RunServer() {
 //   the number of times he wants to solve the laybrinth.
 func End(c *gin.Context) {
 	printResults()
-	os.Exit(1)
+	os.Exit(0)
 }
 
 // initializes a new maze and places Icarus in his awakening location
@@ -137,13 +128,13 @@ func MoveDirection(c *gin.Context) {
 	case "up":
 		err = currentMaze.MoveUp()
 	}
-
 	var r mazelib.Reply
 
 	if err != nil {
 		r.Error = true
 		r.Message = err.Error()
 		c.JSON(409, r)
+		return
 	}
 
 	s, e := currentMaze.LookAround()
@@ -173,204 +164,23 @@ func printResults() {
 	fmt.Printf("Labyrinth solved %d times with an avg of %d steps\n", len(scores), mazelib.AvgScores(scores))
 }
 
-// Return a room from the maze
-func (m *Maze) GetRoom(x, y int) (*mazelib.Room, error) {
-	if x < 0 || y < 0 || x >= m.Width() || y >= m.Height() {
-		return &mazelib.Room{}, errors.New("room outside of maze boundaries")
-	}
-
-	return &m.rooms[y][x], nil
-}
-
-func (m *Maze) Width() int  { return len(m.rooms[0]) }
-func (m *Maze) Height() int { return len(m.rooms) }
-
-// Return Icarus's current position
-func (m *Maze) Icarus() (x, y int) {
-	return m.icarus.X, m.icarus.Y
-}
-
-// Set the location where Icarus will awake
-func (m *Maze) SetStartPoint(x, y int) error {
-	r, err := m.GetRoom(x, y)
-
-	if err != nil {
-		return err
-	}
-
-	if r.Treasure {
-		return errors.New("can't start in the treasure")
-	}
-
-	r.Start = true
-	m.icarus = mazelib.Coordinate{x, y}
-	return nil
-}
-
-// Set the location of the treasure for a given maze
-func (m *Maze) SetTreasure(x, y int) error {
-	r, err := m.GetRoom(x, y)
-
-	if err != nil {
-		return err
-	}
-
-	if r.Start {
-		return errors.New("can't have the treasure at the start")
-	}
-
-	r.Treasure = true
-	m.end = mazelib.Coordinate{x, y}
-	return nil
-}
-
-// Given Icarus's current location, Discover that room
-// Will return ErrVictory if Icarus is at the treasure.
-func (m *Maze) LookAround() (mazelib.Survey, error) {
-	if m.end.X == m.icarus.X && m.end.Y == m.icarus.Y {
-		fmt.Printf("Victory achieved in %d steps \n", m.StepsTaken)
-		return mazelib.Survey{}, mazelib.ErrVictory
-	}
-
-	return m.Discover(m.icarus.X, m.icarus.Y)
-}
-
-// Given two points, survey the room.
-// Will return error if two points are outside of the maze
-func (m *Maze) Discover(x, y int) (mazelib.Survey, error) {
-	if r, err := m.GetRoom(x, y); err != nil {
-		return mazelib.Survey{}, nil
-	} else {
-		return r.Walls, nil
-	}
-}
-
-// Moves Icarus's position left one step
-// Will not permit moving through walls or out of the maze
-func (m *Maze) MoveLeft() error {
-	s, e := m.LookAround()
-	if e != nil {
-		return e
-	}
-	if s.Left {
-		return errors.New("Can't walk through walls")
-	}
-
-	x, y := m.Icarus()
-	if _, err := m.GetRoom(x-1, y); err != nil {
-		return err
-	}
-
-	m.icarus = mazelib.Coordinate{x - 1, y}
-	m.StepsTaken++
-	return nil
-}
-
-// Moves Icarus's position right one step
-// Will not permit moving through walls or out of the maze
-func (m *Maze) MoveRight() error {
-	s, e := m.LookAround()
-	if e != nil {
-		return e
-	}
-	if s.Right {
-		return errors.New("Can't walk through walls")
-	}
-
-	x, y := m.Icarus()
-	if _, err := m.GetRoom(x+1, y); err != nil {
-		return err
-	}
-
-	m.icarus = mazelib.Coordinate{x + 1, y}
-	m.StepsTaken++
-	return nil
-}
-
-// Moves Icarus's position up one step
-// Will not permit moving through walls or out of the maze
-func (m *Maze) MoveUp() error {
-	s, e := m.LookAround()
-	if e != nil {
-		return e
-	}
-	if s.Top {
-		return errors.New("Can't walk through walls")
-	}
-
-	x, y := m.Icarus()
-	if _, err := m.GetRoom(x, y-1); err != nil {
-		return err
-	}
-
-	m.icarus = mazelib.Coordinate{x, y - 1}
-	m.StepsTaken++
-	return nil
-}
-
-// Moves Icarus's position down one step
-// Will not permit moving through walls or out of the maze
-func (m *Maze) MoveDown() error {
-	s, e := m.LookAround()
-	if e != nil {
-		return e
-	}
-	if s.Bottom {
-		return errors.New("Can't walk through walls")
-	}
-
-	x, y := m.Icarus()
-	if _, err := m.GetRoom(x, y+1); err != nil {
-		return err
-	}
-
-	m.icarus = mazelib.Coordinate{x, y + 1}
-	m.StepsTaken++
-	return nil
-}
-
 // Creates a maze without any walls
 // Good starting point for additive algorithms
-func emptyMaze() *Maze {
-	z := Maze{}
+func EmptyMaze() *mazelib.Maze {
 	ySize := viper.GetInt("height")
 	xSize := viper.GetInt("width")
-
-	z.rooms = make([][]mazelib.Room, ySize)
-	for y := 0; y < ySize; y++ {
-		z.rooms[y] = make([]mazelib.Room, xSize)
-		for x := 0; x < xSize; x++ {
-			z.rooms[y][x] = mazelib.Room{}
-		}
-	}
-
-	return &z
+	return mazelib.EmptyMaze(xSize, ySize)
 }
 
 // Creates a maze with all walls
 // Good starting point for subtractive algorithms
-func fullMaze() *Maze {
-	z := emptyMaze()
+func FullMaze() *mazelib.Maze {
 	ySize := viper.GetInt("height")
 	xSize := viper.GetInt("width")
-
-	for y := 0; y < ySize; y++ {
-		for x := 0; x < xSize; x++ {
-			z.rooms[y][x].Walls = mazelib.Survey{true, true, true, true}
-		}
-	}
-
-	return z
+	return mazelib.FullMaze(xSize, ySize)
 }
 
 // TODO: Write your maze creator function here
-func createMaze() *Maze {
-
-	// TODO: Fill in the maze:
-	// You need to insert a startingPoint for Icarus
-	// You need to insert an EndingPoint (treasure) for Icarus
-	// You need to Add and Remove walls as needed.
-	// Use the mazelib.AddWall & mazelib.RmWall to do this
-
-	return emptyMaze()
+func createMaze() *mazelib.Maze {
+	return EmptyMaze()
 }

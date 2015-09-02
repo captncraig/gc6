@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/golangchallenge/gc6/mazelib"
+	"github.com/golangchallenge/gc6/solvers"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -115,12 +116,11 @@ func ToReply(in []byte) mazelib.Reply {
 	return *res
 }
 
-// TODO: This is where you work your magic
 func solveMaze() {
-	_ = awake() // Need to start with waking up to initialize a new maze
-	// You'll probably want to set this to a named value and start by figuring
-	// out which step to take next
-
-	//TODO: Write your solver algorithm here
-
+	initial := awake()
+	var solver solvers.MazeSolver
+	if viper.GetBool("mouse") {
+		solver = solvers.NewMouse(Move)
+	}
+	solver.Solve(initial)
 }

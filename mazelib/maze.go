@@ -122,7 +122,7 @@ func AvgScores(in []int) int {
 
 // PrintMaze : Function to Print Maze to Console
 func PrintMaze(m MazeI) {
-	fmt.Println("_" + strings.Repeat("___", m.Width()))
+	fmt.Println("_" + strings.Repeat("__", m.Width()))
 	for y := 0; y < m.Height(); y++ {
 		str := ""
 		for x := 0; x < m.Width(); x++ {
@@ -141,29 +141,234 @@ func PrintMaze(m MazeI) {
 			}
 			if s.Bottom {
 				if r.Treasure {
-					str += "⏅_"
+					str += "T̲"
 				} else if r.Start {
-					str += "⏂_"
+					str += "S̲"
 				} else {
-					str += "__"
+					str += "_"
 				}
 			} else {
 				if r.Treasure {
-					str += "⏃ "
+					str += "T"
 				} else if r.Start {
-					str += "⏀ "
+					str += "S"
 				} else {
-					str += "  "
+					str += " "
 				}
 			}
 
 			if s.Right {
 				str += "|"
 			} else {
-				str += "_"
+				str += " "
 			}
 
 		}
 		fmt.Println(str)
 	}
+}
+
+type Maze struct {
+	rooms      [][]Room
+	start      Coordinate
+	end        Coordinate
+	icarus     Coordinate
+	StepsTaken int
+}
+
+// Return a room from the maze
+func (m *Maze) GetRoom(x, y int) (*Room, error) {
+	if x < 0 || y < 0 || x >= m.Width() || y >= m.Height() {
+		return &Room{}, errors.New("room outside of maze boundaries")
+	}
+
+	return &m.rooms[y][x], nil
+}
+
+func (m *Maze) Width() int  { return len(m.rooms[0]) }
+func (m *Maze) Height() int { return len(m.rooms) }
+
+// Return Icarus's current position
+func (m *Maze) Icarus() (x, y int) {
+	return m.icarus.X, m.icarus.Y
+}
+
+// Set the location where Icarus will awake
+func (m *Maze) SetStartPoint(x, y int) error {
+	r, err := m.GetRoom(x, y)
+
+	if err != nil {
+		return err
+	}
+
+	if r.Treasure {
+		return errors.New("can't start in the treasure")
+	}
+
+	r.Start = true
+	m.icarus = Coordinate{x, y}
+	return nil
+}
+
+// Set the location of the treasure for a given maze
+func (m *Maze) SetTreasure(x, y int) error {
+	r, err := m.GetRoom(x, y)
+
+	if err != nil {
+		return err
+	}
+
+	if r.Start {
+		return errors.New("can't have the treasure at the start")
+	}
+
+	r.Treasure = true
+	m.end = Coordinate{x, y}
+	return nil
+}
+
+// Given Icarus's current location, Discover that room
+// Will return ErrVictory if Icarus is at the treasure.
+func (m *Maze) LookAround() (Survey, error) {
+	if m.end.X == m.icarus.X && m.end.Y == m.icarus.Y {
+		fmt.Printf("Victory achieved in %d steps \n", m.StepsTaken)
+		return Survey{}, ErrVictory
+	}
+
+	return m.Discover(m.icarus.X, m.icarus.Y)
+}
+
+// Given two points, survey the room.
+// Will return error if two points are outside of the maze
+func (m *Maze) Discover(x, y int) (Survey, error) {
+	if r, err := m.GetRoom(x, y); err != nil {
+		return Survey{}, nil
+	} else {
+		return r.Walls, nil
+	}
+}
+
+// Moves Icarus's position left one step
+// Will not permit moving through walls or out of the maze
+func (m *Maze) MoveLeft() error {
+	s, e := m.LookAround()
+	if e != nil {
+		return e
+	}
+	if s.Left {
+		return errors.New("Can't walk through walls")
+	}
+
+	x, y := m.Icarus()
+	if _, err := m.GetRoom(x-1, y); err != nil {
+		return err
+	}
+
+	m.icarus = Coordinate{x - 1, y}
+	m.StepsTaken++
+	return nil
+}
+
+// Moves Icarus's position right one step
+// Will not permit moving through walls or out of the maze
+func (m *Maze) MoveRight() error {
+	s, e := m.LookAround()
+	if e != nil {
+		return e
+	}
+	if s.Right {
+		return errors.New("Can't walk through walls")
+	}
+
+	x, y := m.Icarus()
+	if _, err := m.GetRoom(x+1, y); err != nil {
+		return err
+	}
+
+	m.icarus = Coordinate{x + 1, y}
+	m.StepsTaken++
+	return nil
+}
+
+// Moves Icarus's position up one step
+// Will not permit moving through walls or out of the maze
+func (m *Maze) MoveUp() error {
+	s, e := m.LookAround()
+	if e != nil {
+		return e
+	}
+	if s.Top {
+		return errors.New("Can't walk through walls")
+	}
+
+	x, y := m.Icarus()
+	if _, err := m.GetRoom(x, y-1); err != nil {
+		return err
+	}
+
+	m.icarus = Coordinate{x, y - 1}
+	m.StepsTaken++
+	return nil
+}
+
+// Moves Icarus's position down one step
+// Will not permit moving through walls or out of the maze
+func (m *Maze) MoveDown() error {
+	s, e := m.LookAround()
+	if e != nil {
+		return e
+	}
+	if s.Bottom {
+		return errors.New("Can't walk through walls")
+	}
+
+	x, y := m.Icarus()
+	if _, err := m.GetRoom(x, y+1); err != nil {
+		return err
+	}
+
+	m.icarus = Coordinate{x, y + 1}
+	m.StepsTaken++
+	return nil
+}
+
+// Creates a maze without any walls
+// Good starting point for additive algorithms
+func EmptyMaze(xSize, ySize int) *Maze {
+	z := Maze{}
+	z.rooms = make([][]Room, ySize)
+	for y := 0; y < ySize; y++ {
+		z.rooms[y] = make([]Room, xSize)
+		for x := 0; x < xSize; x++ {
+			z.rooms[y][x] = Room{}
+			if x == xSize-1 {
+				z.rooms[y][x].AddWall(E)
+			}
+			if y == ySize-1 {
+				z.rooms[y][x].AddWall(S)
+			}
+			if x == 0 {
+				z.rooms[y][x].AddWall(W)
+			}
+			if y == 0 {
+				z.rooms[y][x].AddWall(N)
+			}
+		}
+	}
+	z.SetStartPoint(0, 0)
+	z.SetTreasure(14, 9)
+	return &z
+}
+
+// Creates a maze with all walls
+// Good starting point for subtractive algorithms
+func FullMaze(xSize, ySize int) *Maze {
+	z := EmptyMaze(xSize, ySize)
+
+	for y := 0; y < ySize; y++ {
+		for x := 0; x < xSize; x++ {
+			z.rooms[y][x].Walls = Survey{true, true, true, true}
+		}
+	}
+	return z
 }

@@ -25,7 +25,7 @@ import (
 // This will be called as 'laybrinth author'
 // It uses a variable set in the labyrinth.go file
 var authorCmd = &cobra.Command{
-	Use:   "author",
+	Use:   "Craig Peterson",
 	Short: "Print the creator of this laybrinth",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println(AuthorName)
