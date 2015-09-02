@@ -21,6 +21,7 @@ package mazelib
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 )
@@ -193,6 +194,14 @@ func (m *Maze) Icarus() (x, y int) {
 	return m.icarus.X, m.icarus.Y
 }
 
+func (m *Maze) End() (x, y int) {
+	return m.end.X, m.end.Y
+}
+
+func (m *Maze) Start() (x, y int) {
+	return m.start.X, m.start.Y
+}
+
 // Set the location where Icarus will awake
 func (m *Maze) SetStartPoint(x, y int) error {
 	r, err := m.GetRoom(x, y)
@@ -206,6 +215,7 @@ func (m *Maze) SetStartPoint(x, y int) error {
 	}
 
 	r.Start = true
+	m.start = Coordinate{x, y}
 	m.icarus = Coordinate{x, y}
 	return nil
 }
@@ -355,8 +365,15 @@ func EmptyMaze(xSize, ySize int) *Maze {
 			}
 		}
 	}
-	z.SetStartPoint(0, 0)
-	z.SetTreasure(14, 9)
+	z.SetStartPoint(rand.Intn(xSize), rand.Intn(ySize))
+	for {
+		tX, tY := rand.Intn(xSize), rand.Intn(ySize)
+		if tX != z.start.X && tY != z.start.Y {
+			z.SetTreasure(tX, tY)
+			break
+		}
+	}
+
 	return &z
 }
 

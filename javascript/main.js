@@ -2760,13 +2760,18 @@ $packages["io"] = (function() {
 	return $pkg;
 })();
 $packages["math"] = (function() {
-	var $pkg = {}, $init, js, arrayType, arrayType$1, arrayType$2, structType, arrayType$3, math, zero, posInf, negInf, buf, pow10tab, IsInf, init, Float32bits, Float64bits, init$1;
+	var $pkg = {}, $init, js, arrayType, arrayType$1, arrayType$2, structType, arrayType$3, math, zero, posInf, negInf, nan, buf, pow10tab, Exp, IsInf, Log, init, Float32bits, Float64bits, init$1;
 	js = $packages["github.com/gopherjs/gopherjs/js"];
 	arrayType = $arrayType($Uint32, 2);
 	arrayType$1 = $arrayType($Float32, 2);
 	arrayType$2 = $arrayType($Float64, 1);
 	structType = $structType([{prop: "uint32array", name: "uint32array", pkg: "math", typ: arrayType, tag: ""}, {prop: "float32array", name: "float32array", pkg: "math", typ: arrayType$1, tag: ""}, {prop: "float64array", name: "float64array", pkg: "math", typ: arrayType$2, tag: ""}]);
 	arrayType$3 = $arrayType($Float64, 70);
+	Exp = function(x) {
+		var $ptr, x;
+		return $parseFloat(math.exp(x));
+	};
+	$pkg.Exp = Exp;
 	IsInf = function(f, sign) {
 		var $ptr, f, sign;
 		if (f === posInf) {
@@ -2778,6 +2783,14 @@ $packages["math"] = (function() {
 		return false;
 	};
 	$pkg.IsInf = IsInf;
+	Log = function(x) {
+		var $ptr, x;
+		if (!((x === x))) {
+			return nan;
+		}
+		return $parseFloat(math.log(x));
+	};
+	$pkg.Log = Log;
 	init = function() {
 		var $ptr, ab;
 		ab = new ($global.ArrayBuffer)(8);
@@ -2819,6 +2832,7 @@ $packages["math"] = (function() {
 		zero = 0;
 		posInf = 1 / zero;
 		negInf = -1 / zero;
+		nan = 0 / zero;
 		init();
 		init$1();
 		/* */ } return; } if ($f === undefined) { $f = { $blk: $init }; } $f.$s = $s; $f.$r = $r; return $f;
@@ -3975,7 +3989,15 @@ $packages["syscall"] = (function() {
 	return $pkg;
 })();
 $packages["github.com/gopherjs/gopherjs/nosync"] = (function() {
-	var $pkg = {}, $init, Once, funcType, ptrType$3;
+	var $pkg = {}, $init, Mutex, Once, ptrType, funcType, ptrType$3;
+	Mutex = $pkg.Mutex = $newType(0, $kindStruct, "nosync.Mutex", "Mutex", "github.com/gopherjs/gopherjs/nosync", function(locked_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.locked = false;
+			return;
+		}
+		this.locked = locked_;
+	});
 	Once = $pkg.Once = $newType(0, $kindStruct, "nosync.Once", "Once", "github.com/gopherjs/gopherjs/nosync", function(doing_, done_) {
 		this.$val = this;
 		if (arguments.length === 0) {
@@ -3986,8 +4008,27 @@ $packages["github.com/gopherjs/gopherjs/nosync"] = (function() {
 		this.doing = doing_;
 		this.done = done_;
 	});
+	ptrType = $ptrType(Mutex);
 	funcType = $funcType([], [], false);
 	ptrType$3 = $ptrType(Once);
+	Mutex.ptr.prototype.Lock = function() {
+		var $ptr, m;
+		m = this;
+		if (m.locked) {
+			$panic(new $String("nosync: mutex is already locked"));
+		}
+		m.locked = true;
+	};
+	Mutex.prototype.Lock = function() { return this.$val.Lock(); };
+	Mutex.ptr.prototype.Unlock = function() {
+		var $ptr, m;
+		m = this;
+		if (!m.locked) {
+			$panic(new $String("nosync: unlock of unlocked mutex"));
+		}
+		m.locked = false;
+	};
+	Mutex.prototype.Unlock = function() { return this.$val.Unlock(); };
 	Once.ptr.prototype.Do = function(f) {
 		var $ptr, f, o, $s, $deferred, $r;
 		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; f = $f.f; o = $f.o; $s = $f.$s; $deferred = $f.$deferred; $r = $f.$r; } var $err = null; try { s: while (true) { switch ($s) { case 0: $deferred = []; $deferred.index = $curGoroutine.deferStack.length; $curGoroutine.deferStack.push($deferred);
@@ -4009,7 +4050,9 @@ $packages["github.com/gopherjs/gopherjs/nosync"] = (function() {
 		/* */ $s = -1; case -1: } return; } } catch(err) { $err = err; $s = -1; } finally { $callDeferred($deferred, $err); if($curGoroutine.asleep) { if ($f === undefined) { $f = { $blk: Once.ptr.prototype.Do }; } $f.$ptr = $ptr; $f.f = f; $f.o = o; $f.$s = $s; $f.$deferred = $deferred; $f.$r = $r; return $f; } }
 	};
 	Once.prototype.Do = function(f) { return this.$val.Do(f); };
+	ptrType.methods = [{prop: "Lock", name: "Lock", pkg: "", typ: $funcType([], [], false)}, {prop: "Unlock", name: "Unlock", pkg: "", typ: $funcType([], [], false)}];
 	ptrType$3.methods = [{prop: "Do", name: "Do", pkg: "", typ: $funcType([funcType], [], false)}];
+	Mutex.init([{prop: "locked", name: "locked", pkg: "github.com/gopherjs/gopherjs/nosync", typ: $Bool, tag: ""}]);
 	Once.init([{prop: "doing", name: "doing", pkg: "github.com/gopherjs/gopherjs/nosync", typ: $Bool, tag: ""}, {prop: "done", name: "done", pkg: "github.com/gopherjs/gopherjs/nosync", typ: $Bool, tag: ""}]);
 	$init = function() {
 		$pkg.$init = function() {};
@@ -4020,17 +4063,47 @@ $packages["github.com/gopherjs/gopherjs/nosync"] = (function() {
 	return $pkg;
 })();
 $packages["strings"] = (function() {
-	var $pkg = {}, $init, errors, js, io, unicode, utf8, IndexByte;
+	var $pkg = {}, $init, errors, js, io, unicode, utf8, sliceType, IndexByte, Join;
 	errors = $packages["errors"];
 	js = $packages["github.com/gopherjs/gopherjs/js"];
 	io = $packages["io"];
 	unicode = $packages["unicode"];
 	utf8 = $packages["unicode/utf8"];
+	sliceType = $sliceType($Uint8);
 	IndexByte = function(s, c) {
 		var $ptr, c, s;
 		return $parseInt(s.indexOf($global.String.fromCharCode(c))) >> 0;
 	};
 	$pkg.IndexByte = IndexByte;
+	Join = function(a, sep) {
+		var $ptr, _i, _ref, a, b, bp, i, n, s, sep;
+		if (a.$length === 0) {
+			return "";
+		}
+		if (a.$length === 1) {
+			return (0 >= a.$length ? $throwRuntimeError("index out of range") : a.$array[a.$offset + 0]);
+		}
+		n = sep.length * ((a.$length - 1 >> 0)) >> 0;
+		i = 0;
+		while (true) {
+			if (!(i < a.$length)) { break; }
+			n = n + (((i < 0 || i >= a.$length) ? $throwRuntimeError("index out of range") : a.$array[a.$offset + i]).length) >> 0;
+			i = i + (1) >> 0;
+		}
+		b = $makeSlice(sliceType, n);
+		bp = $copyString(b, (0 >= a.$length ? $throwRuntimeError("index out of range") : a.$array[a.$offset + 0]));
+		_ref = $subslice(a, 1);
+		_i = 0;
+		while (true) {
+			if (!(_i < _ref.$length)) { break; }
+			s = ((_i < 0 || _i >= _ref.$length) ? $throwRuntimeError("index out of range") : _ref.$array[_ref.$offset + _i]);
+			bp = bp + ($copyString($subslice(b, bp), sep)) >> 0;
+			bp = bp + ($copyString($subslice(b, bp), s)) >> 0;
+			_i++;
+		}
+		return $bytesToString(b);
+	};
+	$pkg.Join = Join;
 	$init = function() {
 		$pkg.$init = function() {};
 		/* */ var $f, $c = false, $s = 0, $r; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
@@ -4045,7 +4118,7 @@ $packages["strings"] = (function() {
 	return $pkg;
 })();
 $packages["time"] = (function() {
-	var $pkg = {}, $init, errors, js, nosync, runtime, strings, syscall, ParseError, Time, Month, Weekday, Duration, Location, zone, zoneTrans, sliceType, sliceType$1, sliceType$2, ptrType, arrayType, sliceType$3, arrayType$1, arrayType$2, ptrType$1, arrayType$4, ptrType$3, ptrType$6, std0x, longDayNames, shortDayNames, shortMonthNames, longMonthNames, atoiError, errBad, errLeadingInt, months, days, daysBefore, utcLoc, utcLoc$ptr, localLoc, localLoc$ptr, localOnce, zoneinfo, badData, _tuple, _r, init, initLocal, startsWithLowerCase, nextStdChunk, match, lookup, appendInt, atoi, formatNano, quote, isDigit, getnum, cutspace, skip, Parse, parse, parseTimeZone, parseGMT, parseNanoseconds, leadingInt, absWeekday, absClock, fmtFrac, fmtInt, absDate, Unix, isLeap, norm, Date, div, FixedZone;
+	var $pkg = {}, $init, errors, js, nosync, runtime, strings, syscall, ParseError, Time, Month, Weekday, Duration, Location, zone, zoneTrans, sliceType, sliceType$1, sliceType$2, ptrType, arrayType, sliceType$3, arrayType$1, arrayType$2, ptrType$1, arrayType$4, ptrType$3, ptrType$6, std0x, longDayNames, shortDayNames, shortMonthNames, longMonthNames, atoiError, errBad, errLeadingInt, months, days, daysBefore, utcLoc, utcLoc$ptr, localLoc, localLoc$ptr, localOnce, zoneinfo, badData, _tuple, _r, init, initLocal, runtimeNano, now, startsWithLowerCase, nextStdChunk, match, lookup, appendInt, atoi, formatNano, quote, isDigit, getnum, cutspace, skip, Parse, parse, parseTimeZone, parseGMT, parseNanoseconds, leadingInt, absWeekday, absClock, fmtFrac, fmtInt, absDate, Now, Unix, isLeap, norm, Date, div, FixedZone;
 	errors = $packages["errors"];
 	js = $packages["github.com/gopherjs/gopherjs/js"];
 	nosync = $packages["github.com/gopherjs/gopherjs/nosync"];
@@ -4155,6 +4228,18 @@ $packages["time"] = (function() {
 		}
 		localLoc.name = s.substring((i + 1 >> 0), j);
 		localLoc.zone = new sliceType$1([new zone.ptr(localLoc.name, ($parseInt(d.getTimezoneOffset()) >> 0) * -60 >> 0, false)]);
+	};
+	runtimeNano = function() {
+		var $ptr;
+		return $mul64($internalize(new ($global.Date)().getTime(), $Int64), new $Int64(0, 1000000));
+	};
+	now = function() {
+		var $ptr, _tmp, _tmp$1, n, nsec, sec, x;
+		sec = new $Int64(0, 0);
+		nsec = 0;
+		n = runtimeNano();
+		_tmp = $div64(n, new $Int64(0, 1000000000), false); _tmp$1 = ((x = $div64(n, new $Int64(0, 1000000000), true), x.$low + ((x.$high >> 31) * 4294967296)) >> 0); sec = _tmp; nsec = _tmp$1;
+		return [sec, nsec];
 	};
 	startsWithLowerCase = function(str) {
 		var $ptr, c, str;
@@ -5562,6 +5647,12 @@ $packages["time"] = (function() {
 		day = (day - begin >> 0) + 1 >> 0;
 		return [year, month, day, yday];
 	};
+	Now = function() {
+		var $ptr, _tuple$1, nsec, sec;
+		_tuple$1 = now(); sec = _tuple$1[0]; nsec = _tuple$1[1];
+		return new Time.ptr(new $Int64(sec.$high + 14, sec.$low + 2006054656), nsec, $pkg.Local);
+	};
+	$pkg.Now = Now;
 	Time.ptr.prototype.UTC = function() {
 		var $ptr, t;
 		t = $clone(this, Time);
@@ -12507,7 +12598,7 @@ $packages["reflect"] = (function() {
 	return $pkg;
 })();
 $packages["fmt"] = (function() {
-	var $pkg = {}, $init, errors, io, math, os, reflect, strconv, sync, utf8, fmtFlags, fmt, State, Formatter, Stringer, GoStringer, buffer, pp, runeUnreader, scanError, ss, ssave, sliceType, sliceType$1, arrayType, sliceType$2, ptrType, ptrType$1, ptrType$2, ptrType$5, arrayType$1, arrayType$2, ptrType$25, funcType, padZeroBytes, padSpaceBytes, trueBytes, falseBytes, commaSpaceBytes, nilAngleBytes, nilParenBytes, nilBytes, mapBytes, percentBangBytes, missingBytes, badIndexBytes, panicBytes, extraBytes, irparenBytes, bytesBytes, badWidthBytes, badPrecBytes, noVerbBytes, ppFree, intBits, uintptrBits, byteType, space, ssFree, complexError, boolError, _r, _r$1, init, doPrec, newPrinter, Fprintf, Printf, Fprintln, Println, getField, tooLarge, parsenum, intFromArg, parseArgNumber, isSpace, notSpace, indexRune;
+	var $pkg = {}, $init, errors, io, math, os, reflect, strconv, sync, utf8, fmtFlags, fmt, State, Formatter, Stringer, GoStringer, buffer, pp, runeUnreader, scanError, ss, ssave, sliceType, sliceType$1, arrayType, sliceType$2, ptrType, ptrType$1, ptrType$2, ptrType$5, arrayType$1, arrayType$2, ptrType$25, funcType, padZeroBytes, padSpaceBytes, trueBytes, falseBytes, commaSpaceBytes, nilAngleBytes, nilParenBytes, nilBytes, mapBytes, percentBangBytes, missingBytes, badIndexBytes, panicBytes, extraBytes, irparenBytes, bytesBytes, badWidthBytes, badPrecBytes, noVerbBytes, ppFree, intBits, uintptrBits, byteType, space, ssFree, complexError, boolError, _r, _r$1, init, doPrec, newPrinter, Fprintf, Printf, getField, tooLarge, parsenum, intFromArg, parseArgNumber, isSpace, notSpace, indexRune;
 	errors = $packages["errors"];
 	io = $packages["io"];
 	math = $packages["math"];
@@ -13307,32 +13398,6 @@ $packages["fmt"] = (function() {
 		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Printf }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f._tuple = _tuple; $f.a = a; $f.err = err; $f.format = format; $f.n = n; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	$pkg.Printf = Printf;
-	Fprintln = function(w, a) {
-		var $ptr, _r$2, _r$3, _tuple, a, err, n, p, w, x, $s, $r;
-		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$2 = $f._r$2; _r$3 = $f._r$3; _tuple = $f._tuple; a = $f.a; err = $f.err; n = $f.n; p = $f.p; w = $f.w; x = $f.x; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
-		n = 0;
-		err = $ifaceNil;
-		_r$2 = newPrinter(); /* */ $s = 1; case 1: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
-		p = _r$2;
-		$r = p.doPrint(a, true, true); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		_r$3 = w.Write((x = p.buf, $subslice(new sliceType(x.$array), x.$offset, x.$offset + x.$length))); /* */ $s = 3; case 3: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
-		_tuple = _r$3; n = _tuple[0]; err = _tuple[1];
-		p.free();
-		return [n, err];
-		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Fprintln }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._tuple = _tuple; $f.a = a; $f.err = err; $f.n = n; $f.p = p; $f.w = w; $f.x = x; $f.$s = $s; $f.$r = $r; return $f;
-	};
-	$pkg.Fprintln = Fprintln;
-	Println = function(a) {
-		var $ptr, _r$2, _tuple, a, err, n, $s, $r;
-		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$2 = $f._r$2; _tuple = $f._tuple; a = $f.a; err = $f.err; n = $f.n; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
-		n = 0;
-		err = $ifaceNil;
-		_r$2 = Fprintln(os.Stdout, a); /* */ $s = 1; case 1: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
-		_tuple = _r$2; n = _tuple[0]; err = _tuple[1];
-		return [n, err];
-		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Println }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f._tuple = _tuple; $f.a = a; $f.err = err; $f.n = n; $f.$s = $s; $f.$r = $r; return $f;
-	};
-	$pkg.Println = Println;
 	getField = function(v, i) {
 		var $ptr, _r$2, _r$3, i, v, val, $s, $r;
 		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$2 = $f._r$2; _r$3 = $f._r$3; i = $f.i; v = $f.v; val = $f.val; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
@@ -14755,37 +14820,6 @@ $packages["fmt"] = (function() {
 		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: pp.ptr.prototype.doPrintf }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._r$5 = _r$5; $f._ref = _ref; $f._tuple = _tuple; $f._tuple$1 = _tuple$1; $f._tuple$2 = _tuple$2; $f._tuple$3 = _tuple$3; $f._tuple$4 = _tuple$4; $f._tuple$5 = _tuple$5; $f._tuple$6 = _tuple$6; $f._tuple$7 = _tuple$7; $f.a = a; $f.afterIndex = afterIndex; $f.arg = arg; $f.arg$1 = arg$1; $f.argNum = argNum; $f.c = c; $f.end = end; $f.format = format; $f.i = i; $f.lasti = lasti; $f.p = p; $f.w = w; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	pp.prototype.doPrintf = function(format, a) { return this.$val.doPrintf(format, a); };
-	pp.ptr.prototype.doPrint = function(a, addspace, addnewline) {
-		var $ptr, _r$2, _r$3, _v, a, addnewline, addspace, arg, argNum, isString, p, prevString, $s, $r;
-		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$2 = $f._r$2; _r$3 = $f._r$3; _v = $f._v; a = $f.a; addnewline = $f.addnewline; addspace = $f.addspace; arg = $f.arg; argNum = $f.argNum; isString = $f.isString; p = $f.p; prevString = $f.prevString; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
-		p = this;
-		prevString = false;
-		argNum = 0;
-		/* while (true) { */ case 1:
-			/* if (!(argNum < a.$length)) { break; } */ if(!(argNum < a.$length)) { $s = 2; continue; }
-			p.fmt.clearflags();
-			arg = ((argNum < 0 || argNum >= a.$length) ? $throwRuntimeError("index out of range") : a.$array[a.$offset + argNum]);
-			/* */ if (argNum > 0) { $s = 3; continue; }
-			/* */ $s = 4; continue;
-			/* if (argNum > 0) { */ case 3:
-				if (!(!($interfaceIsEqual(arg, $ifaceNil)))) { _v = false; $s = 5; continue s; }
-				_r$2 = reflect.TypeOf(arg).Kind(); /* */ $s = 6; case 6: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
-				_v = _r$2 === 24; case 5:
-				isString = _v;
-				if (addspace || !isString && !prevString) {
-					(p.$ptr_buf || (p.$ptr_buf = new ptrType$1(function() { return this.$target.buf; }, function($v) { this.$target.buf = $v; }, p))).WriteByte(32);
-				}
-			/* } */ case 4:
-			_r$3 = p.printArg(arg, 118, 0); /* */ $s = 7; case 7: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
-			prevString = _r$3;
-			argNum = argNum + (1) >> 0;
-		/* } */ $s = 1; continue; case 2:
-		if (addnewline) {
-			(p.$ptr_buf || (p.$ptr_buf = new ptrType$1(function() { return this.$target.buf; }, function($v) { this.$target.buf = $v; }, p))).WriteByte(10);
-		}
-		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: pp.ptr.prototype.doPrint }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._v = _v; $f.a = a; $f.addnewline = addnewline; $f.addspace = addspace; $f.arg = arg; $f.argNum = argNum; $f.isString = isString; $f.p = p; $f.prevString = prevString; $f.$s = $s; $f.$r = $r; return $f;
-	};
-	pp.prototype.doPrint = function(a, addspace, addnewline) { return this.$val.doPrint(a, addspace, addnewline); };
 	ss.ptr.prototype.Read = function(buf) {
 		var $ptr, _tmp, _tmp$1, buf, err, n, s;
 		n = 0;
@@ -15137,10 +15171,417 @@ $packages["fmt"] = (function() {
 	$pkg.$init = $init;
 	return $pkg;
 })();
+$packages["math/rand"] = (function() {
+	var $pkg = {}, $init, nosync, math, Source, Rand, lockedSource, rngSource, sliceType, ptrType$1, ptrType$2, arrayType, ptrType$3, ke, we, fe, kn, wn, fn, globalRand, rng_cooked, absInt32, NewSource, New, Seed, Intn, seedrand;
+	nosync = $packages["github.com/gopherjs/gopherjs/nosync"];
+	math = $packages["math"];
+	Source = $pkg.Source = $newType(8, $kindInterface, "rand.Source", "Source", "math/rand", null);
+	Rand = $pkg.Rand = $newType(0, $kindStruct, "rand.Rand", "Rand", "math/rand", function(src_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.src = $ifaceNil;
+			return;
+		}
+		this.src = src_;
+	});
+	lockedSource = $pkg.lockedSource = $newType(0, $kindStruct, "rand.lockedSource", "lockedSource", "math/rand", function(lk_, src_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.lk = new nosync.Mutex.ptr();
+			this.src = $ifaceNil;
+			return;
+		}
+		this.lk = lk_;
+		this.src = src_;
+	});
+	rngSource = $pkg.rngSource = $newType(0, $kindStruct, "rand.rngSource", "rngSource", "math/rand", function(tap_, feed_, vec_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.tap = 0;
+			this.feed = 0;
+			this.vec = arrayType.zero();
+			return;
+		}
+		this.tap = tap_;
+		this.feed = feed_;
+		this.vec = vec_;
+	});
+	sliceType = $sliceType($Int);
+	ptrType$1 = $ptrType(Rand);
+	ptrType$2 = $ptrType(lockedSource);
+	arrayType = $arrayType($Int64, 607);
+	ptrType$3 = $ptrType(rngSource);
+	Rand.ptr.prototype.ExpFloat64 = function() {
+		var $ptr, _r, _r$1, _r$2, _r$3, i, j, r, x, x$1, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; i = $f.i; j = $f.j; r = $f.r; x = $f.x; x$1 = $f.x$1; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		/* while (true) { */ case 1:
+			_r = r.Uint32(); /* */ $s = 3; case 3: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+			j = _r;
+			i = (j & 255) >>> 0;
+			x = j * ((i < 0 || i >= we.length) ? $throwRuntimeError("index out of range") : we[i]);
+			if (j < ((i < 0 || i >= ke.length) ? $throwRuntimeError("index out of range") : ke[i])) {
+				return x;
+			}
+			/* */ if (i === 0) { $s = 4; continue; }
+			/* */ $s = 5; continue;
+			/* if (i === 0) { */ case 4:
+				_r$1 = r.Float64(); /* */ $s = 6; case 6: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+				_r$2 = math.Log(_r$1); /* */ $s = 7; case 7: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+				return 7.69711747013105 - _r$2;
+			/* } */ case 5:
+			_r$3 = r.Float64(); /* */ $s = 10; case 10: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+			/* */ if ($fround(((i < 0 || i >= fe.length) ? $throwRuntimeError("index out of range") : fe[i]) + $fround($fround(_r$3) * ($fround((x$1 = i - 1 >>> 0, ((x$1 < 0 || x$1 >= fe.length) ? $throwRuntimeError("index out of range") : fe[x$1])) - ((i < 0 || i >= fe.length) ? $throwRuntimeError("index out of range") : fe[i]))))) < $fround(math.Exp(-x))) { $s = 8; continue; }
+			/* */ $s = 9; continue;
+			/* if ($fround(((i < 0 || i >= fe.length) ? $throwRuntimeError("index out of range") : fe[i]) + $fround($fround(_r$3) * ($fround((x$1 = i - 1 >>> 0, ((x$1 < 0 || x$1 >= fe.length) ? $throwRuntimeError("index out of range") : fe[x$1])) - ((i < 0 || i >= fe.length) ? $throwRuntimeError("index out of range") : fe[i]))))) < $fround(math.Exp(-x))) { */ case 8:
+				return x;
+			/* } */ case 9:
+		/* } */ $s = 1; continue; case 2:
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.ExpFloat64 }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f.i = i; $f.j = j; $f.r = r; $f.x = x; $f.x$1 = x$1; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.ExpFloat64 = function() { return this.$val.ExpFloat64(); };
+	absInt32 = function(i) {
+		var $ptr, i;
+		if (i < 0) {
+			return (-i >>> 0);
+		}
+		return (i >>> 0);
+	};
+	Rand.ptr.prototype.NormFloat64 = function() {
+		var $ptr, _r, _r$1, _r$2, _r$3, _r$4, _r$5, i, j, r, x, x$1, y, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; _r$4 = $f._r$4; _r$5 = $f._r$5; i = $f.i; j = $f.j; r = $f.r; x = $f.x; x$1 = $f.x$1; y = $f.y; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		/* while (true) { */ case 1:
+			_r = r.Uint32(); /* */ $s = 3; case 3: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+			j = (_r >> 0);
+			i = j & 127;
+			x = j * ((i < 0 || i >= wn.length) ? $throwRuntimeError("index out of range") : wn[i]);
+			if (absInt32(j) < ((i < 0 || i >= kn.length) ? $throwRuntimeError("index out of range") : kn[i])) {
+				return x;
+			}
+			/* */ if (i === 0) { $s = 4; continue; }
+			/* */ $s = 5; continue;
+			/* if (i === 0) { */ case 4:
+				/* while (true) { */ case 6:
+					_r$1 = r.Float64(); /* */ $s = 8; case 8: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+					_r$2 = math.Log(_r$1); /* */ $s = 9; case 9: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+					x = -_r$2 * 0.29047645161474317;
+					_r$3 = r.Float64(); /* */ $s = 10; case 10: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+					_r$4 = math.Log(_r$3); /* */ $s = 11; case 11: if($c) { $c = false; _r$4 = _r$4.$blk(); } if (_r$4 && _r$4.$blk !== undefined) { break s; }
+					y = -_r$4;
+					if (y + y >= x * x) {
+						/* break; */ $s = 7; continue;
+					}
+				/* } */ $s = 6; continue; case 7:
+				if (j > 0) {
+					return 3.442619855899 + x;
+				}
+				return -3.442619855899 - x;
+			/* } */ case 5:
+			_r$5 = r.Float64(); /* */ $s = 14; case 14: if($c) { $c = false; _r$5 = _r$5.$blk(); } if (_r$5 && _r$5.$blk !== undefined) { break s; }
+			/* */ if ($fround(((i < 0 || i >= fn.length) ? $throwRuntimeError("index out of range") : fn[i]) + $fround($fround(_r$5) * ($fround((x$1 = i - 1 >> 0, ((x$1 < 0 || x$1 >= fn.length) ? $throwRuntimeError("index out of range") : fn[x$1])) - ((i < 0 || i >= fn.length) ? $throwRuntimeError("index out of range") : fn[i]))))) < $fround(math.Exp(-0.5 * x * x))) { $s = 12; continue; }
+			/* */ $s = 13; continue;
+			/* if ($fround(((i < 0 || i >= fn.length) ? $throwRuntimeError("index out of range") : fn[i]) + $fround($fround(_r$5) * ($fround((x$1 = i - 1 >> 0, ((x$1 < 0 || x$1 >= fn.length) ? $throwRuntimeError("index out of range") : fn[x$1])) - ((i < 0 || i >= fn.length) ? $throwRuntimeError("index out of range") : fn[i]))))) < $fround(math.Exp(-0.5 * x * x))) { */ case 12:
+				return x;
+			/* } */ case 13:
+		/* } */ $s = 1; continue; case 2:
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.NormFloat64 }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._r$5 = _r$5; $f.i = i; $f.j = j; $f.r = r; $f.x = x; $f.x$1 = x$1; $f.y = y; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.NormFloat64 = function() { return this.$val.NormFloat64(); };
+	NewSource = function(seed) {
+		var $ptr, rng, seed;
+		rng = $clone(new rngSource.ptr(), rngSource);
+		rng.Seed(seed);
+		return rng;
+	};
+	$pkg.NewSource = NewSource;
+	New = function(src) {
+		var $ptr, src;
+		return new Rand.ptr(src);
+	};
+	$pkg.New = New;
+	Rand.ptr.prototype.Seed = function(seed) {
+		var $ptr, r, seed, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; r = $f.r; seed = $f.seed; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		$r = r.src.Seed(seed); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.Seed }; } $f.$ptr = $ptr; $f.r = r; $f.seed = seed; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.Seed = function(seed) { return this.$val.Seed(seed); };
+	Rand.ptr.prototype.Int63 = function() {
+		var $ptr, _r, r, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; r = $f.r; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		_r = r.src.Int63(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		return _r;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.Int63 }; } $f.$ptr = $ptr; $f._r = _r; $f.r = r; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.Int63 = function() { return this.$val.Int63(); };
+	Rand.ptr.prototype.Uint32 = function() {
+		var $ptr, _r, r, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; r = $f.r; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		_r = r.Int63(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		return ($shiftRightInt64(_r, 31).$low >>> 0);
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.Uint32 }; } $f.$ptr = $ptr; $f._r = _r; $f.r = r; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.Uint32 = function() { return this.$val.Uint32(); };
+	Rand.ptr.prototype.Int31 = function() {
+		var $ptr, _r, r, x, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; r = $f.r; x = $f.x; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		_r = r.Int63(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		return ((x = $shiftRightInt64(_r, 32), x.$low + ((x.$high >> 31) * 4294967296)) >> 0);
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.Int31 }; } $f.$ptr = $ptr; $f._r = _r; $f.r = r; $f.x = x; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.Int31 = function() { return this.$val.Int31(); };
+	Rand.ptr.prototype.Int = function() {
+		var $ptr, _r, r, u, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; r = $f.r; u = $f.u; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		_r = r.Int63(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		u = (_r.$low >>> 0);
+		return (((u << 1 >>> 0) >>> 1 >>> 0) >> 0);
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.Int }; } $f.$ptr = $ptr; $f._r = _r; $f.r = r; $f.u = u; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.Int = function() { return this.$val.Int(); };
+	Rand.ptr.prototype.Int63n = function(n) {
+		var $ptr, _r, _r$1, _r$2, max, n, r, v, x, x$1, x$2, x$3, x$4, x$5, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; max = $f.max; n = $f.n; r = $f.r; v = $f.v; x = $f.x; x$1 = $f.x$1; x$2 = $f.x$2; x$3 = $f.x$3; x$4 = $f.x$4; x$5 = $f.x$5; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		if ((n.$high < 0 || (n.$high === 0 && n.$low <= 0))) {
+			$panic(new $String("invalid argument to Int63n"));
+		}
+		/* */ if ((x = (x$1 = new $Int64(n.$high - 0, n.$low - 1), new $Int64(n.$high & x$1.$high, (n.$low & x$1.$low) >>> 0)), (x.$high === 0 && x.$low === 0))) { $s = 1; continue; }
+		/* */ $s = 2; continue;
+		/* if ((x = (x$1 = new $Int64(n.$high - 0, n.$low - 1), new $Int64(n.$high & x$1.$high, (n.$low & x$1.$low) >>> 0)), (x.$high === 0 && x.$low === 0))) { */ case 1:
+			_r = r.Int63(); /* */ $s = 3; case 3: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+			return (x$2 = _r, x$3 = new $Int64(n.$high - 0, n.$low - 1), new $Int64(x$2.$high & x$3.$high, (x$2.$low & x$3.$low) >>> 0));
+		/* } */ case 2:
+		max = (x$4 = (x$5 = $div64(new $Uint64(2147483648, 0), new $Uint64(n.$high, n.$low), true), new $Uint64(2147483647 - x$5.$high, 4294967295 - x$5.$low)), new $Int64(x$4.$high, x$4.$low));
+		_r$1 = r.Int63(); /* */ $s = 4; case 4: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		v = _r$1;
+		/* while (true) { */ case 5:
+			/* if (!((v.$high > max.$high || (v.$high === max.$high && v.$low > max.$low)))) { break; } */ if(!((v.$high > max.$high || (v.$high === max.$high && v.$low > max.$low)))) { $s = 6; continue; }
+			_r$2 = r.Int63(); /* */ $s = 7; case 7: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+			v = _r$2;
+		/* } */ $s = 5; continue; case 6:
+		return $div64(v, n, true);
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.Int63n }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f.max = max; $f.n = n; $f.r = r; $f.v = v; $f.x = x; $f.x$1 = x$1; $f.x$2 = x$2; $f.x$3 = x$3; $f.x$4 = x$4; $f.x$5 = x$5; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.Int63n = function(n) { return this.$val.Int63n(n); };
+	Rand.ptr.prototype.Int31n = function(n) {
+		var $ptr, _r, _r$1, _r$2, _r$3, _r$4, max, n, r, v, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; _r$4 = $f._r$4; max = $f.max; n = $f.n; r = $f.r; v = $f.v; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		if (n <= 0) {
+			$panic(new $String("invalid argument to Int31n"));
+		}
+		/* */ if ((n & ((n - 1 >> 0))) === 0) { $s = 1; continue; }
+		/* */ $s = 2; continue;
+		/* if ((n & ((n - 1 >> 0))) === 0) { */ case 1:
+			_r = r.Int31(); /* */ $s = 3; case 3: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+			return _r & ((n - 1 >> 0));
+		/* } */ case 2:
+		max = ((2147483647 - (_r$1 = 2147483648 % (n >>> 0), _r$1 === _r$1 ? _r$1 : $throwRuntimeError("integer divide by zero")) >>> 0) >> 0);
+		_r$2 = r.Int31(); /* */ $s = 4; case 4: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+		v = _r$2;
+		/* while (true) { */ case 5:
+			/* if (!(v > max)) { break; } */ if(!(v > max)) { $s = 6; continue; }
+			_r$3 = r.Int31(); /* */ $s = 7; case 7: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+			v = _r$3;
+		/* } */ $s = 5; continue; case 6:
+		return (_r$4 = v % n, _r$4 === _r$4 ? _r$4 : $throwRuntimeError("integer divide by zero"));
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.Int31n }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f.max = max; $f.n = n; $f.r = r; $f.v = v; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.Int31n = function(n) { return this.$val.Int31n(n); };
+	Rand.ptr.prototype.Intn = function(n) {
+		var $ptr, _r, _r$1, n, r, x, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; n = $f.n; r = $f.r; x = $f.x; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		if (n <= 0) {
+			$panic(new $String("invalid argument to Intn"));
+		}
+		/* */ if (n <= 2147483647) { $s = 1; continue; }
+		/* */ $s = 2; continue;
+		/* if (n <= 2147483647) { */ case 1:
+			_r = r.Int31n((n >> 0)); /* */ $s = 3; case 3: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+			return (_r >> 0);
+		/* } */ case 2:
+		_r$1 = r.Int63n(new $Int64(0, n)); /* */ $s = 4; case 4: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		return ((x = _r$1, x.$low + ((x.$high >> 31) * 4294967296)) >> 0);
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.Intn }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f.n = n; $f.r = r; $f.x = x; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.Intn = function(n) { return this.$val.Intn(n); };
+	Rand.ptr.prototype.Float64 = function() {
+		var $ptr, _r, f, r, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; f = $f.f; r = $f.r; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		_r = r.Int63(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		f = $flatten64(_r) / 9.223372036854776e+18;
+		if (f === 1) {
+			f = 0;
+		}
+		return f;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.Float64 }; } $f.$ptr = $ptr; $f._r = _r; $f.f = f; $f.r = r; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.Float64 = function() { return this.$val.Float64(); };
+	Rand.ptr.prototype.Float32 = function() {
+		var $ptr, _r, f, r, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; f = $f.f; r = $f.r; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		_r = r.Float64(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		f = $fround(_r);
+		if (f === 1) {
+			f = 0;
+		}
+		return f;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.Float32 }; } $f.$ptr = $ptr; $f._r = _r; $f.f = f; $f.r = r; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.Float32 = function() { return this.$val.Float32(); };
+	Rand.ptr.prototype.Perm = function(n) {
+		var $ptr, _r, i, j, m, n, r, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; i = $f.i; j = $f.j; m = $f.m; n = $f.n; r = $f.r; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		m = $makeSlice(sliceType, n);
+		i = 0;
+		/* while (true) { */ case 1:
+			/* if (!(i < n)) { break; } */ if(!(i < n)) { $s = 2; continue; }
+			_r = r.Intn(i + 1 >> 0); /* */ $s = 3; case 3: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+			j = _r;
+			((i < 0 || i >= m.$length) ? $throwRuntimeError("index out of range") : m.$array[m.$offset + i] = ((j < 0 || j >= m.$length) ? $throwRuntimeError("index out of range") : m.$array[m.$offset + j]));
+			((j < 0 || j >= m.$length) ? $throwRuntimeError("index out of range") : m.$array[m.$offset + j] = i);
+			i = i + (1) >> 0;
+		/* } */ $s = 1; continue; case 2:
+		return m;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Rand.ptr.prototype.Perm }; } $f.$ptr = $ptr; $f._r = _r; $f.i = i; $f.j = j; $f.m = m; $f.n = n; $f.r = r; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Rand.prototype.Perm = function(n) { return this.$val.Perm(n); };
+	Seed = function(seed) {
+		var $ptr, seed, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; seed = $f.seed; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		$r = globalRand.Seed(seed); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Seed }; } $f.$ptr = $ptr; $f.seed = seed; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.Seed = Seed;
+	Intn = function(n) {
+		var $ptr, _r, n, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; n = $f.n; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		_r = globalRand.Intn(n); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		return _r;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Intn }; } $f.$ptr = $ptr; $f._r = _r; $f.n = n; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.Intn = Intn;
+	lockedSource.ptr.prototype.Int63 = function() {
+		var $ptr, _r, n, r, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; n = $f.n; r = $f.r; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		n = new $Int64(0, 0);
+		r = this;
+		r.lk.Lock();
+		_r = r.src.Int63(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		n = _r;
+		r.lk.Unlock();
+		return n;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: lockedSource.ptr.prototype.Int63 }; } $f.$ptr = $ptr; $f._r = _r; $f.n = n; $f.r = r; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	lockedSource.prototype.Int63 = function() { return this.$val.Int63(); };
+	lockedSource.ptr.prototype.Seed = function(seed) {
+		var $ptr, r, seed, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; r = $f.r; seed = $f.seed; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		r = this;
+		r.lk.Lock();
+		$r = r.src.Seed(seed); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		r.lk.Unlock();
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: lockedSource.ptr.prototype.Seed }; } $f.$ptr = $ptr; $f.r = r; $f.seed = seed; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	lockedSource.prototype.Seed = function(seed) { return this.$val.Seed(seed); };
+	seedrand = function(x) {
+		var $ptr, _q, _r, hi, lo, x;
+		hi = (_q = x / 44488, (_q === _q && _q !== 1/0 && _q !== -1/0) ? _q >> 0 : $throwRuntimeError("integer divide by zero"));
+		lo = (_r = x % 44488, _r === _r ? _r : $throwRuntimeError("integer divide by zero"));
+		x = ((((48271 >>> 16 << 16) * lo >> 0) + (48271 << 16 >>> 16) * lo) >> 0) - ((((3399 >>> 16 << 16) * hi >> 0) + (3399 << 16 >>> 16) * hi) >> 0) >> 0;
+		if (x < 0) {
+			x = x + (2147483647) >> 0;
+		}
+		return x;
+	};
+	rngSource.ptr.prototype.Seed = function(seed) {
+		var $ptr, i, rng, seed, u, x, x$1, x$2, x$3, x$4, x$5;
+		rng = this;
+		rng.tap = 0;
+		rng.feed = 334;
+		seed = $div64(seed, new $Int64(0, 2147483647), true);
+		if ((seed.$high < 0 || (seed.$high === 0 && seed.$low < 0))) {
+			seed = (x = new $Int64(0, 2147483647), new $Int64(seed.$high + x.$high, seed.$low + x.$low));
+		}
+		if ((seed.$high === 0 && seed.$low === 0)) {
+			seed = new $Int64(0, 89482311);
+		}
+		x$1 = ((seed.$low + ((seed.$high >> 31) * 4294967296)) >> 0);
+		i = -20;
+		while (true) {
+			if (!(i < 607)) { break; }
+			x$1 = seedrand(x$1);
+			if (i >= 0) {
+				u = new $Int64(0, 0);
+				u = $shiftLeft64(new $Int64(0, x$1), 40);
+				x$1 = seedrand(x$1);
+				u = (x$2 = $shiftLeft64(new $Int64(0, x$1), 20), new $Int64(u.$high ^ x$2.$high, (u.$low ^ x$2.$low) >>> 0));
+				x$1 = seedrand(x$1);
+				u = (x$3 = new $Int64(0, x$1), new $Int64(u.$high ^ x$3.$high, (u.$low ^ x$3.$low) >>> 0));
+				u = (x$4 = ((i < 0 || i >= rng_cooked.length) ? $throwRuntimeError("index out of range") : rng_cooked[i]), new $Int64(u.$high ^ x$4.$high, (u.$low ^ x$4.$low) >>> 0));
+				(x$5 = rng.vec, ((i < 0 || i >= x$5.length) ? $throwRuntimeError("index out of range") : x$5[i] = new $Int64(u.$high & 2147483647, (u.$low & 4294967295) >>> 0)));
+			}
+			i = i + (1) >> 0;
+		}
+	};
+	rngSource.prototype.Seed = function(seed) { return this.$val.Seed(seed); };
+	rngSource.ptr.prototype.Int63 = function() {
+		var $ptr, rng, x, x$1, x$2, x$3, x$4, x$5, x$6, x$7, x$8, x$9;
+		rng = this;
+		rng.tap = rng.tap - (1) >> 0;
+		if (rng.tap < 0) {
+			rng.tap = rng.tap + (607) >> 0;
+		}
+		rng.feed = rng.feed - (1) >> 0;
+		if (rng.feed < 0) {
+			rng.feed = rng.feed + (607) >> 0;
+		}
+		x$7 = (x = (x$1 = (x$2 = rng.vec, x$3 = rng.feed, ((x$3 < 0 || x$3 >= x$2.length) ? $throwRuntimeError("index out of range") : x$2[x$3])), x$4 = (x$5 = rng.vec, x$6 = rng.tap, ((x$6 < 0 || x$6 >= x$5.length) ? $throwRuntimeError("index out of range") : x$5[x$6])), new $Int64(x$1.$high + x$4.$high, x$1.$low + x$4.$low)), new $Int64(x.$high & 2147483647, (x.$low & 4294967295) >>> 0));
+		(x$8 = rng.vec, x$9 = rng.feed, ((x$9 < 0 || x$9 >= x$8.length) ? $throwRuntimeError("index out of range") : x$8[x$9] = x$7));
+		return x$7;
+	};
+	rngSource.prototype.Int63 = function() { return this.$val.Int63(); };
+	ptrType$1.methods = [{prop: "ExpFloat64", name: "ExpFloat64", pkg: "", typ: $funcType([], [$Float64], false)}, {prop: "NormFloat64", name: "NormFloat64", pkg: "", typ: $funcType([], [$Float64], false)}, {prop: "Seed", name: "Seed", pkg: "", typ: $funcType([$Int64], [], false)}, {prop: "Int63", name: "Int63", pkg: "", typ: $funcType([], [$Int64], false)}, {prop: "Uint32", name: "Uint32", pkg: "", typ: $funcType([], [$Uint32], false)}, {prop: "Int31", name: "Int31", pkg: "", typ: $funcType([], [$Int32], false)}, {prop: "Int", name: "Int", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Int63n", name: "Int63n", pkg: "", typ: $funcType([$Int64], [$Int64], false)}, {prop: "Int31n", name: "Int31n", pkg: "", typ: $funcType([$Int32], [$Int32], false)}, {prop: "Intn", name: "Intn", pkg: "", typ: $funcType([$Int], [$Int], false)}, {prop: "Float64", name: "Float64", pkg: "", typ: $funcType([], [$Float64], false)}, {prop: "Float32", name: "Float32", pkg: "", typ: $funcType([], [$Float32], false)}, {prop: "Perm", name: "Perm", pkg: "", typ: $funcType([$Int], [sliceType], false)}];
+	ptrType$2.methods = [{prop: "Int63", name: "Int63", pkg: "", typ: $funcType([], [$Int64], false)}, {prop: "Seed", name: "Seed", pkg: "", typ: $funcType([$Int64], [], false)}];
+	ptrType$3.methods = [{prop: "Seed", name: "Seed", pkg: "", typ: $funcType([$Int64], [], false)}, {prop: "Int63", name: "Int63", pkg: "", typ: $funcType([], [$Int64], false)}];
+	Source.init([{prop: "Int63", name: "Int63", pkg: "", typ: $funcType([], [$Int64], false)}, {prop: "Seed", name: "Seed", pkg: "", typ: $funcType([$Int64], [], false)}]);
+	Rand.init([{prop: "src", name: "src", pkg: "math/rand", typ: Source, tag: ""}]);
+	lockedSource.init([{prop: "lk", name: "lk", pkg: "math/rand", typ: nosync.Mutex, tag: ""}, {prop: "src", name: "src", pkg: "math/rand", typ: Source, tag: ""}]);
+	rngSource.init([{prop: "tap", name: "tap", pkg: "math/rand", typ: $Int, tag: ""}, {prop: "feed", name: "feed", pkg: "math/rand", typ: $Int, tag: ""}, {prop: "vec", name: "vec", pkg: "math/rand", typ: arrayType, tag: ""}]);
+	$init = function() {
+		$pkg.$init = function() {};
+		/* */ var $f, $c = false, $s = 0, $r; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		$r = nosync.$init(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = math.$init(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		ke = $toNativeArray($kindUint32, [3801129273, 0, 2615860924, 3279400049, 3571300752, 3733536696, 3836274812, 3906990442, 3958562475, 3997804264, 4028649213, 4053523342, 4074002619, 4091154507, 4105727352, 4118261130, 4129155133, 4138710916, 4147160435, 4154685009, 4161428406, 4167506077, 4173011791, 4178022498, 4182601930, 4186803325, 4190671498, 4194244443, 4197554582, 4200629752, 4203493986, 4206168142, 4208670408, 4211016720, 4213221098, 4215295924, 4217252177, 4219099625, 4220846988, 4222502074, 4224071896, 4225562770, 4226980400, 4228329951, 4229616109, 4230843138, 4232014925, 4233135020, 4234206673, 4235232866, 4236216336, 4237159604, 4238064994, 4238934652, 4239770563, 4240574564, 4241348362, 4242093539, 4242811568, 4243503822, 4244171579, 4244816032, 4245438297, 4246039419, 4246620374, 4247182079, 4247725394, 4248251127, 4248760037, 4249252839, 4249730206, 4250192773, 4250641138, 4251075867, 4251497493, 4251906522, 4252303431, 4252688672, 4253062674, 4253425844, 4253778565, 4254121205, 4254454110, 4254777611, 4255092022, 4255397640, 4255694750, 4255983622, 4256264513, 4256537670, 4256803325, 4257061702, 4257313014, 4257557464, 4257795244, 4258026541, 4258251531, 4258470383, 4258683258, 4258890309, 4259091685, 4259287526, 4259477966, 4259663135, 4259843154, 4260018142, 4260188212, 4260353470, 4260514019, 4260669958, 4260821380, 4260968374, 4261111028, 4261249421, 4261383632, 4261513736, 4261639802, 4261761900, 4261880092, 4261994441, 4262105003, 4262211835, 4262314988, 4262414513, 4262510454, 4262602857, 4262691764, 4262777212, 4262859239, 4262937878, 4263013162, 4263085118, 4263153776, 4263219158, 4263281289, 4263340187, 4263395872, 4263448358, 4263497660, 4263543789, 4263586755, 4263626565, 4263663224, 4263696735, 4263727099, 4263754314, 4263778377, 4263799282, 4263817020, 4263831582, 4263842955, 4263851124, 4263856071, 4263857776, 4263856218, 4263851370, 4263843206, 4263831695, 4263816804, 4263798497, 4263776735, 4263751476, 4263722676, 4263690284, 4263654251, 4263614520, 4263571032, 4263523724, 4263472530, 4263417377, 4263358192, 4263294892, 4263227394, 4263155608, 4263079437, 4262998781, 4262913534, 4262823581, 4262728804, 4262629075, 4262524261, 4262414220, 4262298801, 4262177846, 4262051187, 4261918645, 4261780032, 4261635148, 4261483780, 4261325704, 4261160681, 4260988457, 4260808763, 4260621313, 4260425802, 4260221905, 4260009277, 4259787550, 4259556329, 4259315195, 4259063697, 4258801357, 4258527656, 4258242044, 4257943926, 4257632664, 4257307571, 4256967906, 4256612870, 4256241598, 4255853155, 4255446525, 4255020608, 4254574202, 4254106002, 4253614578, 4253098370, 4252555662, 4251984571, 4251383021, 4250748722, 4250079132, 4249371435, 4248622490, 4247828790, 4246986404, 4246090910, 4245137315, 4244119963, 4243032411, 4241867296, 4240616155, 4239269214, 4237815118, 4236240596, 4234530035, 4232664930, 4230623176, 4228378137, 4225897409, 4223141146, 4220059768, 4216590757, 4212654085, 4208145538, 4202926710, 4196809522, 4189531420, 4180713890, 4169789475, 4155865042, 4137444620, 4111806704, 4073393724, 4008685917, 3873074895]);
+		we = $toNativeArray($kindFloat32, [2.0249555365836613e-09, 1.4866739783681027e-11, 2.4409616689036184e-11, 3.1968806074589295e-11, 3.844677007314168e-11, 4.42282044321729e-11, 4.951644302919611e-11, 5.443358958023836e-11, 5.905943789574764e-11, 6.34494193296753e-11, 6.764381416113352e-11, 7.167294535648239e-11, 7.556032188826833e-11, 7.932458162551725e-11, 8.298078890689453e-11, 8.654132271912474e-11, 9.001651507523079e-11, 9.341507428706208e-11, 9.674443190998971e-11, 1.0001099254308699e-10, 1.0322031424037093e-10, 1.0637725422757427e-10, 1.0948611461891744e-10, 1.1255067711157807e-10, 1.1557434870246297e-10, 1.1856014781042035e-10, 1.2151082917633005e-10, 1.2442885610752796e-10, 1.2731647680563896e-10, 1.3017574518325858e-10, 1.330085347417409e-10, 1.3581656632677408e-10, 1.386014220061682e-10, 1.413645728254309e-10, 1.4410737880776736e-10, 1.4683107507629245e-10, 1.4953686899854546e-10, 1.522258291641876e-10, 1.5489899640730442e-10, 1.575573282952547e-10, 1.6020171300645814e-10, 1.628330109637588e-10, 1.6545202707884954e-10, 1.68059510752272e-10, 1.7065616975120435e-10, 1.73242697965037e-10, 1.758197337720091e-10, 1.783878739169964e-10, 1.8094774290045024e-10, 1.834998542005195e-10, 1.8604476292871652e-10, 1.8858298256319017e-10, 1.9111498494872592e-10, 1.9364125580789704e-10, 1.9616222535212557e-10, 1.9867835154840918e-10, 2.011900368525943e-10, 2.0369768372052732e-10, 2.062016807302669e-10, 2.0870240258208383e-10, 2.1120022397624894e-10, 2.136955057352452e-10, 2.1618855317040442e-10, 2.1867974098199738e-10, 2.2116936060356807e-10, 2.2365774510202385e-10, 2.2614519978869652e-10, 2.2863201609713002e-10, 2.3111849933865614e-10, 2.3360494094681883e-10, 2.3609159072179864e-10, 2.3857874009713953e-10, 2.4106666662859766e-10, 2.4355562011635357e-10, 2.460458781161634e-10, 2.485376904282077e-10, 2.5103127909709144e-10, 2.5352694943414633e-10, 2.560248957284017e-10, 2.585253955356137e-10, 2.610286709003873e-10, 2.6353494386732734e-10, 2.6604446423661443e-10, 2.6855745405285347e-10, 2.71074163116225e-10, 2.7359478571575835e-10, 2.7611959940720965e-10, 2.786487707240326e-10, 2.8118254946640775e-10, 2.8372118543451563e-10, 2.8626484516180994e-10, 2.8881380620404684e-10, 2.9136826285025563e-10, 2.9392840938946563e-10, 2.96494523377433e-10, 2.990667713476114e-10, 3.016454031001814e-10, 3.042306406797479e-10, 3.068226783753403e-10, 3.09421765987139e-10, 3.12028125559749e-10, 3.1464195138219964e-10, 3.17263521010247e-10, 3.1989300097734485e-10, 3.225306410836737e-10, 3.2517669112941405e-10, 3.2783134540359526e-10, 3.3049485370639786e-10, 3.3316743808242677e-10, 3.3584937608743815e-10, 3.385408342548857e-10, 3.4124211789610115e-10, 3.4395342130011386e-10, 3.4667499426710435e-10, 3.494071143528288e-10, 3.521500313574677e-10, 3.54903967325626e-10, 3.576691720574843e-10, 3.6044595086437425e-10, 3.632345535464765e-10, 3.660352021483959e-10, 3.688482297370399e-10, 3.716738583570134e-10, 3.7451239331964814e-10, 3.773641121807003e-10, 3.802292924959261e-10, 3.831082673322328e-10, 3.8600128648980103e-10, 3.8890865527996255e-10, 3.9183070676962473e-10, 3.9476774627011935e-10, 3.977200790927782e-10, 4.006880383045086e-10, 4.0367195697221803e-10, 4.066721681628138e-10, 4.0968900494320337e-10, 4.127228558914453e-10, 4.15774054074447e-10, 4.188429603146915e-10, 4.2192993543466173e-10, 4.25035395767992e-10, 4.2815970213716525e-10, 4.313032986313914e-10, 4.3446651831757777e-10, 4.376498607960855e-10, 4.408536868893975e-10, 4.4407846844229937e-10, 4.4732464954400086e-10, 4.5059267428371186e-10, 4.538830145062178e-10, 4.5719619756745544e-10, 4.605326675566346e-10, 4.638929240741163e-10, 4.672775499869886e-10, 4.706869893844612e-10, 4.74121908400349e-10, 4.775827511238617e-10, 4.810701836888143e-10, 4.845848167178701e-10, 4.881271498113904e-10, 4.916979601254923e-10, 4.952977472605369e-10, 4.989272883726414e-10, 5.025872495956207e-10, 5.062783525744408e-10, 5.100013189540675e-10, 5.13756870379467e-10, 5.175458395179078e-10, 5.21369003525507e-10, 5.252272505806843e-10, 5.29121357839557e-10, 5.330522134805449e-10, 5.3702081670437e-10, 5.41028055689452e-10, 5.450749851476644e-10, 5.491624932574268e-10, 5.532918012640664e-10, 5.574638528571541e-10, 5.616799247931681e-10, 5.659410717839819e-10, 5.702485705860738e-10, 5.746036979559221e-10, 5.790077306500052e-10, 5.83462111958255e-10, 5.879682296594524e-10, 5.925275825546805e-10, 5.971417249561739e-10, 6.01812211176167e-10, 6.065408175714992e-10, 6.113292094767075e-10, 6.16179329782085e-10, 6.21092954844471e-10, 6.260721940876124e-10, 6.311191569352559e-10, 6.362359528111483e-10, 6.414249686947926e-10, 6.466885360545405e-10, 6.520292639144998e-10, 6.574497612987784e-10, 6.629528592760892e-10, 6.685415554485985e-10, 6.742187919073217e-10, 6.799880103436351e-10, 6.858525969377638e-10, 6.918161599145378e-10, 6.978825850545434e-10, 7.040559801829716e-10, 7.103406751696184e-10, 7.167412219288849e-10, 7.232625609532306e-10, 7.2990985477972e-10, 7.366885990123251e-10, 7.436047333442275e-10, 7.506645305355164e-10, 7.57874762946642e-10, 7.652426470272644e-10, 7.727759543385559e-10, 7.804830115532013e-10, 7.883728114777e-10, 7.964550685635174e-10, 8.047402189070851e-10, 8.132396422944055e-10, 8.219657177122031e-10, 8.309318788590758e-10, 8.401527806789488e-10, 8.496445214056791e-10, 8.594246980742071e-10, 8.695127395874636e-10, 8.799300732498239e-10, 8.90700457834015e-10, 9.01850316648023e-10, 9.134091816243028e-10, 9.254100818978372e-10, 9.37890431984556e-10, 9.508922538259412e-10, 9.64463842123564e-10, 9.78660263939446e-10, 9.935448019859905e-10, 1.0091912860943353e-09, 1.0256859805934937e-09, 1.0431305819125214e-09, 1.0616465484503124e-09, 1.0813799855569073e-09, 1.1025096391392708e-09, 1.1252564435793033e-09, 1.149898620766976e-09, 1.176793218427008e-09, 1.2064089727203964e-09, 1.2393785997488749e-09, 1.2765849488616254e-09, 1.319313880365769e-09, 1.36954347862428e-09, 1.4305497897382224e-09, 1.5083649884672923e-09, 1.6160853766322703e-09, 1.7921247819074893e-09]);
+		fe = $toNativeArray($kindFloat32, [1, 0.9381436705589294, 0.900469958782196, 0.8717043399810791, 0.847785472869873, 0.8269932866096497, 0.8084216713905334, 0.7915276288986206, 0.7759568691253662, 0.7614634037017822, 0.7478685975074768, 0.7350381016731262, 0.7228676676750183, 0.7112747430801392, 0.7001926302909851, 0.6895664930343628, 0.6793505549430847, 0.669506311416626, 0.6600008606910706, 0.6508058309555054, 0.6418967247009277, 0.633251965045929, 0.62485271692276, 0.6166821718215942, 0.608725368976593, 0.6009689569473267, 0.5934008955955505, 0.5860103368759155, 0.5787873864173889, 0.5717230439186096, 0.5648092031478882, 0.5580382943153381, 0.5514034032821655, 0.5448982119560242, 0.5385168790817261, 0.5322538614273071, 0.526104211807251, 0.5200631618499756, 0.5141264200210571, 0.5082897543907166, 0.5025495290756226, 0.4969019889831543, 0.4913438558578491, 0.4858720004558563, 0.48048335313796997, 0.4751752018928528, 0.4699448347091675, 0.4647897481918335, 0.4597076177597046, 0.4546961486339569, 0.4497532546520233, 0.44487687945365906, 0.4400651156902313, 0.4353161156177521, 0.4306281507015228, 0.42599955201148987, 0.42142874002456665, 0.4169141948223114, 0.4124544560909271, 0.40804818272590637, 0.4036940038204193, 0.39939069747924805, 0.3951369822025299, 0.39093172550201416, 0.38677382469177246, 0.38266217708587646, 0.378595769405365, 0.37457355856895447, 0.37059465050697327, 0.366658091545105, 0.362762987613678, 0.358908474445343, 0.35509374737739563, 0.35131800174713135, 0.3475804924964905, 0.34388044476509094, 0.34021714329719543, 0.33658990263938904, 0.3329980671405792, 0.3294409513473511, 0.32591795921325684, 0.32242849469184875, 0.3189719021320343, 0.3155476748943329, 0.31215524673461914, 0.3087940812110901, 0.30546361207962036, 0.30216339230537415, 0.29889291524887085, 0.29565170407295227, 0.2924392819404602, 0.2892552316188812, 0.28609907627105713, 0.2829704284667969, 0.27986884117126465, 0.2767939269542694, 0.2737452983856201, 0.2707225978374481, 0.26772540807724, 0.26475343108177185, 0.2618062496185303, 0.258883535861969, 0.2559850215911865, 0.25311028957366943, 0.25025907158851624, 0.24743106961250305, 0.2446259707212448, 0.24184346199035645, 0.23908329010009766, 0.23634515702724457, 0.2336287796497345, 0.23093391954898834, 0.22826029360294342, 0.22560766339302063, 0.22297576069831848, 0.22036437690258026, 0.21777324378490448, 0.21520215272903442, 0.212650865316391, 0.21011915802955627, 0.20760682225227356, 0.20511364936828613, 0.20263944566249847, 0.20018397271633148, 0.19774706661701202, 0.1953285187482834, 0.19292815029621124, 0.19054576754570007, 0.18818120658397675, 0.18583425879478455, 0.18350479006767273, 0.18119260668754578, 0.17889754474163055, 0.17661945521831512, 0.17435817420482635, 0.1721135377883911, 0.16988539695739746, 0.16767361760139465, 0.16547803580760956, 0.16329853236675262, 0.16113494336605072, 0.1589871346950531, 0.15685498714447021, 0.15473836660385132, 0.15263713896274567, 0.1505511850118637, 0.1484803706407547, 0.14642459154129028, 0.1443837285041809, 0.14235764741897583, 0.1403462439775467, 0.13834942877292633, 0.136367067694664, 0.13439907133579254, 0.1324453204870224, 0.1305057406425476, 0.12858019769191742, 0.12666863203048706, 0.12477091699838638, 0.12288697808980942, 0.1210167184472084, 0.11916005611419678, 0.11731690168380737, 0.11548716574907303, 0.11367076635360718, 0.11186762899160385, 0.11007767915725708, 0.1083008274435997, 0.10653700679540634, 0.10478614270687103, 0.1030481606721878, 0.10132300108671188, 0.0996105819940567, 0.09791085124015808, 0.09622374176979065, 0.09454918652772903, 0.09288713335990906, 0.09123751521110535, 0.08960027992725372, 0.08797537535429001, 0.08636274188756943, 0.0847623273730278, 0.08317409455776215, 0.08159798383712769, 0.08003395050764084, 0.07848194986581802, 0.07694194465875626, 0.07541389018297195, 0.07389774918556213, 0.07239348441362381, 0.070901058614254, 0.06942043453454971, 0.06795158982276917, 0.06649449467658997, 0.06504911929368973, 0.06361543387174606, 0.06219341605901718, 0.06078304722905159, 0.0593843050301075, 0.05799717456102371, 0.05662164092063904, 0.05525768920779228, 0.05390531197190285, 0.05256449431180954, 0.05123523622751236, 0.04991753399372101, 0.04861138388514519, 0.047316793352365494, 0.04603376239538193, 0.044762298464775085, 0.04350241273641586, 0.04225412383675575, 0.04101744294166565, 0.039792392402887344, 0.03857899457216263, 0.03737728297710419, 0.03618728369474411, 0.03500903770327568, 0.03384258225560188, 0.0326879620552063, 0.031545232981443405, 0.030414443463087082, 0.0292956605553627, 0.028188949450850487, 0.027094384655356407, 0.02601204626262188, 0.024942025542259216, 0.023884421214461327, 0.022839335724711418, 0.021806888282299042, 0.020787203684449196, 0.019780423492193222, 0.018786700442433357, 0.017806200310587883, 0.016839107498526573, 0.015885621309280396, 0.014945968054234982, 0.01402039173990488, 0.013109165243804455, 0.012212592177093029, 0.011331013403832912, 0.010464809834957123, 0.009614413604140282, 0.008780314587056637, 0.007963077165186405, 0.007163353264331818, 0.0063819061033427715, 0.005619642324745655, 0.004877655766904354, 0.004157294984906912, 0.003460264764726162, 0.0027887988835573196, 0.0021459676790982485, 0.001536299823783338, 0.0009672692976891994, 0.0004541343660093844]);
+		kn = $toNativeArray($kindUint32, [1991057938, 0, 1611602771, 1826899878, 1918584482, 1969227037, 2001281515, 2023368125, 2039498179, 2051788381, 2061460127, 2069267110, 2075699398, 2081089314, 2085670119, 2089610331, 2093034710, 2096037586, 2098691595, 2101053571, 2103168620, 2105072996, 2106796166, 2108362327, 2109791536, 2111100552, 2112303493, 2113412330, 2114437283, 2115387130, 2116269447, 2117090813, 2117856962, 2118572919, 2119243101, 2119871411, 2120461303, 2121015852, 2121537798, 2122029592, 2122493434, 2122931299, 2123344971, 2123736059, 2124106020, 2124456175, 2124787725, 2125101763, 2125399283, 2125681194, 2125948325, 2126201433, 2126441213, 2126668298, 2126883268, 2127086657, 2127278949, 2127460589, 2127631985, 2127793506, 2127945490, 2128088244, 2128222044, 2128347141, 2128463758, 2128572095, 2128672327, 2128764606, 2128849065, 2128925811, 2128994934, 2129056501, 2129110560, 2129157136, 2129196237, 2129227847, 2129251929, 2129268426, 2129277255, 2129278312, 2129271467, 2129256561, 2129233410, 2129201800, 2129161480, 2129112170, 2129053545, 2128985244, 2128906855, 2128817916, 2128717911, 2128606255, 2128482298, 2128345305, 2128194452, 2128028813, 2127847342, 2127648860, 2127432031, 2127195339, 2126937058, 2126655214, 2126347546, 2126011445, 2125643893, 2125241376, 2124799783, 2124314271, 2123779094, 2123187386, 2122530867, 2121799464, 2120980787, 2120059418, 2119015917, 2117825402, 2116455471, 2114863093, 2112989789, 2110753906, 2108037662, 2104664315, 2100355223, 2094642347, 2086670106, 2074676188, 2054300022, 2010539237]);
+		wn = $toNativeArray($kindFloat32, [1.7290404663583558e-09, 1.2680928529462676e-10, 1.689751810696194e-10, 1.9862687883343e-10, 2.223243117382978e-10, 2.4244936613904144e-10, 2.601613091623989e-10, 2.761198769629658e-10, 2.9073962681813725e-10, 3.042996965518796e-10, 3.169979556627567e-10, 3.289802041894774e-10, 3.4035738116777736e-10, 3.5121602848242617e-10, 3.61625090983253e-10, 3.7164057942185025e-10, 3.813085680537398e-10, 3.906675816178762e-10, 3.997501218933053e-10, 4.0858399996679395e-10, 4.1719308563337165e-10, 4.255982233303257e-10, 4.3381759295968436e-10, 4.4186720948857783e-10, 4.497613115272969e-10, 4.57512583373898e-10, 4.6513240481438345e-10, 4.726310454117311e-10, 4.800177477726209e-10, 4.873009773476156e-10, 4.944885056978876e-10, 5.015873272284921e-10, 5.086040477664255e-10, 5.155446070048697e-10, 5.224146670812502e-10, 5.292193350214802e-10, 5.359634958068682e-10, 5.426517013518151e-10, 5.492881705038144e-10, 5.558769555769061e-10, 5.624218868405251e-10, 5.689264614971989e-10, 5.75394121238304e-10, 5.818281967329142e-10, 5.882316855831959e-10, 5.946076964136182e-10, 6.009590047817426e-10, 6.072883862451306e-10, 6.135985053390414e-10, 6.19892026598734e-10, 6.261713370037114e-10, 6.324390455780815e-10, 6.386973727678935e-10, 6.449488165749528e-10, 6.511955974453087e-10, 6.574400468473129e-10, 6.636843297158634e-10, 6.699307220081607e-10, 6.761814441702541e-10, 6.824387166481927e-10, 6.887046488657234e-10, 6.949815167800466e-10, 7.012714853260604e-10, 7.075767749498141e-10, 7.13899661608508e-10, 7.202424212593428e-10, 7.266072743483676e-10, 7.329966078550854e-10, 7.394128087589991e-10, 7.458582640396116e-10, 7.523354716987285e-10, 7.588469852493063e-10, 7.653954137154528e-10, 7.719834771435785e-10, 7.786139510912449e-10, 7.852897221383159e-10, 7.920137878869582e-10, 7.987892014504894e-10, 8.056192379868321e-10, 8.125072836762115e-10, 8.194568912323064e-10, 8.264716688799467e-10, 8.3355555791087e-10, 8.407127216614185e-10, 8.479473234679347e-10, 8.552640262671218e-10, 8.626675485068347e-10, 8.701631637464402e-10, 8.777562010564566e-10, 8.854524335966119e-10, 8.932581896381464e-10, 9.011799639857543e-10, 9.092249730890956e-10, 9.174008219758889e-10, 9.25715837318819e-10, 9.341788453909317e-10, 9.42799727177146e-10, 9.515889187738935e-10, 9.605578554783278e-10, 9.697193048552322e-10, 9.790869226478094e-10, 9.886760299337993e-10, 9.985036131254788e-10, 1.008588212947359e-09, 1.0189509236369076e-09, 1.0296150598776421e-09, 1.040606933955246e-09, 1.0519566329136865e-09, 1.0636980185552147e-09, 1.0758701707302976e-09, 1.0885182755160372e-09, 1.101694735439196e-09, 1.115461056855338e-09, 1.1298901814171813e-09, 1.1450695946990663e-09, 1.1611052119775422e-09, 1.178127595480305e-09, 1.1962995039027646e-09, 1.2158286599728285e-09, 1.2369856250415978e-09, 1.2601323318151003e-09, 1.2857697129220469e-09, 1.3146201904845611e-09, 1.3477839955200466e-09, 1.3870635751089821e-09, 1.43574030442295e-09, 1.5008658760251592e-09, 1.6030947680434338e-09]);
+		fn = $toNativeArray($kindFloat32, [1, 0.963599681854248, 0.9362826943397522, 0.9130436182022095, 0.8922816514968872, 0.8732430338859558, 0.8555005788803101, 0.8387836217880249, 0.8229072093963623, 0.8077383041381836, 0.7931770086288452, 0.7791460752487183, 0.7655841708183289, 0.7524415850639343, 0.7396772503852844, 0.7272568941116333, 0.7151514887809753, 0.7033361196517944, 0.6917891502380371, 0.6804918646812439, 0.6694276928901672, 0.6585819721221924, 0.6479418277740479, 0.6374954581260681, 0.6272324919700623, 0.6171433925628662, 0.6072195172309875, 0.5974531769752502, 0.5878370404243469, 0.5783646702766418, 0.5690299868583679, 0.5598273873329163, 0.550751805305481, 0.5417983531951904, 0.5329626798629761, 0.5242405533790588, 0.5156282186508179, 0.5071220397949219, 0.49871864914894104, 0.4904148280620575, 0.48220765590667725, 0.47409430146217346, 0.466072142124176, 0.45813870429992676, 0.45029163360595703, 0.44252872467041016, 0.4348478317260742, 0.42724698781967163, 0.41972434520721436, 0.41227802634239197, 0.40490642189979553, 0.39760786294937134, 0.3903807997703552, 0.3832238018512726, 0.3761354684829712, 0.3691144585609436, 0.36215949058532715, 0.3552693724632263, 0.3484429717063904, 0.3416791558265686, 0.33497685194015503, 0.32833510637283325, 0.3217529058456421, 0.3152293860912323, 0.30876362323760986, 0.3023548424243927, 0.2960021495819092, 0.2897048592567444, 0.28346219658851624, 0.2772735059261322, 0.271138072013855, 0.2650552988052368, 0.25902456045150757, 0.25304529070854187, 0.24711695313453674, 0.24123899638652802, 0.23541094362735748, 0.22963231801986694, 0.22390270233154297, 0.21822164952754974, 0.21258877217769623, 0.20700371265411377, 0.20146611332893372, 0.1959756463766098, 0.19053204357624054, 0.18513499200344086, 0.17978426814079285, 0.1744796335697174, 0.16922089457511902, 0.16400785744190216, 0.1588403731584549, 0.15371830761432648, 0.14864157140254974, 0.14361007511615753, 0.13862377405166626, 0.13368265330791473, 0.12878671288490295, 0.12393598258495331, 0.11913054436445236, 0.11437050998210907, 0.10965602099895477, 0.1049872562289238, 0.10036443918943405, 0.09578784555196762, 0.09125780314207077, 0.08677466958761215, 0.08233889937400818, 0.07795098423957825, 0.07361150532960892, 0.06932111829519272, 0.06508058309555054, 0.06089077144861221, 0.05675266310572624, 0.05266740173101425, 0.048636294901371, 0.044660862535238266, 0.040742866694927216, 0.03688438981771469, 0.03308788686990738, 0.029356317594647408, 0.025693291798233986, 0.02210330404341221, 0.018592102453112602, 0.015167297795414925, 0.011839478276669979, 0.0086244847625494, 0.005548994988203049, 0.0026696291752159595]);
+		rng_cooked = $toNativeArray($kindInt64, [new $Int64(1173834291, 3952672746), new $Int64(1081821761, 3130416987), new $Int64(324977939, 3414273807), new $Int64(1241840476, 2806224363), new $Int64(669549340, 1997590414), new $Int64(2103305448, 2402795971), new $Int64(1663160183, 1140819369), new $Int64(1120601685, 1788868961), new $Int64(1848035537, 1089001426), new $Int64(1235702047, 873593504), new $Int64(1911387977, 581324885), new $Int64(492609478, 1609182556), new $Int64(1069394745, 1241596776), new $Int64(1895445337, 1771189259), new $Int64(772864846, 3467012610), new $Int64(2006957225, 2344407434), new $Int64(402115761, 782467244), new $Int64(26335124, 3404933915), new $Int64(1063924276, 618867887), new $Int64(1178782866, 520164395), new $Int64(555910815, 1341358184), new $Int64(632398609, 665794848), new $Int64(1527227641, 3183648150), new $Int64(1781176124, 696329606), new $Int64(1789146075, 4151988961), new $Int64(60039534, 998951326), new $Int64(1535158725, 1364957564), new $Int64(63173359, 4090230633), new $Int64(649454641, 4009697548), new $Int64(248009524, 2569622517), new $Int64(778703922, 3742421481), new $Int64(1038377625, 1506914633), new $Int64(1738099768, 1983412561), new $Int64(236311649, 1436266083), new $Int64(1035966148, 3922894967), new $Int64(810508934, 1792680179), new $Int64(563141142, 1188796351), new $Int64(1349617468, 405968250), new $Int64(1044074554, 433754187), new $Int64(870549669, 4073162024), new $Int64(1053232044, 433121399), new $Int64(2451824, 4162580594), new $Int64(2010221076, 4132415622), new $Int64(611252600, 3033822028), new $Int64(2016407895, 824682382), new $Int64(2366218, 3583765414), new $Int64(1522878809, 535386927), new $Int64(1637219058, 2286693689), new $Int64(1453075389, 2968466525), new $Int64(193683513, 1351410206), new $Int64(1863677552, 1412813499), new $Int64(492736522, 4126267639), new $Int64(512765208, 2105529399), new $Int64(2132966268, 2413882233), new $Int64(947457634, 32226200), new $Int64(1149341356, 2032329073), new $Int64(106485445, 1356518208), new $Int64(79673492, 3430061722), new $Int64(663048513, 3820169661), new $Int64(481498454, 2981816134), new $Int64(1017155588, 4184371017), new $Int64(206574701, 2119206761), new $Int64(1295374591, 2472200560), new $Int64(1587026100, 2853524696), new $Int64(1307803389, 1681119904), new $Int64(1972496813, 95608918), new $Int64(392686347, 3690479145), new $Int64(941912722, 1397922290), new $Int64(988169623, 1516129515), new $Int64(1827305493, 1547420459), new $Int64(1311333971, 1470949486), new $Int64(194013850, 1336785672), new $Int64(2102397034, 4131677129), new $Int64(755205548, 4246329084), new $Int64(1004983461, 3788585631), new $Int64(2081005363, 3080389532), new $Int64(1501045284, 2215402037), new $Int64(391002300, 1171593935), new $Int64(1408774047, 1423855166), new $Int64(1628305930, 2276716302), new $Int64(1779030508, 2068027241), new $Int64(1369359303, 3427553297), new $Int64(189241615, 3289637845), new $Int64(1057480830, 3486407650), new $Int64(634572984, 3071877822), new $Int64(1159653919, 3363620705), new $Int64(1213226718, 4159821533), new $Int64(2070861710, 1894661), new $Int64(1472989750, 1156868282), new $Int64(348271067, 776219088), new $Int64(1646054810, 2425634259), new $Int64(1716021749, 680510161), new $Int64(1573220192, 1310101429), new $Int64(1095885995, 2964454134), new $Int64(1821788136, 3467098407), new $Int64(1990672920, 2109628894), new $Int64(7834944, 1232604732), new $Int64(309412934, 3261916179), new $Int64(1699175360, 434597899), new $Int64(235436061, 1624796439), new $Int64(521080809, 3589632480), new $Int64(1198416575, 864579159), new $Int64(208735487, 1380889830), new $Int64(619206309, 2654509477), new $Int64(1419738251, 1468209306), new $Int64(403198876, 100794388), new $Int64(956062190, 2991674471), new $Int64(1938816907, 2224662036), new $Int64(1973824487, 977097250), new $Int64(1351320195, 726419512), new $Int64(1964023751, 1747974366), new $Int64(1394388465, 1556430604), new $Int64(1097991433, 1080776742), new $Int64(1761636690, 280794874), new $Int64(117767733, 919835643), new $Int64(1180474222, 3434019658), new $Int64(196069168, 2461941785), new $Int64(133215641, 3615001066), new $Int64(417204809, 3103414427), new $Int64(790056561, 3380809712), new $Int64(879802240, 2724693469), new $Int64(547796833, 598827710), new $Int64(300924196, 3452273442), new $Int64(2071705424, 649274915), new $Int64(1346182319, 2585724112), new $Int64(636549385, 3165579553), new $Int64(1185578221, 2635894283), new $Int64(2094573470, 2053289721), new $Int64(985976581, 3169337108), new $Int64(1170569632, 144717764), new $Int64(1079216270, 1383666384), new $Int64(2022678706, 681540375), new $Int64(1375448925, 537050586), new $Int64(182715304, 315246468), new $Int64(226402871, 849323088), new $Int64(1262421183, 45543944), new $Int64(1201038398, 2319052083), new $Int64(2106775454, 3613090841), new $Int64(560472520, 2992171180), new $Int64(1765620479, 2068244785), new $Int64(917538188, 4239862634), new $Int64(777927839, 3892253031), new $Int64(720683925, 958186149), new $Int64(1724185863, 1877702262), new $Int64(1357886971, 837674867), new $Int64(1837048883, 1507589294), new $Int64(1905518400, 873336795), new $Int64(267722611, 2764496274), new $Int64(341003118, 4196182374), new $Int64(1080717893, 550964545), new $Int64(818747069, 420611474), new $Int64(222653272, 204265180), new $Int64(1549974541, 1787046383), new $Int64(1215581865, 3102292318), new $Int64(418321538, 1552199393), new $Int64(1243493047, 980542004), new $Int64(267284263, 3293718720), new $Int64(1179528763, 3771917473), new $Int64(599484404, 2195808264), new $Int64(252818753, 3894702887), new $Int64(780007692, 2099949527), new $Int64(1424094358, 338442522), new $Int64(490737398, 637158004), new $Int64(419862118, 281976339), new $Int64(574970164, 3619802330), new $Int64(1715552825, 3084554784), new $Int64(882872465, 4129772886), new $Int64(43084605, 1680378557), new $Int64(525521057, 3339087776), new $Int64(1680500332, 4220317857), new $Int64(211654685, 2959322499), new $Int64(1675600481, 1488354890), new $Int64(1312620086, 3958162143), new $Int64(920972075, 2773705983), new $Int64(1876039582, 225908689), new $Int64(963748535, 908216283), new $Int64(1541787429, 3574646075), new $Int64(319760557, 1936937569), new $Int64(1519770881, 75492235), new $Int64(816689472, 1935193178), new $Int64(2142521206, 2018250883), new $Int64(455141620, 3943126022), new $Int64(1546084160, 3066544345), new $Int64(1932392669, 2793082663), new $Int64(908474287, 3297036421), new $Int64(1640597065, 2206987825), new $Int64(1594236910, 807894872), new $Int64(366158341, 766252117), new $Int64(2060649606, 3833114345), new $Int64(845619743, 1255067973), new $Int64(1201145605, 741697208), new $Int64(671241040, 2810093753), new $Int64(1109032642, 4229340371), new $Int64(1462188720, 1361684224), new $Int64(988084219, 1906263026), new $Int64(475781207, 3904421704), new $Int64(1523946520, 1769075545), new $Int64(1062308525, 2621599764), new $Int64(1279509432, 3431891480), new $Int64(404732502, 1871896503), new $Int64(128756421, 1412808876), new $Int64(1605404688, 952876175), new $Int64(1917039957, 1824438899), new $Int64(1662295856, 1005035476), new $Int64(1990909507, 527508597), new $Int64(1288873303, 3066806859), new $Int64(565995893, 3244940914), new $Int64(1257737460, 209092916), new $Int64(1899814242, 1242699167), new $Int64(1433653252, 456723774), new $Int64(1776978905, 1001252870), new $Int64(1468772157, 2026725874), new $Int64(857254202, 2137562569), new $Int64(765939740, 3183366709), new $Int64(1533887628, 2612072960), new $Int64(56977098, 1727148468), new $Int64(949899753, 3803658212), new $Int64(1883670356, 479946959), new $Int64(685713571, 1562982345), new $Int64(201241205, 1766109365), new $Int64(700596547, 3257093788), new $Int64(1962768719, 2365720207), new $Int64(93384808, 3742754173), new $Int64(1689098413, 2878193673), new $Int64(1096135042, 2174002182), new $Int64(1313222695, 3573511231), new $Int64(1392911121, 1760299077), new $Int64(771856457, 2260779833), new $Int64(1281464374, 1452805722), new $Int64(917811730, 2940011802), new $Int64(1890251082, 1886183802), new $Int64(893897673, 2514369088), new $Int64(1644345561, 3924317791), new $Int64(172616216, 500935732), new $Int64(1403501753, 676580929), new $Int64(581571365, 1184984890), new $Int64(1455515235, 1271474274), new $Int64(318728910, 3163791473), new $Int64(2051027584, 2842487377), new $Int64(1511537551, 2170968612), new $Int64(573262976, 3535856740), new $Int64(94256461, 1488599718), new $Int64(966951817, 3408913763), new $Int64(60951736, 2501050084), new $Int64(1272353200, 1639124157), new $Int64(138001144, 4088176393), new $Int64(1574896563, 3989947576), new $Int64(1982239940, 3414355209), new $Int64(1355154361, 2275136352), new $Int64(89709303, 2151835223), new $Int64(1216338715, 1654534827), new $Int64(1467562197, 377892833), new $Int64(1664767638, 660204544), new $Int64(85706799, 390828249), new $Int64(725310955, 3402783878), new $Int64(678849488, 3717936603), new $Int64(1113532086, 2211058823), new $Int64(1564224320, 2692150867), new $Int64(1952770442, 1928910388), new $Int64(788716862, 3931011137), new $Int64(1083670504, 1112701047), new $Int64(2079333076, 2452299106), new $Int64(1251318826, 2337204777), new $Int64(1774877857, 273889282), new $Int64(1798719843, 1462008793), new $Int64(2138834788, 1554494002), new $Int64(952516517, 182675323), new $Int64(548928884, 1882802136), new $Int64(589279648, 3700220025), new $Int64(381039426, 3083431543), new $Int64(1295624457, 3622207527), new $Int64(338126939, 432729309), new $Int64(480013522, 2391914317), new $Int64(297925497, 235747924), new $Int64(2120733629, 3088823825), new $Int64(1402403853, 2314658321), new $Int64(1165929723, 2957634338), new $Int64(501323675, 4117056981), new $Int64(1564699815, 1482500298), new $Int64(1406657158, 840489337), new $Int64(799522364, 3483178565), new $Int64(532129761, 2074004656), new $Int64(724246478, 3643392642), new $Int64(1482330167, 1583624461), new $Int64(1261660694, 287473085), new $Int64(1667835381, 3136843981), new $Int64(1138806821, 1266970974), new $Int64(135185781, 1998688839), new $Int64(392094735, 1492900209), new $Int64(1031326774, 1538112737), new $Int64(76914806, 2207265429), new $Int64(260686035, 963263315), new $Int64(1671145500, 2295892134), new $Int64(1068469660, 2002560897), new $Int64(1791233343, 1369254035), new $Int64(33436120, 3353312708), new $Int64(57507843, 947771099), new $Int64(201728503, 1747061399), new $Int64(1507240140, 2047354631), new $Int64(720000810, 4165367136), new $Int64(479265078, 3388864963), new $Int64(1195302398, 286492130), new $Int64(2045622690, 2795735007), new $Int64(1431753082, 3703961339), new $Int64(1999047161, 1797825479), new $Int64(1429039600, 1116589674), new $Int64(482063550, 2593309206), new $Int64(1329049334, 3404995677), new $Int64(1396904208, 3453462936), new $Int64(1014767077, 3016498634), new $Int64(75698599, 1650371545), new $Int64(1592007860, 212344364), new $Int64(1127766888, 3843932156), new $Int64(1399463792, 3573129983), new $Int64(1256901817, 665897820), new $Int64(1071492673, 1675628772), new $Int64(243225682, 2831752928), new $Int64(2120298836, 1486294219), new $Int64(193076235, 268782709), new $Int64(1145360145, 4186179080), new $Int64(624342951, 1613720397), new $Int64(857179861, 2703686015), new $Int64(1235864944, 2205342611), new $Int64(1474779655, 1411666394), new $Int64(619028749, 677744900), new $Int64(270855115, 4172867247), new $Int64(135494707, 2163418403), new $Int64(849547544, 2841526879), new $Int64(1029966689, 1082141470), new $Int64(377371856, 4046134367), new $Int64(51415528, 2142943655), new $Int64(1897659315, 3124627521), new $Int64(998228909, 219992939), new $Int64(1068692697, 1756846531), new $Int64(1283749206, 1225118210), new $Int64(1621625642, 1647770243), new $Int64(111523943, 444807907), new $Int64(2036369448, 3952076173), new $Int64(53201823, 1461839639), new $Int64(315761893, 3699250910), new $Int64(702974850, 1373688981), new $Int64(734022261, 147523747), new $Int64(100152742, 1211276581), new $Int64(1294440951, 2548832680), new $Int64(1144696256, 1995631888), new $Int64(154500578, 2011457303), new $Int64(796460974, 3057425772), new $Int64(667839456, 81484597), new $Int64(465502760, 3646681560), new $Int64(775020923, 635548515), new $Int64(602489502, 2508044581), new $Int64(353263531, 1014917157), new $Int64(719992433, 3214891315), new $Int64(852684611, 959582252), new $Int64(226415134, 3347040449), new $Int64(1784615552, 4102971975), new $Int64(397887437, 4078022210), new $Int64(1610679822, 2851767182), new $Int64(749162636, 1540160644), new $Int64(598384772, 1057290595), new $Int64(2034890660, 3907769253), new $Int64(579300318, 4248952684), new $Int64(1092907599, 132554364), new $Int64(1061621234, 1029351092), new $Int64(697840928, 2583007416), new $Int64(298619124, 1486185789), new $Int64(55905697, 2871589073), new $Int64(2017643612, 723203291), new $Int64(146250550, 2494333952), new $Int64(1064490251, 2230939180), new $Int64(342915576, 3943232912), new $Int64(1768732449, 2181367922), new $Int64(1418222537, 2889274791), new $Int64(1824032949, 2046728161), new $Int64(1653899792, 1376052477), new $Int64(1022327048, 381236993), new $Int64(1034385958, 3188942166), new $Int64(2073003539, 350070824), new $Int64(144881592, 61758415), new $Int64(1405659422, 3492950336), new $Int64(117440928, 3093818430), new $Int64(1693893113, 2962480613), new $Int64(235432940, 3154871160), new $Int64(511005079, 3228564679), new $Int64(610731502, 888276216), new $Int64(1200780674, 3574998604), new $Int64(870415268, 1967526716), new $Int64(591335707, 1554691298), new $Int64(574459414, 339944798), new $Int64(1223764147, 1154515356), new $Int64(1825645307, 967516237), new $Int64(1546195135, 596588202), new $Int64(279882768, 3764362170), new $Int64(492091056, 266611402), new $Int64(1754227768, 2047856075), new $Int64(1146757215, 21444105), new $Int64(1198058894, 3065563181), new $Int64(1915064845, 1140663212), new $Int64(633187674, 2323741028), new $Int64(2126290159, 3103873707), new $Int64(1008658319, 2766828349), new $Int64(1661896145, 1970872996), new $Int64(1628585413, 3766615585), new $Int64(1552335120, 2036813414), new $Int64(152606527, 3105536507), new $Int64(13954645, 3396176938), new $Int64(1426081645, 1377154485), new $Int64(2085644467, 3807014186), new $Int64(543009040, 3710110597), new $Int64(396058129, 916420443), new $Int64(734556788, 2103831255), new $Int64(381322154, 717331943), new $Int64(572884752, 3550505941), new $Int64(45939673, 378749927), new $Int64(149867929, 611017331), new $Int64(592130075, 758907650), new $Int64(1012992349, 154266815), new $Int64(1107028706, 1407468696), new $Int64(469292398, 970098704), new $Int64(1862426162, 1971660656), new $Int64(998365243, 3332747885), new $Int64(1947089649, 1935189867), new $Int64(1510248801, 203520055), new $Int64(842317902, 3916463034), new $Int64(1758884993, 3474113316), new $Int64(1036101639, 316544223), new $Int64(373738757, 1650844677), new $Int64(1240292229, 4267565603), new $Int64(1077208624, 2501167616), new $Int64(626831785, 3929401789), new $Int64(56122796, 337170252), new $Int64(1186981558, 2061966842), new $Int64(1843292800, 2508461464), new $Int64(206012532, 2791377107), new $Int64(1240791848, 1227227588), new $Int64(1813978778, 1709681848), new $Int64(1153692192, 3768820575), new $Int64(1145186199, 2887126398), new $Int64(700372314, 296561685), new $Int64(700300844, 3729960077), new $Int64(575172304, 372833036), new $Int64(2078875613, 2409779288), new $Int64(1829161290, 555274064), new $Int64(1041887929, 4239804901), new $Int64(1839403216, 3723486978), new $Int64(498390553, 2145871984), new $Int64(564717933, 3565480803), new $Int64(578829821, 2197313814), new $Int64(974785092, 3613674566), new $Int64(438638731, 3042093666), new $Int64(2050927384, 3324034321), new $Int64(869420878, 3708873369), new $Int64(946682149, 1698090092), new $Int64(1618900382, 4213940712), new $Int64(304003901, 2087477361), new $Int64(381315848, 2407950639), new $Int64(851258090, 3942568569), new $Int64(923583198, 4088074412), new $Int64(723260036, 2964773675), new $Int64(1473561819, 1539178386), new $Int64(1062961552, 2694849566), new $Int64(460977733, 2120273838), new $Int64(542912908, 2484608657), new $Int64(880846449, 2956190677), new $Int64(1970902366, 4223313749), new $Int64(662161910, 3502682327), new $Int64(705634754, 4133891139), new $Int64(1116124348, 1166449596), new $Int64(1038247601, 3362705993), new $Int64(93734798, 3892921029), new $Int64(1876124043, 786869787), new $Int64(1057490746, 1046342263), new $Int64(242763728, 493777327), new $Int64(1293910447, 3304827646), new $Int64(616460742, 125356352), new $Int64(499300063, 74094113), new $Int64(1351896723, 2500816079), new $Int64(1657235204, 514015239), new $Int64(1377565129, 543520454), new $Int64(107706923, 3614531153), new $Int64(2056746300, 2356753985), new $Int64(1390062617, 2018141668), new $Int64(131272971, 2087974891), new $Int64(644556607, 3166972343), new $Int64(372256200, 1517638666), new $Int64(1212207984, 173466846), new $Int64(1451709187, 4241513471), new $Int64(733932806, 2783126920), new $Int64(1972004134, 4167264826), new $Int64(29260506, 3907395640), new $Int64(1236582087, 1539634186), new $Int64(1551526350, 178241987), new $Int64(2034206012, 182168164), new $Int64(1044953189, 2386154934), new $Int64(1379126408, 4077374341), new $Int64(32803926, 1732699140), new $Int64(1726425903, 1041306002), new $Int64(1860414813, 2068001749), new $Int64(1005320202, 3208962910), new $Int64(844054010, 697710380), new $Int64(638124245, 2228431183), new $Int64(1337169671, 3554678728), new $Int64(1396494601, 173470263), new $Int64(2061597383, 3848297795), new $Int64(1220546671, 246236185), new $Int64(163293187, 2066374846), new $Int64(1771673660, 312890749), new $Int64(703378057, 3573310289), new $Int64(1548631747, 143166754), new $Int64(613554316, 2081511079), new $Int64(1197802104, 486038032), new $Int64(240999859, 2982218564), new $Int64(364901986, 1000939191), new $Int64(1902782651, 2750454885), new $Int64(1475638791, 3375313137), new $Int64(503615608, 881302957), new $Int64(638698903, 2514186393), new $Int64(443860803, 360024739), new $Int64(1399671872, 292500025), new $Int64(1381210821, 2276300752), new $Int64(521803381, 4069087683), new $Int64(208500981, 1637778212), new $Int64(720490469, 1676670893), new $Int64(1067262482, 3855174429), new $Int64(2114075974, 2067248671), new $Int64(2058057389, 2884561259), new $Int64(1341742553, 2456511185), new $Int64(983726246, 561175414), new $Int64(427994085, 432588903), new $Int64(885133709, 4059399550), new $Int64(2054387382, 1075014784), new $Int64(413651020, 2728058415), new $Int64(1839142064, 1299703678), new $Int64(1262333188, 2347583393), new $Int64(1285481956, 2468164145), new $Int64(989129637, 1140014346), new $Int64(2033889184, 1936972070), new $Int64(409904655, 3870530098), new $Int64(1662989391, 1717789158), new $Int64(1914486492, 1153452491), new $Int64(1157059232, 3948827651), new $Int64(790338018, 2101413152), new $Int64(1495744672, 3854091229), new $Int64(83644069, 4215565463), new $Int64(762206335, 1202710438), new $Int64(1582574611, 2072216740), new $Int64(705690639, 2066751068), new $Int64(33900336, 173902580), new $Int64(1405499842, 142459001), new $Int64(172391592, 1889151926), new $Int64(1648540523, 3034199774), new $Int64(1618587731, 516490102), new $Int64(93114264, 3692577783), new $Int64(68662295, 2953948865), new $Int64(1826544975, 4041040923), new $Int64(204965672, 592046130), new $Int64(1441840008, 384297211), new $Int64(95834184, 265863924), new $Int64(2101717619, 1333136237), new $Int64(1499611781, 1406273556), new $Int64(1074670496, 426305476), new $Int64(125704633, 2750898176), new $Int64(488068495, 1633944332), new $Int64(2037723464, 3236349343), new $Int64(444060402, 4013676611), new $Int64(1718532237, 2265047407), new $Int64(1433593806, 875071080), new $Int64(1804436145, 1418843655), new $Int64(2009228711, 451657300), new $Int64(1229446621, 1866374663), new $Int64(1653472867, 1551455622), new $Int64(577191481, 3560962459), new $Int64(1669204077, 3347903778), new $Int64(1849156454, 2675874918), new $Int64(316128071, 2762991672), new $Int64(530492383, 3689068477), new $Int64(844089962, 4071997905), new $Int64(1508155730, 1381702441), new $Int64(2089931018, 2373284878), new $Int64(1283216186, 2143983064), new $Int64(308739063, 1938207195), new $Int64(1754949306, 1188152253), new $Int64(1272345009, 615870490), new $Int64(742653194, 2662252621), new $Int64(1477718295, 3839976789), new $Int64(56149435, 306752547), new $Int64(720795581, 2162363077), new $Int64(2090431015, 2767224719), new $Int64(675859549, 2628837712), new $Int64(1678405918, 2967771969), new $Int64(1694285728, 499792248), new $Int64(403352367, 4285253508), new $Int64(962357072, 2856511070), new $Int64(679471692, 2526409716), new $Int64(353777175, 1240875658), new $Int64(1232590226, 2577342868), new $Int64(1146185433, 4136853496), new $Int64(670368674, 2403540137), new $Int64(1372824515, 1371410668), new $Int64(1970921600, 371758825), new $Int64(1706420536, 1528834084), new $Int64(2075795018, 1504757260), new $Int64(685663576, 699052551), new $Int64(1641940109, 3347789870), new $Int64(1951619734, 3430604759), new $Int64(2119672219, 1935601723), new $Int64(966789690, 834676166)]);
+		globalRand = New(new lockedSource.ptr(new nosync.Mutex.ptr(), NewSource(new $Int64(0, 1))));
+		/* */ } return; } if ($f === undefined) { $f = { $blk: $init }; } $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.$init = $init;
+	return $pkg;
+})();
 $packages["github.com/golangchallenge/gc6/mazelib"] = (function() {
-	var $pkg = {}, $init, errors, fmt, os, strings, Coordinate, Survey, Room, Maze, sliceType, sliceType$1, sliceType$2, ptrType, ptrType$1, EmptyMaze, FullMaze;
+	var $pkg = {}, $init, errors, fmt, rand, os, strings, Coordinate, Survey, Room, Maze, sliceType, sliceType$1, sliceType$2, ptrType, ptrType$1, EmptyMaze;
 	errors = $packages["errors"];
 	fmt = $packages["fmt"];
+	rand = $packages["math/rand"];
 	os = $packages["os"];
 	strings = $packages["strings"];
 	Coordinate = $pkg.Coordinate = $newType(0, $kindStruct, "mazelib.Coordinate", "Coordinate", "github.com/golangchallenge/gc6/mazelib", function(X_, Y_) {
@@ -15262,6 +15703,24 @@ $packages["github.com/golangchallenge/gc6/mazelib"] = (function() {
 		return [x, y];
 	};
 	Maze.prototype.Icarus = function() { return this.$val.Icarus(); };
+	Maze.ptr.prototype.End = function() {
+		var $ptr, _tmp, _tmp$1, m, x, y;
+		x = 0;
+		y = 0;
+		m = this;
+		_tmp = m.end.X; _tmp$1 = m.end.Y; x = _tmp; y = _tmp$1;
+		return [x, y];
+	};
+	Maze.prototype.End = function() { return this.$val.End(); };
+	Maze.ptr.prototype.Start = function() {
+		var $ptr, _tmp, _tmp$1, m, x, y;
+		x = 0;
+		y = 0;
+		m = this;
+		_tmp = m.start.X; _tmp$1 = m.start.Y; x = _tmp; y = _tmp$1;
+		return [x, y];
+	};
+	Maze.prototype.Start = function() { return this.$val.Start(); };
 	Maze.ptr.prototype.SetStartPoint = function(x, y) {
 		var $ptr, _tuple, err, m, r, x, y;
 		m = this;
@@ -15273,6 +15732,7 @@ $packages["github.com/golangchallenge/gc6/mazelib"] = (function() {
 			return errors.New("can't start in the treasure");
 		}
 		r.Start = true;
+		$copy(m.start, new Coordinate.ptr(x, y), Coordinate);
 		$copy(m.icarus, new Coordinate.ptr(x, y), Coordinate);
 		return $ifaceNil;
 	};
@@ -15411,57 +15871,56 @@ $packages["github.com/golangchallenge/gc6/mazelib"] = (function() {
 	};
 	Maze.prototype.MoveDown = function() { return this.$val.MoveDown(); };
 	EmptyMaze = function(xSize, ySize) {
-		var $ptr, x, x$1, x$10, x$11, x$2, x$3, x$4, x$5, x$6, x$7, x$8, x$9, xSize, y, ySize, z;
-		z = new Maze.ptr(sliceType$2.nil, new Coordinate.ptr(), new Coordinate.ptr(), new Coordinate.ptr(), 0);
-		z.rooms = $makeSlice(sliceType$2, ySize);
+		var $ptr, _arg, _arg$1, _r, _r$1, _r$2, _r$3, _r$4, _tmp, _tmp$1, tX, tY, x, x$1, x$10, x$11, x$2, x$3, x$4, x$5, x$6, x$7, x$8, x$9, xSize, y, ySize, z, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _arg = $f._arg; _arg$1 = $f._arg$1; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; _r$4 = $f._r$4; _tmp = $f._tmp; _tmp$1 = $f._tmp$1; tX = $f.tX; tY = $f.tY; x = $f.x; x$1 = $f.x$1; x$10 = $f.x$10; x$11 = $f.x$11; x$2 = $f.x$2; x$3 = $f.x$3; x$4 = $f.x$4; x$5 = $f.x$5; x$6 = $f.x$6; x$7 = $f.x$7; x$8 = $f.x$8; x$9 = $f.x$9; xSize = $f.xSize; y = $f.y; ySize = $f.ySize; z = $f.z; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		z = [z];
+		z[0] = new Maze.ptr(sliceType$2.nil, new Coordinate.ptr(), new Coordinate.ptr(), new Coordinate.ptr(), 0);
+		z[0].rooms = $makeSlice(sliceType$2, ySize);
 		y = 0;
 		while (true) {
 			if (!(y < ySize)) { break; }
-			(x = z.rooms, ((y < 0 || y >= x.$length) ? $throwRuntimeError("index out of range") : x.$array[x.$offset + y] = $makeSlice(sliceType$1, xSize)));
+			(x = z[0].rooms, ((y < 0 || y >= x.$length) ? $throwRuntimeError("index out of range") : x.$array[x.$offset + y] = $makeSlice(sliceType$1, xSize)));
 			x$1 = 0;
 			while (true) {
 				if (!(x$1 < xSize)) { break; }
-				$copy((x$2 = (x$3 = z.rooms, ((y < 0 || y >= x$3.$length) ? $throwRuntimeError("index out of range") : x$3.$array[x$3.$offset + y])), ((x$1 < 0 || x$1 >= x$2.$length) ? $throwRuntimeError("index out of range") : x$2.$array[x$2.$offset + x$1])), new Room.ptr(false, false, false, new Survey.ptr()), Room);
+				$copy((x$2 = (x$3 = z[0].rooms, ((y < 0 || y >= x$3.$length) ? $throwRuntimeError("index out of range") : x$3.$array[x$3.$offset + y])), ((x$1 < 0 || x$1 >= x$2.$length) ? $throwRuntimeError("index out of range") : x$2.$array[x$2.$offset + x$1])), new Room.ptr(false, false, false, new Survey.ptr()), Room);
 				if (x$1 === (xSize - 1 >> 0)) {
-					(x$4 = (x$5 = z.rooms, ((y < 0 || y >= x$5.$length) ? $throwRuntimeError("index out of range") : x$5.$array[x$5.$offset + y])), ((x$1 < 0 || x$1 >= x$4.$length) ? $throwRuntimeError("index out of range") : x$4.$array[x$4.$offset + x$1])).AddWall(3);
+					(x$4 = (x$5 = z[0].rooms, ((y < 0 || y >= x$5.$length) ? $throwRuntimeError("index out of range") : x$5.$array[x$5.$offset + y])), ((x$1 < 0 || x$1 >= x$4.$length) ? $throwRuntimeError("index out of range") : x$4.$array[x$4.$offset + x$1])).AddWall(3);
 				}
 				if (y === (ySize - 1 >> 0)) {
-					(x$6 = (x$7 = z.rooms, ((y < 0 || y >= x$7.$length) ? $throwRuntimeError("index out of range") : x$7.$array[x$7.$offset + y])), ((x$1 < 0 || x$1 >= x$6.$length) ? $throwRuntimeError("index out of range") : x$6.$array[x$6.$offset + x$1])).AddWall(2);
+					(x$6 = (x$7 = z[0].rooms, ((y < 0 || y >= x$7.$length) ? $throwRuntimeError("index out of range") : x$7.$array[x$7.$offset + y])), ((x$1 < 0 || x$1 >= x$6.$length) ? $throwRuntimeError("index out of range") : x$6.$array[x$6.$offset + x$1])).AddWall(2);
 				}
 				if (x$1 === 0) {
-					(x$8 = (x$9 = z.rooms, ((y < 0 || y >= x$9.$length) ? $throwRuntimeError("index out of range") : x$9.$array[x$9.$offset + y])), ((x$1 < 0 || x$1 >= x$8.$length) ? $throwRuntimeError("index out of range") : x$8.$array[x$8.$offset + x$1])).AddWall(4);
+					(x$8 = (x$9 = z[0].rooms, ((y < 0 || y >= x$9.$length) ? $throwRuntimeError("index out of range") : x$9.$array[x$9.$offset + y])), ((x$1 < 0 || x$1 >= x$8.$length) ? $throwRuntimeError("index out of range") : x$8.$array[x$8.$offset + x$1])).AddWall(4);
 				}
 				if (y === 0) {
-					(x$10 = (x$11 = z.rooms, ((y < 0 || y >= x$11.$length) ? $throwRuntimeError("index out of range") : x$11.$array[x$11.$offset + y])), ((x$1 < 0 || x$1 >= x$10.$length) ? $throwRuntimeError("index out of range") : x$10.$array[x$10.$offset + x$1])).AddWall(1);
+					(x$10 = (x$11 = z[0].rooms, ((y < 0 || y >= x$11.$length) ? $throwRuntimeError("index out of range") : x$11.$array[x$11.$offset + y])), ((x$1 < 0 || x$1 >= x$10.$length) ? $throwRuntimeError("index out of range") : x$10.$array[x$10.$offset + x$1])).AddWall(1);
 				}
 				x$1 = x$1 + (1) >> 0;
 			}
 			y = y + (1) >> 0;
 		}
-		z.SetStartPoint(0, 0);
-		z.SetTreasure(14, 9);
-		return z;
+		_r = rand.Intn(xSize); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		_arg = _r;
+		_r$1 = rand.Intn(ySize); /* */ $s = 2; case 2: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		_arg$1 = _r$1;
+		_r$2 = z[0].SetStartPoint(_arg, _arg$1); /* */ $s = 3; case 3: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+		_r$2;
+		/* while (true) { */ case 4:
+			_r$3 = rand.Intn(xSize); /* */ $s = 6; case 6: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+			_r$4 = rand.Intn(ySize); /* */ $s = 7; case 7: if($c) { $c = false; _r$4 = _r$4.$blk(); } if (_r$4 && _r$4.$blk !== undefined) { break s; }
+			_tmp = _r$3; _tmp$1 = _r$4; tX = _tmp; tY = _tmp$1;
+			if (!((tX === z[0].start.X)) && !((tY === z[0].start.Y))) {
+				z[0].SetTreasure(tX, tY);
+				/* break; */ $s = 5; continue;
+			}
+		/* } */ $s = 4; continue; case 5:
+		return z[0];
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: EmptyMaze }; } $f.$ptr = $ptr; $f._arg = _arg; $f._arg$1 = _arg$1; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._tmp = _tmp; $f._tmp$1 = _tmp$1; $f.tX = tX; $f.tY = tY; $f.x = x; $f.x$1 = x$1; $f.x$10 = x$10; $f.x$11 = x$11; $f.x$2 = x$2; $f.x$3 = x$3; $f.x$4 = x$4; $f.x$5 = x$5; $f.x$6 = x$6; $f.x$7 = x$7; $f.x$8 = x$8; $f.x$9 = x$9; $f.xSize = xSize; $f.y = y; $f.ySize = ySize; $f.z = z; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	$pkg.EmptyMaze = EmptyMaze;
-	FullMaze = function(xSize, ySize) {
-		var $ptr, x, x$1, x$2, xSize, y, ySize, z;
-		z = EmptyMaze(xSize, ySize);
-		y = 0;
-		while (true) {
-			if (!(y < ySize)) { break; }
-			x = 0;
-			while (true) {
-				if (!(x < xSize)) { break; }
-				$copy((x$1 = (x$2 = z.rooms, ((y < 0 || y >= x$2.$length) ? $throwRuntimeError("index out of range") : x$2.$array[x$2.$offset + y])), ((x < 0 || x >= x$1.$length) ? $throwRuntimeError("index out of range") : x$1.$array[x$1.$offset + x])).Walls, new Survey.ptr(true, true, true, true), Survey);
-				x = x + (1) >> 0;
-			}
-			y = y + (1) >> 0;
-		}
-		return z;
-	};
-	$pkg.FullMaze = FullMaze;
 	ptrType.methods = [{prop: "AddWall", name: "AddWall", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "RmWall", name: "RmWall", pkg: "", typ: $funcType([$Int], [], false)}];
-	ptrType$1.methods = [{prop: "GetRoom", name: "GetRoom", pkg: "", typ: $funcType([$Int, $Int], [ptrType, $error], false)}, {prop: "Width", name: "Width", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Height", name: "Height", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Icarus", name: "Icarus", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "SetStartPoint", name: "SetStartPoint", pkg: "", typ: $funcType([$Int, $Int], [$error], false)}, {prop: "SetTreasure", name: "SetTreasure", pkg: "", typ: $funcType([$Int, $Int], [$error], false)}, {prop: "LookAround", name: "LookAround", pkg: "", typ: $funcType([], [Survey, $error], false)}, {prop: "Discover", name: "Discover", pkg: "", typ: $funcType([$Int, $Int], [Survey, $error], false)}, {prop: "MoveLeft", name: "MoveLeft", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveRight", name: "MoveRight", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveUp", name: "MoveUp", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveDown", name: "MoveDown", pkg: "", typ: $funcType([], [$error], false)}];
+	ptrType$1.methods = [{prop: "GetRoom", name: "GetRoom", pkg: "", typ: $funcType([$Int, $Int], [ptrType, $error], false)}, {prop: "Width", name: "Width", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Height", name: "Height", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Icarus", name: "Icarus", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "End", name: "End", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "Start", name: "Start", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "SetStartPoint", name: "SetStartPoint", pkg: "", typ: $funcType([$Int, $Int], [$error], false)}, {prop: "SetTreasure", name: "SetTreasure", pkg: "", typ: $funcType([$Int, $Int], [$error], false)}, {prop: "LookAround", name: "LookAround", pkg: "", typ: $funcType([], [Survey, $error], false)}, {prop: "Discover", name: "Discover", pkg: "", typ: $funcType([$Int, $Int], [Survey, $error], false)}, {prop: "MoveLeft", name: "MoveLeft", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveRight", name: "MoveRight", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveUp", name: "MoveUp", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveDown", name: "MoveDown", pkg: "", typ: $funcType([], [$error], false)}];
 	Coordinate.init([{prop: "X", name: "X", pkg: "", typ: $Int, tag: "json:\"x\""}, {prop: "Y", name: "Y", pkg: "", typ: $Int, tag: "json:\"y\""}]);
 	Survey.init([{prop: "Top", name: "Top", pkg: "", typ: $Bool, tag: "json:\"top\""}, {prop: "Right", name: "Right", pkg: "", typ: $Bool, tag: "json:\"right\""}, {prop: "Bottom", name: "Bottom", pkg: "", typ: $Bool, tag: "json:\"bottom\""}, {prop: "Left", name: "Left", pkg: "", typ: $Bool, tag: "json:\"left\""}]);
 	Room.init([{prop: "Treasure", name: "Treasure", pkg: "", typ: $Bool, tag: ""}, {prop: "Start", name: "Start", pkg: "", typ: $Bool, tag: ""}, {prop: "Visited", name: "Visited", pkg: "", typ: $Bool, tag: ""}, {prop: "Walls", name: "Walls", pkg: "", typ: Survey, tag: ""}]);
@@ -15471,55 +15930,4750 @@ $packages["github.com/golangchallenge/gc6/mazelib"] = (function() {
 		/* */ var $f, $c = false, $s = 0, $r; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
 		$r = errors.$init(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		$r = fmt.$init(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		$r = os.$init(); /* */ $s = 3; case 3: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		$r = strings.$init(); /* */ $s = 4; case 4: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = rand.$init(); /* */ $s = 3; case 3: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = os.$init(); /* */ $s = 4; case 4: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = strings.$init(); /* */ $s = 5; case 5: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		$pkg.ErrVictory = errors.New("Victory");
 		/* */ } return; } if ($f === undefined) { $f = { $blk: $init }; } $f.$s = $s; $f.$r = $r; return $f;
 	};
 	$pkg.$init = $init;
 	return $pkg;
 })();
-$packages["github.com/golangchallenge/gc6/generators"] = (function() {
-	var $pkg = {}, $init, mazelib, DepthFirst;
-	mazelib = $packages["github.com/golangchallenge/gc6/mazelib"];
-	DepthFirst = function() {
-		var $ptr, m;
-		m = mazelib.FullMaze(15, 10);
+$packages["honnef.co/go/js/dom"] = (function() {
+	var $pkg = {}, $init, js, strings, time, TokenList, Document, document, htmlDocument, URLUtils, Location, HTMLElement, Window, window, Selection, Screen, Navigator, Geolocation, PositionError, PositionOptions, Position, Coordinates, History, Console, DocumentType, DOMImplementation, StyleSheet, Node, BasicNode, Element, ClientRect, BasicHTMLElement, BasicElement, HTMLAnchorElement, HTMLAppletElement, HTMLAreaElement, HTMLAudioElement, HTMLBRElement, HTMLBaseElement, HTMLBodyElement, ValidityState, HTMLButtonElement, HTMLCanvasElement, CanvasRenderingContext2D, HTMLDListElement, HTMLDataElement, HTMLDataListElement, HTMLDirectoryElement, HTMLDivElement, HTMLEmbedElement, HTMLFieldSetElement, HTMLFontElement, HTMLFormElement, HTMLFrameElement, HTMLFrameSetElement, HTMLHRElement, HTMLHeadElement, HTMLHeadingElement, HTMLHtmlElement, HTMLIFrameElement, HTMLImageElement, HTMLInputElement, File, HTMLKeygenElement, HTMLLIElement, HTMLLabelElement, HTMLLegendElement, HTMLLinkElement, HTMLMapElement, HTMLMediaElement, HTMLMenuElement, HTMLMetaElement, HTMLMeterElement, HTMLModElement, HTMLOListElement, HTMLObjectElement, HTMLOptGroupElement, HTMLOptionElement, HTMLOutputElement, HTMLParagraphElement, HTMLParamElement, HTMLPreElement, HTMLProgressElement, HTMLQuoteElement, HTMLScriptElement, HTMLSelectElement, HTMLSourceElement, HTMLSpanElement, HTMLStyleElement, HTMLTableCaptionElement, HTMLTableCellElement, HTMLTableColElement, HTMLTableDataCellElement, HTMLTableElement, HTMLTableHeaderCellElement, HTMLTableRowElement, HTMLTableSectionElement, HTMLTextAreaElement, HTMLTimeElement, HTMLTitleElement, TextTrack, HTMLTrackElement, HTMLUListElement, HTMLUnknownElement, HTMLVideoElement, CSSStyleDeclaration, Text, Event, BasicEvent, AnimationEvent, AudioProcessingEvent, BeforeInputEvent, BeforeUnloadEvent, BlobEvent, ClipboardEvent, CloseEvent, CompositionEvent, CSSFontFaceLoadEvent, CustomEvent, DeviceLightEvent, DeviceMotionEvent, DeviceOrientationEvent, DeviceProximityEvent, DOMTransactionEvent, DragEvent, EditingBeforeInputEvent, ErrorEvent, FocusEvent, GamepadEvent, HashChangeEvent, IDBVersionChangeEvent, KeyboardEvent, MediaStreamEvent, MessageEvent, MouseEvent, MutationEvent, OfflineAudioCompletionEvent, PageTransitionEvent, PointerEvent, PopStateEvent, ProgressEvent, RelatedEvent, RTCPeerConnectionIceEvent, SensorEvent, StorageEvent, SVGEvent, SVGZoomEvent, TimeEvent, TouchEvent, TrackEvent, TransitionEvent, UIEvent, UserProximityEvent, WheelEvent, sliceType, sliceType$1, sliceType$2, sliceType$3, ptrType, ptrType$1, ptrType$2, ptrType$3, ptrType$4, sliceType$4, ptrType$5, sliceType$5, sliceType$6, sliceType$7, ptrType$6, ptrType$7, sliceType$8, ptrType$8, sliceType$9, ptrType$9, sliceType$10, sliceType$11, ptrType$10, funcType, ptrType$11, funcType$1, ptrType$12, sliceType$12, ptrType$13, ptrType$14, sliceType$13, ptrType$15, sliceType$14, ptrType$16, sliceType$15, ptrType$17, ptrType$18, ptrType$19, funcType$2, ptrType$20, ptrType$21, ptrType$22, ptrType$23, ptrType$24, ptrType$25, funcType$3, ptrType$26, ptrType$27, funcType$4, funcType$5, ptrType$28, ptrType$29, ptrType$30, ptrType$31, ptrType$32, ptrType$33, ptrType$34, ptrType$35, ptrType$36, ptrType$37, ptrType$38, ptrType$39, ptrType$40, ptrType$41, ptrType$42, ptrType$43, ptrType$44, ptrType$45, ptrType$46, ptrType$47, ptrType$48, ptrType$49, ptrType$50, ptrType$51, mapType, ptrType$52, ptrType$53, callRecover, nodeListToNodes, nodeListToElements, nodeListToHTMLElements, wrapDocument, wrapNode, wrapElement, wrapHTMLElement, getForm, getLabels, getOptions, GetWindow, wrapDOMHighResTimeStamp, wrapEvent;
+	js = $packages["github.com/gopherjs/gopherjs/js"];
+	strings = $packages["strings"];
+	time = $packages["time"];
+	TokenList = $pkg.TokenList = $newType(0, $kindStruct, "dom.TokenList", "TokenList", "honnef.co/go/js/dom", function(dtl_, o_, sa_, Length_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.dtl = null;
+			this.o = null;
+			this.sa = "";
+			this.Length = 0;
+			return;
+		}
+		this.dtl = dtl_;
+		this.o = o_;
+		this.sa = sa_;
+		this.Length = Length_;
+	});
+	Document = $pkg.Document = $newType(8, $kindInterface, "dom.Document", "Document", "honnef.co/go/js/dom", null);
+	document = $pkg.document = $newType(0, $kindStruct, "dom.document", "document", "honnef.co/go/js/dom", function(BasicNode_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicNode = ptrType$21.nil;
+			return;
+		}
+		this.BasicNode = BasicNode_;
+	});
+	htmlDocument = $pkg.htmlDocument = $newType(0, $kindStruct, "dom.htmlDocument", "htmlDocument", "honnef.co/go/js/dom", function(document_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.document = ptrType$22.nil;
+			return;
+		}
+		this.document = document_;
+	});
+	URLUtils = $pkg.URLUtils = $newType(0, $kindStruct, "dom.URLUtils", "URLUtils", "honnef.co/go/js/dom", function(Object_, Href_, Protocol_, Host_, Hostname_, Port_, Pathname_, Search_, Hash_, Username_, Password_, Origin_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			this.Href = "";
+			this.Protocol = "";
+			this.Host = "";
+			this.Hostname = "";
+			this.Port = "";
+			this.Pathname = "";
+			this.Search = "";
+			this.Hash = "";
+			this.Username = "";
+			this.Password = "";
+			this.Origin = "";
+			return;
+		}
+		this.Object = Object_;
+		this.Href = Href_;
+		this.Protocol = Protocol_;
+		this.Host = Host_;
+		this.Hostname = Hostname_;
+		this.Port = Port_;
+		this.Pathname = Pathname_;
+		this.Search = Search_;
+		this.Hash = Hash_;
+		this.Username = Username_;
+		this.Password = Password_;
+		this.Origin = Origin_;
+	});
+	Location = $pkg.Location = $newType(0, $kindStruct, "dom.Location", "Location", "honnef.co/go/js/dom", function(Object_, URLUtils_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			this.URLUtils = ptrType$1.nil;
+			return;
+		}
+		this.Object = Object_;
+		this.URLUtils = URLUtils_;
+	});
+	HTMLElement = $pkg.HTMLElement = $newType(8, $kindInterface, "dom.HTMLElement", "HTMLElement", "honnef.co/go/js/dom", null);
+	Window = $pkg.Window = $newType(8, $kindInterface, "dom.Window", "Window", "honnef.co/go/js/dom", null);
+	window = $pkg.window = $newType(0, $kindStruct, "dom.window", "window", "honnef.co/go/js/dom", function(Object_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			return;
+		}
+		this.Object = Object_;
+	});
+	Selection = $pkg.Selection = $newType(8, $kindInterface, "dom.Selection", "Selection", "honnef.co/go/js/dom", null);
+	Screen = $pkg.Screen = $newType(0, $kindStruct, "dom.Screen", "Screen", "honnef.co/go/js/dom", function(Object_, AvailTop_, AvailLeft_, AvailHeight_, AvailWidth_, ColorDepth_, Height_, Left_, PixelDepth_, Top_, Width_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			this.AvailTop = 0;
+			this.AvailLeft = 0;
+			this.AvailHeight = 0;
+			this.AvailWidth = 0;
+			this.ColorDepth = 0;
+			this.Height = 0;
+			this.Left = 0;
+			this.PixelDepth = 0;
+			this.Top = 0;
+			this.Width = 0;
+			return;
+		}
+		this.Object = Object_;
+		this.AvailTop = AvailTop_;
+		this.AvailLeft = AvailLeft_;
+		this.AvailHeight = AvailHeight_;
+		this.AvailWidth = AvailWidth_;
+		this.ColorDepth = ColorDepth_;
+		this.Height = Height_;
+		this.Left = Left_;
+		this.PixelDepth = PixelDepth_;
+		this.Top = Top_;
+		this.Width = Width_;
+	});
+	Navigator = $pkg.Navigator = $newType(8, $kindInterface, "dom.Navigator", "Navigator", "honnef.co/go/js/dom", null);
+	Geolocation = $pkg.Geolocation = $newType(8, $kindInterface, "dom.Geolocation", "Geolocation", "honnef.co/go/js/dom", null);
+	PositionError = $pkg.PositionError = $newType(0, $kindStruct, "dom.PositionError", "PositionError", "honnef.co/go/js/dom", function(Object_, Code_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			this.Code = 0;
+			return;
+		}
+		this.Object = Object_;
+		this.Code = Code_;
+	});
+	PositionOptions = $pkg.PositionOptions = $newType(0, $kindStruct, "dom.PositionOptions", "PositionOptions", "honnef.co/go/js/dom", function(EnableHighAccuracy_, Timeout_, MaximumAge_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.EnableHighAccuracy = false;
+			this.Timeout = new time.Duration(0, 0);
+			this.MaximumAge = new time.Duration(0, 0);
+			return;
+		}
+		this.EnableHighAccuracy = EnableHighAccuracy_;
+		this.Timeout = Timeout_;
+		this.MaximumAge = MaximumAge_;
+	});
+	Position = $pkg.Position = $newType(0, $kindStruct, "dom.Position", "Position", "honnef.co/go/js/dom", function(Coords_, Timestamp_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Coords = ptrType$29.nil;
+			this.Timestamp = new time.Time.ptr();
+			return;
+		}
+		this.Coords = Coords_;
+		this.Timestamp = Timestamp_;
+	});
+	Coordinates = $pkg.Coordinates = $newType(0, $kindStruct, "dom.Coordinates", "Coordinates", "honnef.co/go/js/dom", function(Object_, Latitude_, Longitude_, Altitude_, Accuracy_, AltitudeAccuracy_, Heading_, Speed_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			this.Latitude = 0;
+			this.Longitude = 0;
+			this.Altitude = 0;
+			this.Accuracy = 0;
+			this.AltitudeAccuracy = 0;
+			this.Heading = 0;
+			this.Speed = 0;
+			return;
+		}
+		this.Object = Object_;
+		this.Latitude = Latitude_;
+		this.Longitude = Longitude_;
+		this.Altitude = Altitude_;
+		this.Accuracy = Accuracy_;
+		this.AltitudeAccuracy = AltitudeAccuracy_;
+		this.Heading = Heading_;
+		this.Speed = Speed_;
+	});
+	History = $pkg.History = $newType(8, $kindInterface, "dom.History", "History", "honnef.co/go/js/dom", null);
+	Console = $pkg.Console = $newType(0, $kindStruct, "dom.Console", "Console", "honnef.co/go/js/dom", function(Object_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			return;
+		}
+		this.Object = Object_;
+	});
+	DocumentType = $pkg.DocumentType = $newType(8, $kindInterface, "dom.DocumentType", "DocumentType", "honnef.co/go/js/dom", null);
+	DOMImplementation = $pkg.DOMImplementation = $newType(8, $kindInterface, "dom.DOMImplementation", "DOMImplementation", "honnef.co/go/js/dom", null);
+	StyleSheet = $pkg.StyleSheet = $newType(8, $kindInterface, "dom.StyleSheet", "StyleSheet", "honnef.co/go/js/dom", null);
+	Node = $pkg.Node = $newType(8, $kindInterface, "dom.Node", "Node", "honnef.co/go/js/dom", null);
+	BasicNode = $pkg.BasicNode = $newType(0, $kindStruct, "dom.BasicNode", "BasicNode", "honnef.co/go/js/dom", function(Object_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			return;
+		}
+		this.Object = Object_;
+	});
+	Element = $pkg.Element = $newType(8, $kindInterface, "dom.Element", "Element", "honnef.co/go/js/dom", null);
+	ClientRect = $pkg.ClientRect = $newType(0, $kindStruct, "dom.ClientRect", "ClientRect", "honnef.co/go/js/dom", function(Object_, Height_, Width_, Left_, Right_, Top_, Bottom_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			this.Height = 0;
+			this.Width = 0;
+			this.Left = 0;
+			this.Right = 0;
+			this.Top = 0;
+			this.Bottom = 0;
+			return;
+		}
+		this.Object = Object_;
+		this.Height = Height_;
+		this.Width = Width_;
+		this.Left = Left_;
+		this.Right = Right_;
+		this.Top = Top_;
+		this.Bottom = Bottom_;
+	});
+	BasicHTMLElement = $pkg.BasicHTMLElement = $newType(0, $kindStruct, "dom.BasicHTMLElement", "BasicHTMLElement", "honnef.co/go/js/dom", function(BasicElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicElement = ptrType$30.nil;
+			return;
+		}
+		this.BasicElement = BasicElement_;
+	});
+	BasicElement = $pkg.BasicElement = $newType(0, $kindStruct, "dom.BasicElement", "BasicElement", "honnef.co/go/js/dom", function(BasicNode_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicNode = ptrType$21.nil;
+			return;
+		}
+		this.BasicNode = BasicNode_;
+	});
+	HTMLAnchorElement = $pkg.HTMLAnchorElement = $newType(0, $kindStruct, "dom.HTMLAnchorElement", "HTMLAnchorElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, URLUtils_, HrefLang_, Media_, TabIndex_, Target_, Text_, Type_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.URLUtils = ptrType$1.nil;
+			this.HrefLang = "";
+			this.Media = "";
+			this.TabIndex = 0;
+			this.Target = "";
+			this.Text = "";
+			this.Type = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.URLUtils = URLUtils_;
+		this.HrefLang = HrefLang_;
+		this.Media = Media_;
+		this.TabIndex = TabIndex_;
+		this.Target = Target_;
+		this.Text = Text_;
+		this.Type = Type_;
+	});
+	HTMLAppletElement = $pkg.HTMLAppletElement = $newType(0, $kindStruct, "dom.HTMLAppletElement", "HTMLAppletElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Alt_, Coords_, HrefLang_, Media_, Search_, Shape_, TabIndex_, Target_, Type_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Alt = "";
+			this.Coords = "";
+			this.HrefLang = "";
+			this.Media = "";
+			this.Search = "";
+			this.Shape = "";
+			this.TabIndex = 0;
+			this.Target = "";
+			this.Type = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Alt = Alt_;
+		this.Coords = Coords_;
+		this.HrefLang = HrefLang_;
+		this.Media = Media_;
+		this.Search = Search_;
+		this.Shape = Shape_;
+		this.TabIndex = TabIndex_;
+		this.Target = Target_;
+		this.Type = Type_;
+	});
+	HTMLAreaElement = $pkg.HTMLAreaElement = $newType(0, $kindStruct, "dom.HTMLAreaElement", "HTMLAreaElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, URLUtils_, Alt_, Coords_, HrefLang_, Media_, Search_, Shape_, TabIndex_, Target_, Type_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.URLUtils = ptrType$1.nil;
+			this.Alt = "";
+			this.Coords = "";
+			this.HrefLang = "";
+			this.Media = "";
+			this.Search = "";
+			this.Shape = "";
+			this.TabIndex = 0;
+			this.Target = "";
+			this.Type = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.URLUtils = URLUtils_;
+		this.Alt = Alt_;
+		this.Coords = Coords_;
+		this.HrefLang = HrefLang_;
+		this.Media = Media_;
+		this.Search = Search_;
+		this.Shape = Shape_;
+		this.TabIndex = TabIndex_;
+		this.Target = Target_;
+		this.Type = Type_;
+	});
+	HTMLAudioElement = $pkg.HTMLAudioElement = $newType(0, $kindStruct, "dom.HTMLAudioElement", "HTMLAudioElement", "honnef.co/go/js/dom", function(HTMLMediaElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.HTMLMediaElement = ptrType$2.nil;
+			return;
+		}
+		this.HTMLMediaElement = HTMLMediaElement_;
+	});
+	HTMLBRElement = $pkg.HTMLBRElement = $newType(0, $kindStruct, "dom.HTMLBRElement", "HTMLBRElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLBaseElement = $pkg.HTMLBaseElement = $newType(0, $kindStruct, "dom.HTMLBaseElement", "HTMLBaseElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLBodyElement = $pkg.HTMLBodyElement = $newType(0, $kindStruct, "dom.HTMLBodyElement", "HTMLBodyElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	ValidityState = $pkg.ValidityState = $newType(0, $kindStruct, "dom.ValidityState", "ValidityState", "honnef.co/go/js/dom", function(Object_, CustomError_, PatternMismatch_, RangeOverflow_, RangeUnderflow_, StepMismatch_, TooLong_, TypeMismatch_, Valid_, ValueMissing_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			this.CustomError = false;
+			this.PatternMismatch = false;
+			this.RangeOverflow = false;
+			this.RangeUnderflow = false;
+			this.StepMismatch = false;
+			this.TooLong = false;
+			this.TypeMismatch = false;
+			this.Valid = false;
+			this.ValueMissing = false;
+			return;
+		}
+		this.Object = Object_;
+		this.CustomError = CustomError_;
+		this.PatternMismatch = PatternMismatch_;
+		this.RangeOverflow = RangeOverflow_;
+		this.RangeUnderflow = RangeUnderflow_;
+		this.StepMismatch = StepMismatch_;
+		this.TooLong = TooLong_;
+		this.TypeMismatch = TypeMismatch_;
+		this.Valid = Valid_;
+		this.ValueMissing = ValueMissing_;
+	});
+	HTMLButtonElement = $pkg.HTMLButtonElement = $newType(0, $kindStruct, "dom.HTMLButtonElement", "HTMLButtonElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, AutoFocus_, Disabled_, FormAction_, FormEncType_, FormMethod_, FormNoValidate_, FormTarget_, Name_, TabIndex_, Type_, ValidationMessage_, Value_, WillValidate_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.AutoFocus = false;
+			this.Disabled = false;
+			this.FormAction = "";
+			this.FormEncType = "";
+			this.FormMethod = "";
+			this.FormNoValidate = false;
+			this.FormTarget = "";
+			this.Name = "";
+			this.TabIndex = 0;
+			this.Type = "";
+			this.ValidationMessage = "";
+			this.Value = "";
+			this.WillValidate = false;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.AutoFocus = AutoFocus_;
+		this.Disabled = Disabled_;
+		this.FormAction = FormAction_;
+		this.FormEncType = FormEncType_;
+		this.FormMethod = FormMethod_;
+		this.FormNoValidate = FormNoValidate_;
+		this.FormTarget = FormTarget_;
+		this.Name = Name_;
+		this.TabIndex = TabIndex_;
+		this.Type = Type_;
+		this.ValidationMessage = ValidationMessage_;
+		this.Value = Value_;
+		this.WillValidate = WillValidate_;
+	});
+	HTMLCanvasElement = $pkg.HTMLCanvasElement = $newType(0, $kindStruct, "dom.HTMLCanvasElement", "HTMLCanvasElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Height_, Width_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Height = 0;
+			this.Width = 0;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Height = Height_;
+		this.Width = Width_;
+	});
+	CanvasRenderingContext2D = $pkg.CanvasRenderingContext2D = $newType(0, $kindStruct, "dom.CanvasRenderingContext2D", "CanvasRenderingContext2D", "honnef.co/go/js/dom", function(Object_, FillStyle_, StrokeStyle_, ShadowColor_, ShadowBlur_, ShadowOffsetX_, ShadowOffsetY_, LineCap_, LineJoin_, LineWidth_, MiterLimit_, Font_, TextAlign_, TextBaseline_, GlobalAlpha_, GlobalCompositeOperation_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			this.FillStyle = "";
+			this.StrokeStyle = "";
+			this.ShadowColor = "";
+			this.ShadowBlur = 0;
+			this.ShadowOffsetX = 0;
+			this.ShadowOffsetY = 0;
+			this.LineCap = "";
+			this.LineJoin = "";
+			this.LineWidth = 0;
+			this.MiterLimit = 0;
+			this.Font = "";
+			this.TextAlign = "";
+			this.TextBaseline = "";
+			this.GlobalAlpha = 0;
+			this.GlobalCompositeOperation = "";
+			return;
+		}
+		this.Object = Object_;
+		this.FillStyle = FillStyle_;
+		this.StrokeStyle = StrokeStyle_;
+		this.ShadowColor = ShadowColor_;
+		this.ShadowBlur = ShadowBlur_;
+		this.ShadowOffsetX = ShadowOffsetX_;
+		this.ShadowOffsetY = ShadowOffsetY_;
+		this.LineCap = LineCap_;
+		this.LineJoin = LineJoin_;
+		this.LineWidth = LineWidth_;
+		this.MiterLimit = MiterLimit_;
+		this.Font = Font_;
+		this.TextAlign = TextAlign_;
+		this.TextBaseline = TextBaseline_;
+		this.GlobalAlpha = GlobalAlpha_;
+		this.GlobalCompositeOperation = GlobalCompositeOperation_;
+	});
+	HTMLDListElement = $pkg.HTMLDListElement = $newType(0, $kindStruct, "dom.HTMLDListElement", "HTMLDListElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLDataElement = $pkg.HTMLDataElement = $newType(0, $kindStruct, "dom.HTMLDataElement", "HTMLDataElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Value_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Value = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Value = Value_;
+	});
+	HTMLDataListElement = $pkg.HTMLDataListElement = $newType(0, $kindStruct, "dom.HTMLDataListElement", "HTMLDataListElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLDirectoryElement = $pkg.HTMLDirectoryElement = $newType(0, $kindStruct, "dom.HTMLDirectoryElement", "HTMLDirectoryElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLDivElement = $pkg.HTMLDivElement = $newType(0, $kindStruct, "dom.HTMLDivElement", "HTMLDivElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLEmbedElement = $pkg.HTMLEmbedElement = $newType(0, $kindStruct, "dom.HTMLEmbedElement", "HTMLEmbedElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Src_, Type_, Width_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Src = "";
+			this.Type = "";
+			this.Width = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Src = Src_;
+		this.Type = Type_;
+		this.Width = Width_;
+	});
+	HTMLFieldSetElement = $pkg.HTMLFieldSetElement = $newType(0, $kindStruct, "dom.HTMLFieldSetElement", "HTMLFieldSetElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Disabled_, Name_, Type_, ValidationMessage_, WillValidate_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Disabled = false;
+			this.Name = "";
+			this.Type = "";
+			this.ValidationMessage = "";
+			this.WillValidate = false;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Disabled = Disabled_;
+		this.Name = Name_;
+		this.Type = Type_;
+		this.ValidationMessage = ValidationMessage_;
+		this.WillValidate = WillValidate_;
+	});
+	HTMLFontElement = $pkg.HTMLFontElement = $newType(0, $kindStruct, "dom.HTMLFontElement", "HTMLFontElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLFormElement = $pkg.HTMLFormElement = $newType(0, $kindStruct, "dom.HTMLFormElement", "HTMLFormElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, AcceptCharset_, Action_, Autocomplete_, Encoding_, Enctype_, Length_, Method_, Name_, NoValidate_, Target_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.AcceptCharset = "";
+			this.Action = "";
+			this.Autocomplete = "";
+			this.Encoding = "";
+			this.Enctype = "";
+			this.Length = 0;
+			this.Method = "";
+			this.Name = "";
+			this.NoValidate = false;
+			this.Target = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.AcceptCharset = AcceptCharset_;
+		this.Action = Action_;
+		this.Autocomplete = Autocomplete_;
+		this.Encoding = Encoding_;
+		this.Enctype = Enctype_;
+		this.Length = Length_;
+		this.Method = Method_;
+		this.Name = Name_;
+		this.NoValidate = NoValidate_;
+		this.Target = Target_;
+	});
+	HTMLFrameElement = $pkg.HTMLFrameElement = $newType(0, $kindStruct, "dom.HTMLFrameElement", "HTMLFrameElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLFrameSetElement = $pkg.HTMLFrameSetElement = $newType(0, $kindStruct, "dom.HTMLFrameSetElement", "HTMLFrameSetElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLHRElement = $pkg.HTMLHRElement = $newType(0, $kindStruct, "dom.HTMLHRElement", "HTMLHRElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLHeadElement = $pkg.HTMLHeadElement = $newType(0, $kindStruct, "dom.HTMLHeadElement", "HTMLHeadElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLHeadingElement = $pkg.HTMLHeadingElement = $newType(0, $kindStruct, "dom.HTMLHeadingElement", "HTMLHeadingElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLHtmlElement = $pkg.HTMLHtmlElement = $newType(0, $kindStruct, "dom.HTMLHtmlElement", "HTMLHtmlElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLIFrameElement = $pkg.HTMLIFrameElement = $newType(0, $kindStruct, "dom.HTMLIFrameElement", "HTMLIFrameElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Width_, Height_, Name_, Src_, SrcDoc_, Seamless_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Width = "";
+			this.Height = "";
+			this.Name = "";
+			this.Src = "";
+			this.SrcDoc = "";
+			this.Seamless = false;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Width = Width_;
+		this.Height = Height_;
+		this.Name = Name_;
+		this.Src = Src_;
+		this.SrcDoc = SrcDoc_;
+		this.Seamless = Seamless_;
+	});
+	HTMLImageElement = $pkg.HTMLImageElement = $newType(0, $kindStruct, "dom.HTMLImageElement", "HTMLImageElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Complete_, CrossOrigin_, Height_, IsMap_, NaturalHeight_, NaturalWidth_, Src_, UseMap_, Width_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Complete = false;
+			this.CrossOrigin = "";
+			this.Height = 0;
+			this.IsMap = false;
+			this.NaturalHeight = 0;
+			this.NaturalWidth = 0;
+			this.Src = "";
+			this.UseMap = "";
+			this.Width = 0;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Complete = Complete_;
+		this.CrossOrigin = CrossOrigin_;
+		this.Height = Height_;
+		this.IsMap = IsMap_;
+		this.NaturalHeight = NaturalHeight_;
+		this.NaturalWidth = NaturalWidth_;
+		this.Src = Src_;
+		this.UseMap = UseMap_;
+		this.Width = Width_;
+	});
+	HTMLInputElement = $pkg.HTMLInputElement = $newType(0, $kindStruct, "dom.HTMLInputElement", "HTMLInputElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Accept_, Alt_, Autocomplete_, Autofocus_, Checked_, DefaultChecked_, DefaultValue_, DirName_, Disabled_, FormAction_, FormEncType_, FormMethod_, FormNoValidate_, FormTarget_, Height_, Indeterminate_, Max_, MaxLength_, Min_, Multiple_, Name_, Pattern_, Placeholder_, ReadOnly_, Required_, SelectionDirection_, SelectionEnd_, SelectionStart_, Size_, Src_, Step_, TabIndex_, Type_, ValidationMessage_, Value_, ValueAsDate_, ValueAsNumber_, Width_, WillValidate_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Accept = "";
+			this.Alt = "";
+			this.Autocomplete = "";
+			this.Autofocus = false;
+			this.Checked = false;
+			this.DefaultChecked = false;
+			this.DefaultValue = "";
+			this.DirName = "";
+			this.Disabled = false;
+			this.FormAction = "";
+			this.FormEncType = "";
+			this.FormMethod = "";
+			this.FormNoValidate = false;
+			this.FormTarget = "";
+			this.Height = "";
+			this.Indeterminate = false;
+			this.Max = "";
+			this.MaxLength = 0;
+			this.Min = "";
+			this.Multiple = false;
+			this.Name = "";
+			this.Pattern = "";
+			this.Placeholder = "";
+			this.ReadOnly = false;
+			this.Required = false;
+			this.SelectionDirection = "";
+			this.SelectionEnd = 0;
+			this.SelectionStart = 0;
+			this.Size = 0;
+			this.Src = "";
+			this.Step = "";
+			this.TabIndex = 0;
+			this.Type = "";
+			this.ValidationMessage = "";
+			this.Value = "";
+			this.ValueAsDate = new time.Time.ptr();
+			this.ValueAsNumber = 0;
+			this.Width = "";
+			this.WillValidate = false;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Accept = Accept_;
+		this.Alt = Alt_;
+		this.Autocomplete = Autocomplete_;
+		this.Autofocus = Autofocus_;
+		this.Checked = Checked_;
+		this.DefaultChecked = DefaultChecked_;
+		this.DefaultValue = DefaultValue_;
+		this.DirName = DirName_;
+		this.Disabled = Disabled_;
+		this.FormAction = FormAction_;
+		this.FormEncType = FormEncType_;
+		this.FormMethod = FormMethod_;
+		this.FormNoValidate = FormNoValidate_;
+		this.FormTarget = FormTarget_;
+		this.Height = Height_;
+		this.Indeterminate = Indeterminate_;
+		this.Max = Max_;
+		this.MaxLength = MaxLength_;
+		this.Min = Min_;
+		this.Multiple = Multiple_;
+		this.Name = Name_;
+		this.Pattern = Pattern_;
+		this.Placeholder = Placeholder_;
+		this.ReadOnly = ReadOnly_;
+		this.Required = Required_;
+		this.SelectionDirection = SelectionDirection_;
+		this.SelectionEnd = SelectionEnd_;
+		this.SelectionStart = SelectionStart_;
+		this.Size = Size_;
+		this.Src = Src_;
+		this.Step = Step_;
+		this.TabIndex = TabIndex_;
+		this.Type = Type_;
+		this.ValidationMessage = ValidationMessage_;
+		this.Value = Value_;
+		this.ValueAsDate = ValueAsDate_;
+		this.ValueAsNumber = ValueAsNumber_;
+		this.Width = Width_;
+		this.WillValidate = WillValidate_;
+	});
+	File = $pkg.File = $newType(0, $kindStruct, "dom.File", "File", "honnef.co/go/js/dom", function(Object_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			return;
+		}
+		this.Object = Object_;
+	});
+	HTMLKeygenElement = $pkg.HTMLKeygenElement = $newType(0, $kindStruct, "dom.HTMLKeygenElement", "HTMLKeygenElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Autofocus_, Challenge_, Disabled_, Keytype_, Name_, Type_, ValidationMessage_, WillValidate_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Autofocus = false;
+			this.Challenge = "";
+			this.Disabled = false;
+			this.Keytype = "";
+			this.Name = "";
+			this.Type = "";
+			this.ValidationMessage = "";
+			this.WillValidate = false;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Autofocus = Autofocus_;
+		this.Challenge = Challenge_;
+		this.Disabled = Disabled_;
+		this.Keytype = Keytype_;
+		this.Name = Name_;
+		this.Type = Type_;
+		this.ValidationMessage = ValidationMessage_;
+		this.WillValidate = WillValidate_;
+	});
+	HTMLLIElement = $pkg.HTMLLIElement = $newType(0, $kindStruct, "dom.HTMLLIElement", "HTMLLIElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Value_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Value = 0;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Value = Value_;
+	});
+	HTMLLabelElement = $pkg.HTMLLabelElement = $newType(0, $kindStruct, "dom.HTMLLabelElement", "HTMLLabelElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, For_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.For = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.For = For_;
+	});
+	HTMLLegendElement = $pkg.HTMLLegendElement = $newType(0, $kindStruct, "dom.HTMLLegendElement", "HTMLLegendElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLLinkElement = $pkg.HTMLLinkElement = $newType(0, $kindStruct, "dom.HTMLLinkElement", "HTMLLinkElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Disabled_, Href_, HrefLang_, Media_, Type_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Disabled = false;
+			this.Href = "";
+			this.HrefLang = "";
+			this.Media = "";
+			this.Type = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Disabled = Disabled_;
+		this.Href = Href_;
+		this.HrefLang = HrefLang_;
+		this.Media = Media_;
+		this.Type = Type_;
+	});
+	HTMLMapElement = $pkg.HTMLMapElement = $newType(0, $kindStruct, "dom.HTMLMapElement", "HTMLMapElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Name_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Name = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Name = Name_;
+	});
+	HTMLMediaElement = $pkg.HTMLMediaElement = $newType(0, $kindStruct, "dom.HTMLMediaElement", "HTMLMediaElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLMenuElement = $pkg.HTMLMenuElement = $newType(0, $kindStruct, "dom.HTMLMenuElement", "HTMLMenuElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLMetaElement = $pkg.HTMLMetaElement = $newType(0, $kindStruct, "dom.HTMLMetaElement", "HTMLMetaElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Content_, HTTPEquiv_, Name_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Content = "";
+			this.HTTPEquiv = "";
+			this.Name = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Content = Content_;
+		this.HTTPEquiv = HTTPEquiv_;
+		this.Name = Name_;
+	});
+	HTMLMeterElement = $pkg.HTMLMeterElement = $newType(0, $kindStruct, "dom.HTMLMeterElement", "HTMLMeterElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, High_, Low_, Max_, Min_, Optimum_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.High = 0;
+			this.Low = 0;
+			this.Max = 0;
+			this.Min = 0;
+			this.Optimum = 0;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.High = High_;
+		this.Low = Low_;
+		this.Max = Max_;
+		this.Min = Min_;
+		this.Optimum = Optimum_;
+	});
+	HTMLModElement = $pkg.HTMLModElement = $newType(0, $kindStruct, "dom.HTMLModElement", "HTMLModElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Cite_, DateTime_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Cite = "";
+			this.DateTime = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Cite = Cite_;
+		this.DateTime = DateTime_;
+	});
+	HTMLOListElement = $pkg.HTMLOListElement = $newType(0, $kindStruct, "dom.HTMLOListElement", "HTMLOListElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Reversed_, Start_, Type_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Reversed = false;
+			this.Start = 0;
+			this.Type = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Reversed = Reversed_;
+		this.Start = Start_;
+		this.Type = Type_;
+	});
+	HTMLObjectElement = $pkg.HTMLObjectElement = $newType(0, $kindStruct, "dom.HTMLObjectElement", "HTMLObjectElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Data_, Height_, Name_, TabIndex_, Type_, TypeMustMatch_, UseMap_, ValidationMessage_, With_, WillValidate_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Data = "";
+			this.Height = "";
+			this.Name = "";
+			this.TabIndex = 0;
+			this.Type = "";
+			this.TypeMustMatch = false;
+			this.UseMap = "";
+			this.ValidationMessage = "";
+			this.With = "";
+			this.WillValidate = false;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Data = Data_;
+		this.Height = Height_;
+		this.Name = Name_;
+		this.TabIndex = TabIndex_;
+		this.Type = Type_;
+		this.TypeMustMatch = TypeMustMatch_;
+		this.UseMap = UseMap_;
+		this.ValidationMessage = ValidationMessage_;
+		this.With = With_;
+		this.WillValidate = WillValidate_;
+	});
+	HTMLOptGroupElement = $pkg.HTMLOptGroupElement = $newType(0, $kindStruct, "dom.HTMLOptGroupElement", "HTMLOptGroupElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Disabled_, Label_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Disabled = false;
+			this.Label = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Disabled = Disabled_;
+		this.Label = Label_;
+	});
+	HTMLOptionElement = $pkg.HTMLOptionElement = $newType(0, $kindStruct, "dom.HTMLOptionElement", "HTMLOptionElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, DefaultSelected_, Disabled_, Index_, Label_, Selected_, Text_, Value_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.DefaultSelected = false;
+			this.Disabled = false;
+			this.Index = 0;
+			this.Label = "";
+			this.Selected = false;
+			this.Text = "";
+			this.Value = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.DefaultSelected = DefaultSelected_;
+		this.Disabled = Disabled_;
+		this.Index = Index_;
+		this.Label = Label_;
+		this.Selected = Selected_;
+		this.Text = Text_;
+		this.Value = Value_;
+	});
+	HTMLOutputElement = $pkg.HTMLOutputElement = $newType(0, $kindStruct, "dom.HTMLOutputElement", "HTMLOutputElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, DefaultValue_, Name_, Type_, ValidationMessage_, Value_, WillValidate_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.DefaultValue = "";
+			this.Name = "";
+			this.Type = "";
+			this.ValidationMessage = "";
+			this.Value = "";
+			this.WillValidate = false;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.DefaultValue = DefaultValue_;
+		this.Name = Name_;
+		this.Type = Type_;
+		this.ValidationMessage = ValidationMessage_;
+		this.Value = Value_;
+		this.WillValidate = WillValidate_;
+	});
+	HTMLParagraphElement = $pkg.HTMLParagraphElement = $newType(0, $kindStruct, "dom.HTMLParagraphElement", "HTMLParagraphElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLParamElement = $pkg.HTMLParamElement = $newType(0, $kindStruct, "dom.HTMLParamElement", "HTMLParamElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Name_, Value_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Name = "";
+			this.Value = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Name = Name_;
+		this.Value = Value_;
+	});
+	HTMLPreElement = $pkg.HTMLPreElement = $newType(0, $kindStruct, "dom.HTMLPreElement", "HTMLPreElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLProgressElement = $pkg.HTMLProgressElement = $newType(0, $kindStruct, "dom.HTMLProgressElement", "HTMLProgressElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Max_, Position_, Value_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Max = 0;
+			this.Position = 0;
+			this.Value = 0;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Max = Max_;
+		this.Position = Position_;
+		this.Value = Value_;
+	});
+	HTMLQuoteElement = $pkg.HTMLQuoteElement = $newType(0, $kindStruct, "dom.HTMLQuoteElement", "HTMLQuoteElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Cite_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Cite = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Cite = Cite_;
+	});
+	HTMLScriptElement = $pkg.HTMLScriptElement = $newType(0, $kindStruct, "dom.HTMLScriptElement", "HTMLScriptElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Type_, Src_, Charset_, Async_, Defer_, Text_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Type = "";
+			this.Src = "";
+			this.Charset = "";
+			this.Async = false;
+			this.Defer = false;
+			this.Text = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Type = Type_;
+		this.Src = Src_;
+		this.Charset = Charset_;
+		this.Async = Async_;
+		this.Defer = Defer_;
+		this.Text = Text_;
+	});
+	HTMLSelectElement = $pkg.HTMLSelectElement = $newType(0, $kindStruct, "dom.HTMLSelectElement", "HTMLSelectElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Autofocus_, Disabled_, Length_, Multiple_, Name_, Required_, SelectedIndex_, Size_, Type_, ValidationMessage_, Value_, WillValidate_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Autofocus = false;
+			this.Disabled = false;
+			this.Length = 0;
+			this.Multiple = false;
+			this.Name = "";
+			this.Required = false;
+			this.SelectedIndex = 0;
+			this.Size = 0;
+			this.Type = "";
+			this.ValidationMessage = "";
+			this.Value = "";
+			this.WillValidate = false;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Autofocus = Autofocus_;
+		this.Disabled = Disabled_;
+		this.Length = Length_;
+		this.Multiple = Multiple_;
+		this.Name = Name_;
+		this.Required = Required_;
+		this.SelectedIndex = SelectedIndex_;
+		this.Size = Size_;
+		this.Type = Type_;
+		this.ValidationMessage = ValidationMessage_;
+		this.Value = Value_;
+		this.WillValidate = WillValidate_;
+	});
+	HTMLSourceElement = $pkg.HTMLSourceElement = $newType(0, $kindStruct, "dom.HTMLSourceElement", "HTMLSourceElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Media_, Src_, Type_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Media = "";
+			this.Src = "";
+			this.Type = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Media = Media_;
+		this.Src = Src_;
+		this.Type = Type_;
+	});
+	HTMLSpanElement = $pkg.HTMLSpanElement = $newType(0, $kindStruct, "dom.HTMLSpanElement", "HTMLSpanElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLStyleElement = $pkg.HTMLStyleElement = $newType(0, $kindStruct, "dom.HTMLStyleElement", "HTMLStyleElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLTableCaptionElement = $pkg.HTMLTableCaptionElement = $newType(0, $kindStruct, "dom.HTMLTableCaptionElement", "HTMLTableCaptionElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLTableCellElement = $pkg.HTMLTableCellElement = $newType(0, $kindStruct, "dom.HTMLTableCellElement", "HTMLTableCellElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, ColSpan_, RowSpan_, CellIndex_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.ColSpan = 0;
+			this.RowSpan = 0;
+			this.CellIndex = 0;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.ColSpan = ColSpan_;
+		this.RowSpan = RowSpan_;
+		this.CellIndex = CellIndex_;
+	});
+	HTMLTableColElement = $pkg.HTMLTableColElement = $newType(0, $kindStruct, "dom.HTMLTableColElement", "HTMLTableColElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Span_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Span = 0;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Span = Span_;
+	});
+	HTMLTableDataCellElement = $pkg.HTMLTableDataCellElement = $newType(0, $kindStruct, "dom.HTMLTableDataCellElement", "HTMLTableDataCellElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLTableElement = $pkg.HTMLTableElement = $newType(0, $kindStruct, "dom.HTMLTableElement", "HTMLTableElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLTableHeaderCellElement = $pkg.HTMLTableHeaderCellElement = $newType(0, $kindStruct, "dom.HTMLTableHeaderCellElement", "HTMLTableHeaderCellElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Abbr_, Scope_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Abbr = "";
+			this.Scope = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Abbr = Abbr_;
+		this.Scope = Scope_;
+	});
+	HTMLTableRowElement = $pkg.HTMLTableRowElement = $newType(0, $kindStruct, "dom.HTMLTableRowElement", "HTMLTableRowElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, RowIndex_, SectionRowIndex_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.RowIndex = 0;
+			this.SectionRowIndex = 0;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.RowIndex = RowIndex_;
+		this.SectionRowIndex = SectionRowIndex_;
+	});
+	HTMLTableSectionElement = $pkg.HTMLTableSectionElement = $newType(0, $kindStruct, "dom.HTMLTableSectionElement", "HTMLTableSectionElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLTextAreaElement = $pkg.HTMLTextAreaElement = $newType(0, $kindStruct, "dom.HTMLTextAreaElement", "HTMLTextAreaElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Autocomplete_, Autofocus_, Cols_, DefaultValue_, DirName_, Disabled_, MaxLength_, Name_, Placeholder_, ReadOnly_, Required_, Rows_, SelectionDirection_, SelectionStart_, SelectionEnd_, TabIndex_, TextLength_, Type_, ValidationMessage_, Value_, WillValidate_, Wrap_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Autocomplete = "";
+			this.Autofocus = false;
+			this.Cols = 0;
+			this.DefaultValue = "";
+			this.DirName = "";
+			this.Disabled = false;
+			this.MaxLength = 0;
+			this.Name = "";
+			this.Placeholder = "";
+			this.ReadOnly = false;
+			this.Required = false;
+			this.Rows = 0;
+			this.SelectionDirection = "";
+			this.SelectionStart = 0;
+			this.SelectionEnd = 0;
+			this.TabIndex = 0;
+			this.TextLength = 0;
+			this.Type = "";
+			this.ValidationMessage = "";
+			this.Value = "";
+			this.WillValidate = false;
+			this.Wrap = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Autocomplete = Autocomplete_;
+		this.Autofocus = Autofocus_;
+		this.Cols = Cols_;
+		this.DefaultValue = DefaultValue_;
+		this.DirName = DirName_;
+		this.Disabled = Disabled_;
+		this.MaxLength = MaxLength_;
+		this.Name = Name_;
+		this.Placeholder = Placeholder_;
+		this.ReadOnly = ReadOnly_;
+		this.Required = Required_;
+		this.Rows = Rows_;
+		this.SelectionDirection = SelectionDirection_;
+		this.SelectionStart = SelectionStart_;
+		this.SelectionEnd = SelectionEnd_;
+		this.TabIndex = TabIndex_;
+		this.TextLength = TextLength_;
+		this.Type = Type_;
+		this.ValidationMessage = ValidationMessage_;
+		this.Value = Value_;
+		this.WillValidate = WillValidate_;
+		this.Wrap = Wrap_;
+	});
+	HTMLTimeElement = $pkg.HTMLTimeElement = $newType(0, $kindStruct, "dom.HTMLTimeElement", "HTMLTimeElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, DateTime_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.DateTime = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.DateTime = DateTime_;
+	});
+	HTMLTitleElement = $pkg.HTMLTitleElement = $newType(0, $kindStruct, "dom.HTMLTitleElement", "HTMLTitleElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Text_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Text = "";
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Text = Text_;
+	});
+	TextTrack = $pkg.TextTrack = $newType(0, $kindStruct, "dom.TextTrack", "TextTrack", "honnef.co/go/js/dom", function(Object_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			return;
+		}
+		this.Object = Object_;
+	});
+	HTMLTrackElement = $pkg.HTMLTrackElement = $newType(0, $kindStruct, "dom.HTMLTrackElement", "HTMLTrackElement", "honnef.co/go/js/dom", function(BasicHTMLElement_, Kind_, Src_, Srclang_, Label_, Default_, ReadyState_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			this.Kind = "";
+			this.Src = "";
+			this.Srclang = "";
+			this.Label = "";
+			this.Default = false;
+			this.ReadyState = 0;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+		this.Kind = Kind_;
+		this.Src = Src_;
+		this.Srclang = Srclang_;
+		this.Label = Label_;
+		this.Default = Default_;
+		this.ReadyState = ReadyState_;
+	});
+	HTMLUListElement = $pkg.HTMLUListElement = $newType(0, $kindStruct, "dom.HTMLUListElement", "HTMLUListElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLUnknownElement = $pkg.HTMLUnknownElement = $newType(0, $kindStruct, "dom.HTMLUnknownElement", "HTMLUnknownElement", "honnef.co/go/js/dom", function(BasicHTMLElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicHTMLElement = ptrType.nil;
+			return;
+		}
+		this.BasicHTMLElement = BasicHTMLElement_;
+	});
+	HTMLVideoElement = $pkg.HTMLVideoElement = $newType(0, $kindStruct, "dom.HTMLVideoElement", "HTMLVideoElement", "honnef.co/go/js/dom", function(HTMLMediaElement_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.HTMLMediaElement = ptrType$2.nil;
+			return;
+		}
+		this.HTMLMediaElement = HTMLMediaElement_;
+	});
+	CSSStyleDeclaration = $pkg.CSSStyleDeclaration = $newType(0, $kindStruct, "dom.CSSStyleDeclaration", "CSSStyleDeclaration", "honnef.co/go/js/dom", function(Object_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			return;
+		}
+		this.Object = Object_;
+	});
+	Text = $pkg.Text = $newType(0, $kindStruct, "dom.Text", "Text", "honnef.co/go/js/dom", function(BasicNode_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicNode = ptrType$21.nil;
+			return;
+		}
+		this.BasicNode = BasicNode_;
+	});
+	Event = $pkg.Event = $newType(8, $kindInterface, "dom.Event", "Event", "honnef.co/go/js/dom", null);
+	BasicEvent = $pkg.BasicEvent = $newType(0, $kindStruct, "dom.BasicEvent", "BasicEvent", "honnef.co/go/js/dom", function(Object_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.Object = null;
+			return;
+		}
+		this.Object = Object_;
+	});
+	AnimationEvent = $pkg.AnimationEvent = $newType(0, $kindStruct, "dom.AnimationEvent", "AnimationEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	AudioProcessingEvent = $pkg.AudioProcessingEvent = $newType(0, $kindStruct, "dom.AudioProcessingEvent", "AudioProcessingEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	BeforeInputEvent = $pkg.BeforeInputEvent = $newType(0, $kindStruct, "dom.BeforeInputEvent", "BeforeInputEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	BeforeUnloadEvent = $pkg.BeforeUnloadEvent = $newType(0, $kindStruct, "dom.BeforeUnloadEvent", "BeforeUnloadEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	BlobEvent = $pkg.BlobEvent = $newType(0, $kindStruct, "dom.BlobEvent", "BlobEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	ClipboardEvent = $pkg.ClipboardEvent = $newType(0, $kindStruct, "dom.ClipboardEvent", "ClipboardEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	CloseEvent = $pkg.CloseEvent = $newType(0, $kindStruct, "dom.CloseEvent", "CloseEvent", "honnef.co/go/js/dom", function(BasicEvent_, Code_, Reason_, WasClean_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			this.Code = 0;
+			this.Reason = "";
+			this.WasClean = false;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+		this.Code = Code_;
+		this.Reason = Reason_;
+		this.WasClean = WasClean_;
+	});
+	CompositionEvent = $pkg.CompositionEvent = $newType(0, $kindStruct, "dom.CompositionEvent", "CompositionEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	CSSFontFaceLoadEvent = $pkg.CSSFontFaceLoadEvent = $newType(0, $kindStruct, "dom.CSSFontFaceLoadEvent", "CSSFontFaceLoadEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	CustomEvent = $pkg.CustomEvent = $newType(0, $kindStruct, "dom.CustomEvent", "CustomEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	DeviceLightEvent = $pkg.DeviceLightEvent = $newType(0, $kindStruct, "dom.DeviceLightEvent", "DeviceLightEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	DeviceMotionEvent = $pkg.DeviceMotionEvent = $newType(0, $kindStruct, "dom.DeviceMotionEvent", "DeviceMotionEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	DeviceOrientationEvent = $pkg.DeviceOrientationEvent = $newType(0, $kindStruct, "dom.DeviceOrientationEvent", "DeviceOrientationEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	DeviceProximityEvent = $pkg.DeviceProximityEvent = $newType(0, $kindStruct, "dom.DeviceProximityEvent", "DeviceProximityEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	DOMTransactionEvent = $pkg.DOMTransactionEvent = $newType(0, $kindStruct, "dom.DOMTransactionEvent", "DOMTransactionEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	DragEvent = $pkg.DragEvent = $newType(0, $kindStruct, "dom.DragEvent", "DragEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	EditingBeforeInputEvent = $pkg.EditingBeforeInputEvent = $newType(0, $kindStruct, "dom.EditingBeforeInputEvent", "EditingBeforeInputEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	ErrorEvent = $pkg.ErrorEvent = $newType(0, $kindStruct, "dom.ErrorEvent", "ErrorEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	FocusEvent = $pkg.FocusEvent = $newType(0, $kindStruct, "dom.FocusEvent", "FocusEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	GamepadEvent = $pkg.GamepadEvent = $newType(0, $kindStruct, "dom.GamepadEvent", "GamepadEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	HashChangeEvent = $pkg.HashChangeEvent = $newType(0, $kindStruct, "dom.HashChangeEvent", "HashChangeEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	IDBVersionChangeEvent = $pkg.IDBVersionChangeEvent = $newType(0, $kindStruct, "dom.IDBVersionChangeEvent", "IDBVersionChangeEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	KeyboardEvent = $pkg.KeyboardEvent = $newType(0, $kindStruct, "dom.KeyboardEvent", "KeyboardEvent", "honnef.co/go/js/dom", function(BasicEvent_, AltKey_, CharCode_, CtrlKey_, Key_, KeyIdentifier_, KeyCode_, Locale_, Location_, KeyLocation_, MetaKey_, Repeat_, ShiftKey_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			this.AltKey = false;
+			this.CharCode = 0;
+			this.CtrlKey = false;
+			this.Key = "";
+			this.KeyIdentifier = "";
+			this.KeyCode = 0;
+			this.Locale = "";
+			this.Location = 0;
+			this.KeyLocation = 0;
+			this.MetaKey = false;
+			this.Repeat = false;
+			this.ShiftKey = false;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+		this.AltKey = AltKey_;
+		this.CharCode = CharCode_;
+		this.CtrlKey = CtrlKey_;
+		this.Key = Key_;
+		this.KeyIdentifier = KeyIdentifier_;
+		this.KeyCode = KeyCode_;
+		this.Locale = Locale_;
+		this.Location = Location_;
+		this.KeyLocation = KeyLocation_;
+		this.MetaKey = MetaKey_;
+		this.Repeat = Repeat_;
+		this.ShiftKey = ShiftKey_;
+	});
+	MediaStreamEvent = $pkg.MediaStreamEvent = $newType(0, $kindStruct, "dom.MediaStreamEvent", "MediaStreamEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	MessageEvent = $pkg.MessageEvent = $newType(0, $kindStruct, "dom.MessageEvent", "MessageEvent", "honnef.co/go/js/dom", function(BasicEvent_, Data_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			this.Data = null;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+		this.Data = Data_;
+	});
+	MouseEvent = $pkg.MouseEvent = $newType(0, $kindStruct, "dom.MouseEvent", "MouseEvent", "honnef.co/go/js/dom", function(UIEvent_, AltKey_, Button_, ClientX_, ClientY_, CtrlKey_, MetaKey_, MovementX_, MovementY_, ScreenX_, ScreenY_, ShiftKey_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.UIEvent = ptrType$18.nil;
+			this.AltKey = false;
+			this.Button = 0;
+			this.ClientX = 0;
+			this.ClientY = 0;
+			this.CtrlKey = false;
+			this.MetaKey = false;
+			this.MovementX = 0;
+			this.MovementY = 0;
+			this.ScreenX = 0;
+			this.ScreenY = 0;
+			this.ShiftKey = false;
+			return;
+		}
+		this.UIEvent = UIEvent_;
+		this.AltKey = AltKey_;
+		this.Button = Button_;
+		this.ClientX = ClientX_;
+		this.ClientY = ClientY_;
+		this.CtrlKey = CtrlKey_;
+		this.MetaKey = MetaKey_;
+		this.MovementX = MovementX_;
+		this.MovementY = MovementY_;
+		this.ScreenX = ScreenX_;
+		this.ScreenY = ScreenY_;
+		this.ShiftKey = ShiftKey_;
+	});
+	MutationEvent = $pkg.MutationEvent = $newType(0, $kindStruct, "dom.MutationEvent", "MutationEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	OfflineAudioCompletionEvent = $pkg.OfflineAudioCompletionEvent = $newType(0, $kindStruct, "dom.OfflineAudioCompletionEvent", "OfflineAudioCompletionEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	PageTransitionEvent = $pkg.PageTransitionEvent = $newType(0, $kindStruct, "dom.PageTransitionEvent", "PageTransitionEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	PointerEvent = $pkg.PointerEvent = $newType(0, $kindStruct, "dom.PointerEvent", "PointerEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	PopStateEvent = $pkg.PopStateEvent = $newType(0, $kindStruct, "dom.PopStateEvent", "PopStateEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	ProgressEvent = $pkg.ProgressEvent = $newType(0, $kindStruct, "dom.ProgressEvent", "ProgressEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	RelatedEvent = $pkg.RelatedEvent = $newType(0, $kindStruct, "dom.RelatedEvent", "RelatedEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	RTCPeerConnectionIceEvent = $pkg.RTCPeerConnectionIceEvent = $newType(0, $kindStruct, "dom.RTCPeerConnectionIceEvent", "RTCPeerConnectionIceEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	SensorEvent = $pkg.SensorEvent = $newType(0, $kindStruct, "dom.SensorEvent", "SensorEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	StorageEvent = $pkg.StorageEvent = $newType(0, $kindStruct, "dom.StorageEvent", "StorageEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	SVGEvent = $pkg.SVGEvent = $newType(0, $kindStruct, "dom.SVGEvent", "SVGEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	SVGZoomEvent = $pkg.SVGZoomEvent = $newType(0, $kindStruct, "dom.SVGZoomEvent", "SVGZoomEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	TimeEvent = $pkg.TimeEvent = $newType(0, $kindStruct, "dom.TimeEvent", "TimeEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	TouchEvent = $pkg.TouchEvent = $newType(0, $kindStruct, "dom.TouchEvent", "TouchEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	TrackEvent = $pkg.TrackEvent = $newType(0, $kindStruct, "dom.TrackEvent", "TrackEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	TransitionEvent = $pkg.TransitionEvent = $newType(0, $kindStruct, "dom.TransitionEvent", "TransitionEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	UIEvent = $pkg.UIEvent = $newType(0, $kindStruct, "dom.UIEvent", "UIEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	UserProximityEvent = $pkg.UserProximityEvent = $newType(0, $kindStruct, "dom.UserProximityEvent", "UserProximityEvent", "honnef.co/go/js/dom", function(BasicEvent_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+	});
+	WheelEvent = $pkg.WheelEvent = $newType(0, $kindStruct, "dom.WheelEvent", "WheelEvent", "honnef.co/go/js/dom", function(BasicEvent_, DeltaX_, DeltaY_, DeltaZ_, DeltaMode_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.BasicEvent = ptrType$17.nil;
+			this.DeltaX = 0;
+			this.DeltaY = 0;
+			this.DeltaZ = 0;
+			this.DeltaMode = 0;
+			return;
+		}
+		this.BasicEvent = BasicEvent_;
+		this.DeltaX = DeltaX_;
+		this.DeltaY = DeltaY_;
+		this.DeltaZ = DeltaZ_;
+		this.DeltaMode = DeltaMode_;
+	});
+	sliceType = $sliceType($emptyInterface);
+	sliceType$1 = $sliceType(Node);
+	sliceType$2 = $sliceType(Element);
+	sliceType$3 = $sliceType(HTMLElement);
+	ptrType = $ptrType(BasicHTMLElement);
+	ptrType$1 = $ptrType(URLUtils);
+	ptrType$2 = $ptrType(HTMLMediaElement);
+	ptrType$3 = $ptrType(HTMLFormElement);
+	ptrType$4 = $ptrType(HTMLLabelElement);
+	sliceType$4 = $sliceType(ptrType$4);
+	ptrType$5 = $ptrType(HTMLOptionElement);
+	sliceType$5 = $sliceType(ptrType$5);
+	sliceType$6 = $sliceType($String);
+	sliceType$7 = $sliceType(ptrType$3);
+	ptrType$6 = $ptrType(HTMLHeadElement);
+	ptrType$7 = $ptrType(HTMLImageElement);
+	sliceType$8 = $sliceType(ptrType$7);
+	ptrType$8 = $ptrType(HTMLEmbedElement);
+	sliceType$9 = $sliceType(ptrType$8);
+	ptrType$9 = $ptrType(HTMLScriptElement);
+	sliceType$10 = $sliceType(ptrType$9);
+	sliceType$11 = $sliceType(StyleSheet);
+	ptrType$10 = $ptrType(Text);
+	funcType = $funcType([], [], false);
+	ptrType$11 = $ptrType(js.Object);
+	funcType$1 = $funcType([ptrType$11], [], false);
+	ptrType$12 = $ptrType(File);
+	sliceType$12 = $sliceType(ptrType$12);
+	ptrType$13 = $ptrType(HTMLDataListElement);
+	ptrType$14 = $ptrType(HTMLAreaElement);
+	sliceType$13 = $sliceType(ptrType$14);
+	ptrType$15 = $ptrType(HTMLTableCellElement);
+	sliceType$14 = $sliceType(ptrType$15);
+	ptrType$16 = $ptrType(HTMLTableRowElement);
+	sliceType$15 = $sliceType(ptrType$16);
+	ptrType$17 = $ptrType(BasicEvent);
+	ptrType$18 = $ptrType(UIEvent);
+	ptrType$19 = $ptrType(TokenList);
+	funcType$2 = $funcType([Event], [], false);
+	ptrType$20 = $ptrType(Location);
+	ptrType$21 = $ptrType(BasicNode);
+	ptrType$22 = $ptrType(document);
+	ptrType$23 = $ptrType(htmlDocument);
+	ptrType$24 = $ptrType(CSSStyleDeclaration);
+	ptrType$25 = $ptrType(Console);
+	funcType$3 = $funcType([time.Duration], [], false);
+	ptrType$26 = $ptrType(Screen);
+	ptrType$27 = $ptrType(window);
+	funcType$4 = $funcType([Position], [], false);
+	funcType$5 = $funcType([PositionError], [], false);
+	ptrType$28 = $ptrType(PositionError);
+	ptrType$29 = $ptrType(Coordinates);
+	ptrType$30 = $ptrType(BasicElement);
+	ptrType$31 = $ptrType(HTMLAnchorElement);
+	ptrType$32 = $ptrType(HTMLAppletElement);
+	ptrType$33 = $ptrType(HTMLBaseElement);
+	ptrType$34 = $ptrType(ValidityState);
+	ptrType$35 = $ptrType(HTMLButtonElement);
+	ptrType$36 = $ptrType(CanvasRenderingContext2D);
+	ptrType$37 = $ptrType(HTMLCanvasElement);
+	ptrType$38 = $ptrType(HTMLFieldSetElement);
+	ptrType$39 = $ptrType(HTMLIFrameElement);
+	ptrType$40 = $ptrType(HTMLInputElement);
+	ptrType$41 = $ptrType(HTMLKeygenElement);
+	ptrType$42 = $ptrType(HTMLLegendElement);
+	ptrType$43 = $ptrType(HTMLLinkElement);
+	ptrType$44 = $ptrType(HTMLMapElement);
+	ptrType$45 = $ptrType(HTMLObjectElement);
+	ptrType$46 = $ptrType(HTMLOutputElement);
+	ptrType$47 = $ptrType(HTMLSelectElement);
+	ptrType$48 = $ptrType(HTMLTableSectionElement);
+	ptrType$49 = $ptrType(HTMLTextAreaElement);
+	ptrType$50 = $ptrType(TextTrack);
+	ptrType$51 = $ptrType(HTMLTrackElement);
+	mapType = $mapType($String, $String);
+	ptrType$52 = $ptrType(KeyboardEvent);
+	ptrType$53 = $ptrType(MouseEvent);
+	callRecover = function(o, fn, args) {
+		var $ptr, args, err, fn, o, obj, $deferred;
+		/* */ var $err = null; try { $deferred = []; $deferred.index = $curGoroutine.deferStack.length; $curGoroutine.deferStack.push($deferred);
+		err = $ifaceNil;
+		$deferred.push([(function() {
+			var $ptr, _tuple, e, ok, panicErr;
+			e = $recover();
+			if ($interfaceIsEqual(e, $ifaceNil)) {
+				return;
+			}
+			_tuple = $assertType(e, $error, true); panicErr = _tuple[0]; ok = _tuple[1];
+			if (ok && !($interfaceIsEqual(panicErr, $ifaceNil))) {
+				err = panicErr;
+			} else {
+				$panic(e);
+			}
+		}), []]);
+		(obj = o, obj[$externalize(fn, $String)].apply(obj, $externalize(args, sliceType)));
+		err = $ifaceNil;
+		return err;
+		/* */ } catch(err) { $err = err; } finally { $callDeferred($deferred, $err); if (!$curGoroutine.asleep) { return  err; } }
+	};
+	nodeListToNodes = function(o) {
+		var $ptr, i, length, o, out;
+		out = sliceType$1.nil;
+		length = $parseInt(o.length) >> 0;
+		i = 0;
+		while (true) {
+			if (!(i < length)) { break; }
+			out = $append(out, wrapNode(o.item(i)));
+			i = i + (1) >> 0;
+		}
+		return out;
+	};
+	nodeListToElements = function(o) {
+		var $ptr, i, length, o, out;
+		out = sliceType$2.nil;
+		length = $parseInt(o.length) >> 0;
+		i = 0;
+		while (true) {
+			if (!(i < length)) { break; }
+			out = $append(out, wrapElement(o.item(i)));
+			i = i + (1) >> 0;
+		}
+		return out;
+	};
+	nodeListToHTMLElements = function(o) {
+		var $ptr, i, length, o, out;
+		out = sliceType$3.nil;
+		length = $parseInt(o.length) >> 0;
+		i = 0;
+		while (true) {
+			if (!(i < length)) { break; }
+			out = $append(out, wrapHTMLElement(o.item(i)));
+			i = i + (1) >> 0;
+		}
+		return out;
+	};
+	wrapDocument = function(o) {
+		var $ptr, _ref, o;
+		_ref = o.constructor;
+		if (_ref === $global.HTMLDocument) {
+			return new htmlDocument.ptr(new document.ptr(new BasicNode.ptr(o)));
+		} else {
+			return new document.ptr(new BasicNode.ptr(o));
+		}
+	};
+	wrapNode = function(o) {
+		var $ptr, _ref, o;
+		if (o === null || o === undefined) {
+			return $ifaceNil;
+		}
+		_ref = o.constructor;
+		if (_ref === $global.Text) {
+			return new Text.ptr(new BasicNode.ptr(o));
+		} else {
+			return wrapElement(o);
+		}
+	};
+	wrapElement = function(o) {
+		var $ptr, _ref, o;
+		if (o === null || o === undefined) {
+			return $ifaceNil;
+		}
+		_ref = o.constructor;
+		return wrapHTMLElement(o);
+	};
+	wrapHTMLElement = function(o) {
+		var $ptr, _ref, c, el, o;
+		if (o === null || o === undefined) {
+			return $ifaceNil;
+		}
+		el = new BasicHTMLElement.ptr(new BasicElement.ptr(new BasicNode.ptr(o)));
+		c = o.constructor;
+		_ref = c;
+		if (_ref === $global.HTMLAnchorElement) {
+			return new HTMLAnchorElement.ptr(el, new URLUtils.ptr(o, "", "", "", "", "", "", "", "", "", "", ""), "", "", 0, "", "", "");
+		} else if (_ref === $global.HTMLAppletElement) {
+			return new HTMLAppletElement.ptr(el, "", "", "", "", "", "", 0, "", "");
+		} else if (_ref === $global.HTMLAreaElement) {
+			return new HTMLAreaElement.ptr(el, new URLUtils.ptr(o, "", "", "", "", "", "", "", "", "", "", ""), "", "", "", "", "", "", 0, "", "");
+		} else if (_ref === $global.HTMLAudioElement) {
+			return new HTMLAudioElement.ptr(new HTMLMediaElement.ptr(el));
+		} else if (_ref === $global.HTMLBaseElement) {
+			return new HTMLBaseElement.ptr(el);
+		} else if (_ref === $global.HTMLBodyElement) {
+			return new HTMLBodyElement.ptr(el);
+		} else if (_ref === $global.HTMLBRElement) {
+			return new HTMLBRElement.ptr(el);
+		} else if (_ref === $global.HTMLButtonElement) {
+			return new HTMLButtonElement.ptr(el, false, false, "", "", "", false, "", "", 0, "", "", "", false);
+		} else if (_ref === $global.HTMLCanvasElement) {
+			return new HTMLCanvasElement.ptr(el, 0, 0);
+		} else if (_ref === $global.HTMLDataElement) {
+			return new HTMLDataElement.ptr(el, "");
+		} else if (_ref === $global.HTMLDataListElement) {
+			return new HTMLDataListElement.ptr(el);
+		} else if (_ref === $global.HTMLDirectoryElement) {
+			return new HTMLDirectoryElement.ptr(el);
+		} else if (_ref === $global.HTMLDivElement) {
+			return new HTMLDivElement.ptr(el);
+		} else if (_ref === $global.HTMLDListElement) {
+			return new HTMLDListElement.ptr(el);
+		} else if (_ref === $global.HTMLEmbedElement) {
+			return new HTMLEmbedElement.ptr(el, "", "", "");
+		} else if (_ref === $global.HTMLFieldSetElement) {
+			return new HTMLFieldSetElement.ptr(el, false, "", "", "", false);
+		} else if (_ref === $global.HTMLFontElement) {
+			return new HTMLFontElement.ptr(el);
+		} else if (_ref === $global.HTMLFormElement) {
+			return new HTMLFormElement.ptr(el, "", "", "", "", "", 0, "", "", false, "");
+		} else if (_ref === $global.HTMLFrameElement) {
+			return new HTMLFrameElement.ptr(el);
+		} else if (_ref === $global.HTMLFrameSetElement) {
+			return new HTMLFrameSetElement.ptr(el);
+		} else if (_ref === $global.HTMLHeadElement) {
+			return new HTMLHeadElement.ptr(el);
+		} else if (_ref === $global.HTMLHeadingElement) {
+			return new HTMLHeadingElement.ptr(el);
+		} else if (_ref === $global.HTMLHtmlElement) {
+			return new HTMLHtmlElement.ptr(el);
+		} else if (_ref === $global.HTMLHRElement) {
+			return new HTMLHRElement.ptr(el);
+		} else if (_ref === $global.HTMLIFrameElement) {
+			return new HTMLIFrameElement.ptr(el, "", "", "", "", "", false);
+		} else if (_ref === $global.HTMLImageElement) {
+			return new HTMLImageElement.ptr(el, false, "", 0, false, 0, 0, "", "", 0);
+		} else if (_ref === $global.HTMLInputElement) {
+			return new HTMLInputElement.ptr(el, "", "", "", false, false, false, "", "", false, "", "", "", false, "", "", false, "", 0, "", false, "", "", "", false, false, "", 0, 0, 0, "", "", 0, "", "", "", new time.Time.ptr(), 0, "", false);
+		} else if (_ref === $global.HTMLKeygenElement) {
+			return new HTMLKeygenElement.ptr(el, false, "", false, "", "", "", "", false);
+		} else if (_ref === $global.HTMLLabelElement) {
+			return new HTMLLabelElement.ptr(el, "");
+		} else if (_ref === $global.HTMLLegendElement) {
+			return new HTMLLegendElement.ptr(el);
+		} else if (_ref === $global.HTMLLIElement) {
+			return new HTMLLIElement.ptr(el, 0);
+		} else if (_ref === $global.HTMLLinkElement) {
+			return new HTMLLinkElement.ptr(el, false, "", "", "", "");
+		} else if (_ref === $global.HTMLMapElement) {
+			return new HTMLMapElement.ptr(el, "");
+		} else if (_ref === $global.HTMLMediaElement) {
+			return new HTMLMediaElement.ptr(el);
+		} else if (_ref === $global.HTMLMenuElement) {
+			return new HTMLMenuElement.ptr(el);
+		} else if (_ref === $global.HTMLMetaElement) {
+			return new HTMLMetaElement.ptr(el, "", "", "");
+		} else if (_ref === $global.HTMLMeterElement) {
+			return new HTMLMeterElement.ptr(el, 0, 0, 0, 0, 0);
+		} else if (_ref === $global.HTMLModElement) {
+			return new HTMLModElement.ptr(el, "", "");
+		} else if (_ref === $global.HTMLObjectElement) {
+			return new HTMLObjectElement.ptr(el, "", "", "", 0, "", false, "", "", "", false);
+		} else if (_ref === $global.HTMLOListElement) {
+			return new HTMLOListElement.ptr(el, false, 0, "");
+		} else if (_ref === $global.HTMLOptGroupElement) {
+			return new HTMLOptGroupElement.ptr(el, false, "");
+		} else if (_ref === $global.HTMLOptionElement) {
+			return new HTMLOptionElement.ptr(el, false, false, 0, "", false, "", "");
+		} else if (_ref === $global.HTMLOutputElement) {
+			return new HTMLOutputElement.ptr(el, "", "", "", "", "", false);
+		} else if (_ref === $global.HTMLParagraphElement) {
+			return new HTMLParagraphElement.ptr(el);
+		} else if (_ref === $global.HTMLParamElement) {
+			return new HTMLParamElement.ptr(el, "", "");
+		} else if (_ref === $global.HTMLPreElement) {
+			return new HTMLPreElement.ptr(el);
+		} else if (_ref === $global.HTMLProgressElement) {
+			return new HTMLProgressElement.ptr(el, 0, 0, 0);
+		} else if (_ref === $global.HTMLQuoteElement) {
+			return new HTMLQuoteElement.ptr(el, "");
+		} else if (_ref === $global.HTMLScriptElement) {
+			return new HTMLScriptElement.ptr(el, "", "", "", false, false, "");
+		} else if (_ref === $global.HTMLSelectElement) {
+			return new HTMLSelectElement.ptr(el, false, false, 0, false, "", false, 0, 0, "", "", "", false);
+		} else if (_ref === $global.HTMLSourceElement) {
+			return new HTMLSourceElement.ptr(el, "", "", "");
+		} else if (_ref === $global.HTMLSpanElement) {
+			return new HTMLSpanElement.ptr(el);
+		} else if (_ref === $global.HTMLStyleElement) {
+			return new HTMLStyleElement.ptr(el);
+		} else if (_ref === $global.HTMLTableElement) {
+			return new HTMLTableElement.ptr(el);
+		} else if (_ref === $global.HTMLTableCaptionElement) {
+			return new HTMLTableCaptionElement.ptr(el);
+		} else if (_ref === $global.HTMLTableCellElement) {
+			return new HTMLTableCellElement.ptr(el, 0, 0, 0);
+		} else if (_ref === $global.HTMLTableDataCellElement) {
+			return new HTMLTableDataCellElement.ptr(el);
+		} else if (_ref === $global.HTMLTableHeaderCellElement) {
+			return new HTMLTableHeaderCellElement.ptr(el, "", "");
+		} else if (_ref === $global.HTMLTableColElement) {
+			return new HTMLTableColElement.ptr(el, 0);
+		} else if (_ref === $global.HTMLTableRowElement) {
+			return new HTMLTableRowElement.ptr(el, 0, 0);
+		} else if (_ref === $global.HTMLTableSectionElement) {
+			return new HTMLTableSectionElement.ptr(el);
+		} else if (_ref === $global.HTMLTextAreaElement) {
+			return new HTMLTextAreaElement.ptr(el, "", false, 0, "", "", false, 0, "", "", false, false, 0, "", 0, 0, 0, 0, "", "", "", false, "");
+		} else if (_ref === $global.HTMLTimeElement) {
+			return new HTMLTimeElement.ptr(el, "");
+		} else if (_ref === $global.HTMLTitleElement) {
+			return new HTMLTitleElement.ptr(el, "");
+		} else if (_ref === $global.HTMLTrackElement) {
+			return new HTMLTrackElement.ptr(el, "", "", "", "", false, 0);
+		} else if (_ref === $global.HTMLUListElement) {
+			return new HTMLUListElement.ptr(el);
+		} else if (_ref === $global.HTMLUnknownElement) {
+			return new HTMLUnknownElement.ptr(el);
+		} else if (_ref === $global.HTMLVideoElement) {
+			return new HTMLVideoElement.ptr(new HTMLMediaElement.ptr(el));
+		} else if (_ref === $global.HTMLElement) {
+			return el;
+		} else {
+			return el;
+		}
+	};
+	getForm = function(o) {
+		var $ptr, form, o;
+		form = wrapHTMLElement(o.form);
+		if ($interfaceIsEqual(form, $ifaceNil)) {
+			return ptrType$3.nil;
+		}
+		return $assertType(form, ptrType$3);
+	};
+	getLabels = function(o) {
+		var $ptr, _i, _ref, i, label, labels, o, out;
+		labels = nodeListToElements(o.labels);
+		out = $makeSlice(sliceType$4, labels.$length);
+		_ref = labels;
+		_i = 0;
+		while (true) {
+			if (!(_i < _ref.$length)) { break; }
+			i = _i;
+			label = ((_i < 0 || _i >= _ref.$length) ? $throwRuntimeError("index out of range") : _ref.$array[_ref.$offset + _i]);
+			((i < 0 || i >= out.$length) ? $throwRuntimeError("index out of range") : out.$array[out.$offset + i] = $assertType(label, ptrType$4));
+			_i++;
+		}
+		return out;
+	};
+	getOptions = function(o, attr) {
+		var $ptr, _i, _ref, attr, i, o, option, options, out;
+		options = nodeListToElements(o[$externalize(attr, $String)]);
+		out = $makeSlice(sliceType$5, options.$length);
+		_ref = options;
+		_i = 0;
+		while (true) {
+			if (!(_i < _ref.$length)) { break; }
+			i = _i;
+			option = ((_i < 0 || _i >= _ref.$length) ? $throwRuntimeError("index out of range") : _ref.$array[_ref.$offset + _i]);
+			((i < 0 || i >= out.$length) ? $throwRuntimeError("index out of range") : out.$array[out.$offset + i] = $assertType(option, ptrType$5));
+			_i++;
+		}
+		return out;
+	};
+	GetWindow = function() {
+		var $ptr;
+		return new window.ptr($global);
+	};
+	$pkg.GetWindow = GetWindow;
+	TokenList.ptr.prototype.Item = function(idx) {
+		var $ptr, idx, o, tl;
+		tl = this;
+		o = tl.dtl.item(idx);
+		if (o === null || o === undefined) {
+			return "";
+		}
+		return $internalize(o, $String);
+	};
+	TokenList.prototype.Item = function(idx) { return this.$val.Item(idx); };
+	TokenList.ptr.prototype.Contains = function(token) {
+		var $ptr, tl, token;
+		tl = this;
+		return !!(tl.dtl.contains($externalize(token, $String)));
+	};
+	TokenList.prototype.Contains = function(token) { return this.$val.Contains(token); };
+	TokenList.ptr.prototype.Add = function(token) {
+		var $ptr, tl, token;
+		tl = this;
+		tl.dtl.add($externalize(token, $String));
+	};
+	TokenList.prototype.Add = function(token) { return this.$val.Add(token); };
+	TokenList.ptr.prototype.Remove = function(token) {
+		var $ptr, tl, token;
+		tl = this;
+		tl.dtl.remove($externalize(token, $String));
+	};
+	TokenList.prototype.Remove = function(token) { return this.$val.Remove(token); };
+	TokenList.ptr.prototype.Toggle = function(token) {
+		var $ptr, tl, token;
+		tl = this;
+		tl.dtl.toggle($externalize(token, $String));
+	};
+	TokenList.prototype.Toggle = function(token) { return this.$val.Toggle(token); };
+	TokenList.ptr.prototype.String = function() {
+		var $ptr, tl;
+		tl = this;
+		if (!(tl.sa === "")) {
+			return $internalize(tl.o[$externalize(tl.sa, $String)], $String);
+		}
+		if (tl.dtl.constructor === $global.DOMSettableTokenList) {
+			return $internalize(tl.dtl.value, $String);
+		}
+		return "";
+	};
+	TokenList.prototype.String = function() { return this.$val.String(); };
+	TokenList.ptr.prototype.Slice = function() {
+		var $ptr, i, length, out, tl;
+		tl = this;
+		out = sliceType$6.nil;
+		length = $parseInt(tl.dtl.length) >> 0;
+		i = 0;
+		while (true) {
+			if (!(i < length)) { break; }
+			out = $append(out, $internalize(tl.dtl.item(i), $String));
+			i = i + (1) >> 0;
+		}
+		return out;
+	};
+	TokenList.prototype.Slice = function() { return this.$val.Slice(); };
+	TokenList.ptr.prototype.SetString = function(s) {
+		var $ptr, s, tl;
+		tl = this;
+		if (!(tl.sa === "")) {
+			tl.o[$externalize(tl.sa, $String)] = $externalize(s, $String);
+			return;
+		}
+		if (tl.dtl.constructor === $global.DOMSettableTokenList) {
+			tl.dtl.value = $externalize(s, $String);
+			return;
+		}
+		$panic(new $String("no way to SetString on this TokenList"));
+	};
+	TokenList.prototype.SetString = function(s) { return this.$val.SetString(s); };
+	TokenList.ptr.prototype.Set = function(s) {
+		var $ptr, s, tl;
+		tl = this;
+		tl.SetString(strings.Join(s, " "));
+	};
+	TokenList.prototype.Set = function(s) { return this.$val.Set(s); };
+	htmlDocument.ptr.prototype.ActiveElement = function() {
+		var $ptr, d;
+		d = this;
+		return wrapHTMLElement(d.document.BasicNode.Object.activeElement);
+	};
+	htmlDocument.prototype.ActiveElement = function() { return this.$val.ActiveElement(); };
+	htmlDocument.ptr.prototype.Body = function() {
+		var $ptr, d;
+		d = this;
+		return wrapHTMLElement(d.document.BasicNode.Object.body);
+	};
+	htmlDocument.prototype.Body = function() { return this.$val.Body(); };
+	htmlDocument.ptr.prototype.Cookie = function() {
+		var $ptr, d;
+		d = this;
+		return $internalize(d.document.BasicNode.Object.cookie, $String);
+	};
+	htmlDocument.prototype.Cookie = function() { return this.$val.Cookie(); };
+	htmlDocument.ptr.prototype.SetCookie = function(s) {
+		var $ptr, d, s;
+		d = this;
+		d.document.BasicNode.Object.cookie = $externalize(s, $String);
+	};
+	htmlDocument.prototype.SetCookie = function(s) { return this.$val.SetCookie(s); };
+	htmlDocument.ptr.prototype.DefaultView = function() {
+		var $ptr, d;
+		d = this;
+		return new window.ptr(d.document.BasicNode.Object.defaultView);
+	};
+	htmlDocument.prototype.DefaultView = function() { return this.$val.DefaultView(); };
+	htmlDocument.ptr.prototype.DesignMode = function() {
+		var $ptr, d, s;
+		d = this;
+		s = $internalize(d.document.BasicNode.Object.designMode, $String);
+		if (s === "off") {
+			return false;
+		}
+		return true;
+	};
+	htmlDocument.prototype.DesignMode = function() { return this.$val.DesignMode(); };
+	htmlDocument.ptr.prototype.SetDesignMode = function(b) {
+		var $ptr, b, d, s;
+		d = this;
+		s = "off";
+		if (b) {
+			s = "on";
+		}
+		d.document.BasicNode.Object.designMode = $externalize(s, $String);
+	};
+	htmlDocument.prototype.SetDesignMode = function(b) { return this.$val.SetDesignMode(b); };
+	htmlDocument.ptr.prototype.Domain = function() {
+		var $ptr, d;
+		d = this;
+		return $internalize(d.document.BasicNode.Object.domain, $String);
+	};
+	htmlDocument.prototype.Domain = function() { return this.$val.Domain(); };
+	htmlDocument.ptr.prototype.SetDomain = function(s) {
+		var $ptr, d, s;
+		d = this;
+		d.document.BasicNode.Object.domain = $externalize(s, $String);
+	};
+	htmlDocument.prototype.SetDomain = function(s) { return this.$val.SetDomain(s); };
+	htmlDocument.ptr.prototype.Forms = function() {
+		var $ptr, d, els, forms, i, length;
+		d = this;
+		els = sliceType$7.nil;
+		forms = d.document.BasicNode.Object.forms;
+		length = $parseInt(forms.length) >> 0;
+		i = 0;
+		while (true) {
+			if (!(i < length)) { break; }
+			els = $append(els, $assertType(wrapHTMLElement(forms.item(i)), ptrType$3));
+			i = i + (1) >> 0;
+		}
+		return els;
+	};
+	htmlDocument.prototype.Forms = function() { return this.$val.Forms(); };
+	htmlDocument.ptr.prototype.Head = function() {
+		var $ptr, d, head;
+		d = this;
+		head = wrapElement(d.document.BasicNode.Object.head);
+		if ($interfaceIsEqual(head, $ifaceNil)) {
+			return ptrType$6.nil;
+		}
+		return $assertType(head, ptrType$6);
+	};
+	htmlDocument.prototype.Head = function() { return this.$val.Head(); };
+	htmlDocument.ptr.prototype.Images = function() {
+		var $ptr, d, els, i, images, length;
+		d = this;
+		els = sliceType$8.nil;
+		images = d.document.BasicNode.Object.images;
+		length = $parseInt(images.length) >> 0;
+		i = 0;
+		while (true) {
+			if (!(i < length)) { break; }
+			els = $append(els, $assertType(wrapHTMLElement(images.item(i)), ptrType$7));
+			i = i + (1) >> 0;
+		}
+		return els;
+	};
+	htmlDocument.prototype.Images = function() { return this.$val.Images(); };
+	htmlDocument.ptr.prototype.LastModified = function() {
+		var $ptr, d;
+		d = this;
+		return $assertType($internalize(d.document.BasicNode.Object.lastModified, $emptyInterface), time.Time);
+	};
+	htmlDocument.prototype.LastModified = function() { return this.$val.LastModified(); };
+	htmlDocument.ptr.prototype.Links = function() {
+		var $ptr, d, els, i, length, links;
+		d = this;
+		els = sliceType$3.nil;
+		links = d.document.BasicNode.Object.links;
+		length = $parseInt(links.length) >> 0;
+		i = 0;
+		while (true) {
+			if (!(i < length)) { break; }
+			els = $append(els, wrapHTMLElement(links.item(i)));
+			i = i + (1) >> 0;
+		}
+		return els;
+	};
+	htmlDocument.prototype.Links = function() { return this.$val.Links(); };
+	htmlDocument.ptr.prototype.Location = function() {
+		var $ptr, d, o;
+		d = this;
+		o = d.document.BasicNode.Object.location;
+		return new Location.ptr(o, new URLUtils.ptr(o, "", "", "", "", "", "", "", "", "", "", ""));
+	};
+	htmlDocument.prototype.Location = function() { return this.$val.Location(); };
+	htmlDocument.ptr.prototype.Plugins = function() {
+		var $ptr, d, els, forms, i, length;
+		d = this;
+		els = sliceType$9.nil;
+		forms = d.document.BasicNode.Object.plugins;
+		length = $parseInt(forms.length) >> 0;
+		i = 0;
+		while (true) {
+			if (!(i < length)) { break; }
+			els = $append(els, $assertType(wrapHTMLElement(forms.item(i)), ptrType$8));
+			i = i + (1) >> 0;
+		}
+		return els;
+	};
+	htmlDocument.prototype.Plugins = function() { return this.$val.Plugins(); };
+	htmlDocument.ptr.prototype.ReadyState = function() {
+		var $ptr, d;
+		d = this;
+		return $internalize(d.document.BasicNode.Object.readyState, $String);
+	};
+	htmlDocument.prototype.ReadyState = function() { return this.$val.ReadyState(); };
+	htmlDocument.ptr.prototype.Referrer = function() {
+		var $ptr, d;
+		d = this;
+		return $internalize(d.document.BasicNode.Object.referrer, $String);
+	};
+	htmlDocument.prototype.Referrer = function() { return this.$val.Referrer(); };
+	htmlDocument.ptr.prototype.Scripts = function() {
+		var $ptr, d, els, forms, i, length;
+		d = this;
+		els = sliceType$10.nil;
+		forms = d.document.BasicNode.Object.scripts;
+		length = $parseInt(forms.length) >> 0;
+		i = 0;
+		while (true) {
+			if (!(i < length)) { break; }
+			els = $append(els, $assertType(wrapHTMLElement(forms.item(i)), ptrType$9));
+			i = i + (1) >> 0;
+		}
+		return els;
+	};
+	htmlDocument.prototype.Scripts = function() { return this.$val.Scripts(); };
+	htmlDocument.ptr.prototype.Title = function() {
+		var $ptr, d;
+		d = this;
+		return $internalize(d.document.BasicNode.Object.title, $String);
+	};
+	htmlDocument.prototype.Title = function() { return this.$val.Title(); };
+	htmlDocument.ptr.prototype.SetTitle = function(s) {
+		var $ptr, d, s;
+		d = this;
+		d.document.BasicNode.Object.title = $externalize(s, $String);
+	};
+	htmlDocument.prototype.SetTitle = function(s) { return this.$val.SetTitle(s); };
+	htmlDocument.ptr.prototype.URL = function() {
+		var $ptr, d;
+		d = this;
+		return $internalize(d.document.BasicNode.Object.url, $String);
+	};
+	htmlDocument.prototype.URL = function() { return this.$val.URL(); };
+	document.ptr.prototype.Async = function() {
+		var $ptr, d;
+		d = $clone(this, document);
+		return !!(d.BasicNode.Object.async);
+	};
+	document.prototype.Async = function() { return this.$val.Async(); };
+	document.ptr.prototype.SetAsync = function(b) {
+		var $ptr, b, d;
+		d = $clone(this, document);
+		d.BasicNode.Object.async = $externalize(b, $Bool);
+	};
+	document.prototype.SetAsync = function(b) { return this.$val.SetAsync(b); };
+	document.ptr.prototype.Doctype = function() {
+		var $ptr, d;
+		d = $clone(this, document);
+		return $ifaceNil;
+	};
+	document.prototype.Doctype = function() { return this.$val.Doctype(); };
+	document.ptr.prototype.DocumentElement = function() {
+		var $ptr, d;
+		d = $clone(this, document);
+		return wrapElement(d.BasicNode.Object.documentElement);
+	};
+	document.prototype.DocumentElement = function() { return this.$val.DocumentElement(); };
+	document.ptr.prototype.DocumentURI = function() {
+		var $ptr, d;
+		d = $clone(this, document);
+		return $internalize(d.BasicNode.Object.documentURI, $String);
+	};
+	document.prototype.DocumentURI = function() { return this.$val.DocumentURI(); };
+	document.ptr.prototype.Implementation = function() {
+		var $ptr, d;
+		d = $clone(this, document);
+		return $ifaceNil;
+	};
+	document.prototype.Implementation = function() { return this.$val.Implementation(); };
+	document.ptr.prototype.LastStyleSheetSet = function() {
+		var $ptr, d;
+		d = $clone(this, document);
+		return $internalize(d.BasicNode.Object.lastStyleSheetSet, $String);
+	};
+	document.prototype.LastStyleSheetSet = function() { return this.$val.LastStyleSheetSet(); };
+	document.ptr.prototype.PreferredStyleSheetSet = function() {
+		var $ptr, d;
+		d = $clone(this, document);
+		return $internalize(d.BasicNode.Object.preferredStyleSheetSet, $String);
+	};
+	document.prototype.PreferredStyleSheetSet = function() { return this.$val.PreferredStyleSheetSet(); };
+	document.ptr.prototype.SelectedStyleSheetSet = function() {
+		var $ptr, d;
+		d = $clone(this, document);
+		return $internalize(d.BasicNode.Object.selectedStyleSheetSet, $String);
+	};
+	document.prototype.SelectedStyleSheetSet = function() { return this.$val.SelectedStyleSheetSet(); };
+	document.ptr.prototype.StyleSheets = function() {
+		var $ptr, d;
+		d = $clone(this, document);
+		return sliceType$11.nil;
+	};
+	document.prototype.StyleSheets = function() { return this.$val.StyleSheets(); };
+	document.ptr.prototype.StyleSheetSets = function() {
+		var $ptr, d;
+		d = $clone(this, document);
+		return sliceType$11.nil;
+	};
+	document.prototype.StyleSheetSets = function() { return this.$val.StyleSheetSets(); };
+	document.ptr.prototype.AdoptNode = function(node) {
+		var $ptr, _r, _r$1, d, node, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; d = $f.d; node = $f.node; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		d = $clone(this, document);
+		_r = node.Underlying(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		_r$1 = wrapNode(d.BasicNode.Object.adoptNode(_r)); /* */ $s = 2; case 2: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		return _r$1;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: document.ptr.prototype.AdoptNode }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f.d = d; $f.node = node; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	document.prototype.AdoptNode = function(node) { return this.$val.AdoptNode(node); };
+	document.ptr.prototype.ImportNode = function(node, deep) {
+		var $ptr, _r, _r$1, d, deep, node, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; d = $f.d; deep = $f.deep; node = $f.node; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		d = $clone(this, document);
+		_r = node.Underlying(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		_r$1 = wrapNode(d.BasicNode.Object.importNode(_r, $externalize(deep, $Bool))); /* */ $s = 2; case 2: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		return _r$1;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: document.ptr.prototype.ImportNode }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f.d = d; $f.deep = deep; $f.node = node; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	document.prototype.ImportNode = function(node, deep) { return this.$val.ImportNode(node, deep); };
+	document.ptr.prototype.CreateElement = function(name) {
+		var $ptr, d, name;
+		d = $clone(this, document);
+		return wrapElement(d.BasicNode.Object.createElement($externalize(name, $String)));
+	};
+	document.prototype.CreateElement = function(name) { return this.$val.CreateElement(name); };
+	document.ptr.prototype.CreateElementNS = function(ns, name) {
+		var $ptr, d, name, ns;
+		d = $clone(this, document);
+		return wrapElement(d.BasicNode.Object.createElement($externalize(ns, $String), $externalize(name, $String)));
+	};
+	document.prototype.CreateElementNS = function(ns, name) { return this.$val.CreateElementNS(ns, name); };
+	document.ptr.prototype.CreateTextNode = function(s) {
+		var $ptr, d, s;
+		d = $clone(this, document);
+		return $assertType(wrapNode(d.BasicNode.Object.createTextNode($externalize(s, $String))), ptrType$10);
+	};
+	document.prototype.CreateTextNode = function(s) { return this.$val.CreateTextNode(s); };
+	document.ptr.prototype.ElementFromPoint = function(x, y) {
+		var $ptr, d, x, y;
+		d = $clone(this, document);
+		return wrapElement(d.BasicNode.Object.elementFromPoint(x, y));
+	};
+	document.prototype.ElementFromPoint = function(x, y) { return this.$val.ElementFromPoint(x, y); };
+	document.ptr.prototype.EnableStyleSheetsForSet = function(name) {
+		var $ptr, d, name;
+		d = $clone(this, document);
+		d.BasicNode.Object.enableStyleSheetsForSet($externalize(name, $String));
+	};
+	document.prototype.EnableStyleSheetsForSet = function(name) { return this.$val.EnableStyleSheetsForSet(name); };
+	document.ptr.prototype.GetElementsByClassName = function(name) {
+		var $ptr, d, name;
+		d = $clone(this, document);
+		return (new BasicElement.ptr(new BasicNode.ptr(d.BasicNode.Object))).GetElementsByClassName(name);
+	};
+	document.prototype.GetElementsByClassName = function(name) { return this.$val.GetElementsByClassName(name); };
+	document.ptr.prototype.GetElementsByTagName = function(name) {
+		var $ptr, d, name;
+		d = $clone(this, document);
+		return (new BasicElement.ptr(new BasicNode.ptr(d.BasicNode.Object))).GetElementsByTagName(name);
+	};
+	document.prototype.GetElementsByTagName = function(name) { return this.$val.GetElementsByTagName(name); };
+	document.ptr.prototype.GetElementsByTagNameNS = function(ns, name) {
+		var $ptr, d, name, ns;
+		d = $clone(this, document);
+		return (new BasicElement.ptr(new BasicNode.ptr(d.BasicNode.Object))).GetElementsByTagNameNS(ns, name);
+	};
+	document.prototype.GetElementsByTagNameNS = function(ns, name) { return this.$val.GetElementsByTagNameNS(ns, name); };
+	document.ptr.prototype.GetElementByID = function(id) {
+		var $ptr, d, id;
+		d = $clone(this, document);
+		return wrapElement(d.BasicNode.Object.getElementById($externalize(id, $String)));
+	};
+	document.prototype.GetElementByID = function(id) { return this.$val.GetElementByID(id); };
+	document.ptr.prototype.QuerySelector = function(sel) {
+		var $ptr, d, sel;
+		d = $clone(this, document);
+		return (new BasicElement.ptr(new BasicNode.ptr(d.BasicNode.Object))).QuerySelector(sel);
+	};
+	document.prototype.QuerySelector = function(sel) { return this.$val.QuerySelector(sel); };
+	document.ptr.prototype.QuerySelectorAll = function(sel) {
+		var $ptr, d, sel;
+		d = $clone(this, document);
+		return (new BasicElement.ptr(new BasicNode.ptr(d.BasicNode.Object))).QuerySelectorAll(sel);
+	};
+	document.prototype.QuerySelectorAll = function(sel) { return this.$val.QuerySelectorAll(sel); };
+	window.ptr.prototype.Console = function() {
+		var $ptr, w;
+		w = this;
+		return new Console.ptr(w.Object.console);
+	};
+	window.prototype.Console = function() { return this.$val.Console(); };
+	window.ptr.prototype.Document = function() {
+		var $ptr, w;
+		w = this;
+		return wrapDocument(w.Object.document);
+	};
+	window.prototype.Document = function() { return this.$val.Document(); };
+	window.ptr.prototype.FrameElement = function() {
+		var $ptr, w;
+		w = this;
+		return wrapElement(w.Object.frameElement);
+	};
+	window.prototype.FrameElement = function() { return this.$val.FrameElement(); };
+	window.ptr.prototype.Location = function() {
+		var $ptr, o, w;
+		w = this;
+		o = w.Object.location;
+		return new Location.ptr(o, new URLUtils.ptr(o, "", "", "", "", "", "", "", "", "", "", ""));
+	};
+	window.prototype.Location = function() { return this.$val.Location(); };
+	window.ptr.prototype.Name = function() {
+		var $ptr, w;
+		w = this;
+		return $internalize(w.Object.name, $String);
+	};
+	window.prototype.Name = function() { return this.$val.Name(); };
+	window.ptr.prototype.SetName = function(s) {
+		var $ptr, s, w;
+		w = this;
+		w.Object.name = $externalize(s, $String);
+	};
+	window.prototype.SetName = function(s) { return this.$val.SetName(s); };
+	window.ptr.prototype.InnerHeight = function() {
+		var $ptr, w;
+		w = this;
+		return $parseInt(w.Object.innerHeight) >> 0;
+	};
+	window.prototype.InnerHeight = function() { return this.$val.InnerHeight(); };
+	window.ptr.prototype.InnerWidth = function() {
+		var $ptr, w;
+		w = this;
+		return $parseInt(w.Object.innerWidth) >> 0;
+	};
+	window.prototype.InnerWidth = function() { return this.$val.InnerWidth(); };
+	window.ptr.prototype.Length = function() {
+		var $ptr, w;
+		w = this;
+		return $parseInt(w.Object.length) >> 0;
+	};
+	window.prototype.Length = function() { return this.$val.Length(); };
+	window.ptr.prototype.Opener = function() {
+		var $ptr, w;
+		w = this;
+		return new window.ptr(w.Object.opener);
+	};
+	window.prototype.Opener = function() { return this.$val.Opener(); };
+	window.ptr.prototype.OuterHeight = function() {
+		var $ptr, w;
+		w = this;
+		return $parseInt(w.Object.outerHeight) >> 0;
+	};
+	window.prototype.OuterHeight = function() { return this.$val.OuterHeight(); };
+	window.ptr.prototype.OuterWidth = function() {
+		var $ptr, w;
+		w = this;
+		return $parseInt(w.Object.outerWidth) >> 0;
+	};
+	window.prototype.OuterWidth = function() { return this.$val.OuterWidth(); };
+	window.ptr.prototype.ScrollX = function() {
+		var $ptr, w;
+		w = this;
+		return $parseInt(w.Object.scrollX) >> 0;
+	};
+	window.prototype.ScrollX = function() { return this.$val.ScrollX(); };
+	window.ptr.prototype.ScrollY = function() {
+		var $ptr, w;
+		w = this;
+		return $parseInt(w.Object.scrollY) >> 0;
+	};
+	window.prototype.ScrollY = function() { return this.$val.ScrollY(); };
+	window.ptr.prototype.Parent = function() {
+		var $ptr, w;
+		w = this;
+		return new window.ptr(w.Object.parent);
+	};
+	window.prototype.Parent = function() { return this.$val.Parent(); };
+	window.ptr.prototype.ScreenX = function() {
+		var $ptr, w;
+		w = this;
+		return $parseInt(w.Object.screenX) >> 0;
+	};
+	window.prototype.ScreenX = function() { return this.$val.ScreenX(); };
+	window.ptr.prototype.ScreenY = function() {
+		var $ptr, w;
+		w = this;
+		return $parseInt(w.Object.screenY) >> 0;
+	};
+	window.prototype.ScreenY = function() { return this.$val.ScreenY(); };
+	window.ptr.prototype.ScrollMaxX = function() {
+		var $ptr, w;
+		w = this;
+		return $parseInt(w.Object.scrollMaxX) >> 0;
+	};
+	window.prototype.ScrollMaxX = function() { return this.$val.ScrollMaxX(); };
+	window.ptr.prototype.ScrollMaxY = function() {
+		var $ptr, w;
+		w = this;
+		return $parseInt(w.Object.scrollMaxY) >> 0;
+	};
+	window.prototype.ScrollMaxY = function() { return this.$val.ScrollMaxY(); };
+	window.ptr.prototype.Top = function() {
+		var $ptr, w;
+		w = this;
+		return new window.ptr(w.Object.top);
+	};
+	window.prototype.Top = function() { return this.$val.Top(); };
+	window.ptr.prototype.History = function() {
+		var $ptr, w;
+		w = this;
+		return $ifaceNil;
+	};
+	window.prototype.History = function() { return this.$val.History(); };
+	window.ptr.prototype.Navigator = function() {
+		var $ptr, w;
+		w = this;
+		return $ifaceNil;
+	};
+	window.prototype.Navigator = function() { return this.$val.Navigator(); };
+	window.ptr.prototype.Screen = function() {
+		var $ptr, w;
+		w = this;
+		return new Screen.ptr(w.Object.screen, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	};
+	window.prototype.Screen = function() { return this.$val.Screen(); };
+	window.ptr.prototype.Alert = function(msg) {
+		var $ptr, msg, w;
+		w = this;
+		w.Object.alert($externalize(msg, $String));
+	};
+	window.prototype.Alert = function(msg) { return this.$val.Alert(msg); };
+	window.ptr.prototype.Back = function() {
+		var $ptr, w;
+		w = this;
+		w.Object.back();
+	};
+	window.prototype.Back = function() { return this.$val.Back(); };
+	window.ptr.prototype.Blur = function() {
+		var $ptr, w;
+		w = this;
+		w.Object.blur();
+	};
+	window.prototype.Blur = function() { return this.$val.Blur(); };
+	window.ptr.prototype.ClearInterval = function(id) {
+		var $ptr, id, w;
+		w = this;
+		w.Object.clearInterval(id);
+	};
+	window.prototype.ClearInterval = function(id) { return this.$val.ClearInterval(id); };
+	window.ptr.prototype.ClearTimeout = function(id) {
+		var $ptr, id, w;
+		w = this;
+		w.Object.clearTimeout(id);
+	};
+	window.prototype.ClearTimeout = function(id) { return this.$val.ClearTimeout(id); };
+	window.ptr.prototype.Close = function() {
+		var $ptr, w;
+		w = this;
+		w.Object.close();
+	};
+	window.prototype.Close = function() { return this.$val.Close(); };
+	window.ptr.prototype.Confirm = function(prompt) {
+		var $ptr, prompt, w;
+		w = this;
+		return !!(w.Object.confirm($externalize(prompt, $String)));
+	};
+	window.prototype.Confirm = function(prompt) { return this.$val.Confirm(prompt); };
+	window.ptr.prototype.Focus = function() {
+		var $ptr, w;
+		w = this;
+		w.Object.focus();
+	};
+	window.prototype.Focus = function() { return this.$val.Focus(); };
+	window.ptr.prototype.Forward = function() {
+		var $ptr, w;
+		w = this;
+		w.Object.forward();
+	};
+	window.prototype.Forward = function() { return this.$val.Forward(); };
+	window.ptr.prototype.GetComputedStyle = function(el, pseudoElt) {
+		var $ptr, _r, el, optArg, pseudoElt, w, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; el = $f.el; optArg = $f.optArg; pseudoElt = $f.pseudoElt; w = $f.w; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		w = this;
+		optArg = $ifaceNil;
+		if (!(pseudoElt === "")) {
+			optArg = new $String(pseudoElt);
+		}
+		_r = el.Underlying(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		return new CSSStyleDeclaration.ptr(w.Object.getComputedStyle(_r, $externalize(optArg, $emptyInterface)));
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: window.ptr.prototype.GetComputedStyle }; } $f.$ptr = $ptr; $f._r = _r; $f.el = el; $f.optArg = optArg; $f.pseudoElt = pseudoElt; $f.w = w; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	window.prototype.GetComputedStyle = function(el, pseudoElt) { return this.$val.GetComputedStyle(el, pseudoElt); };
+	window.ptr.prototype.GetSelection = function() {
+		var $ptr, w;
+		w = this;
+		return $ifaceNil;
+	};
+	window.prototype.GetSelection = function() { return this.$val.GetSelection(); };
+	window.ptr.prototype.Home = function() {
+		var $ptr, w;
+		w = this;
+		w.Object.home();
+	};
+	window.prototype.Home = function() { return this.$val.Home(); };
+	window.ptr.prototype.MoveBy = function(dx, dy) {
+		var $ptr, dx, dy, w;
+		w = this;
+		w.Object.moveBy(dx, dy);
+	};
+	window.prototype.MoveBy = function(dx, dy) { return this.$val.MoveBy(dx, dy); };
+	window.ptr.prototype.MoveTo = function(x, y) {
+		var $ptr, w, x, y;
+		w = this;
+		w.Object.moveTo(x, y);
+	};
+	window.prototype.MoveTo = function(x, y) { return this.$val.MoveTo(x, y); };
+	window.ptr.prototype.Open = function(url, name, features) {
+		var $ptr, features, name, url, w;
+		w = this;
+		return new window.ptr(w.Object.open($externalize(url, $String), $externalize(name, $String), $externalize(features, $String)));
+	};
+	window.prototype.Open = function(url, name, features) { return this.$val.Open(url, name, features); };
+	window.ptr.prototype.OpenDialog = function(url, name, features, args) {
+		var $ptr, args, features, name, url, w;
+		w = this;
+		return new window.ptr(w.Object.openDialog($externalize(url, $String), $externalize(name, $String), $externalize(features, $String), $externalize(args, sliceType)));
+	};
+	window.prototype.OpenDialog = function(url, name, features, args) { return this.$val.OpenDialog(url, name, features, args); };
+	window.ptr.prototype.PostMessage = function(message, target, transfer) {
+		var $ptr, message, target, transfer, w;
+		w = this;
+		w.Object.postMessage($externalize(message, $String), $externalize(target, $String), $externalize(transfer, sliceType));
+	};
+	window.prototype.PostMessage = function(message, target, transfer) { return this.$val.PostMessage(message, target, transfer); };
+	window.ptr.prototype.Print = function() {
+		var $ptr, w;
+		w = this;
+		w.Object.print();
+	};
+	window.prototype.Print = function() { return this.$val.Print(); };
+	window.ptr.prototype.Prompt = function(prompt, initial) {
+		var $ptr, initial, prompt, w;
+		w = this;
+		return $internalize(w.Object.prompt($externalize(prompt, $String), $externalize(initial, $String)), $String);
+	};
+	window.prototype.Prompt = function(prompt, initial) { return this.$val.Prompt(prompt, initial); };
+	window.ptr.prototype.ResizeBy = function(dw, dh) {
+		var $ptr, dh, dw, w;
+		w = this;
+		w.Object.resizeBy(dw, dh);
+	};
+	window.prototype.ResizeBy = function(dw, dh) { return this.$val.ResizeBy(dw, dh); };
+	window.ptr.prototype.ResizeTo = function(width, height) {
+		var $ptr, height, w, width;
+		w = this;
+		w.Object.resizeTo(width, height);
+	};
+	window.prototype.ResizeTo = function(width, height) { return this.$val.ResizeTo(width, height); };
+	window.ptr.prototype.Scroll = function(x, y) {
+		var $ptr, w, x, y;
+		w = this;
+		w.Object.scroll(x, y);
+	};
+	window.prototype.Scroll = function(x, y) { return this.$val.Scroll(x, y); };
+	window.ptr.prototype.ScrollBy = function(dx, dy) {
+		var $ptr, dx, dy, w;
+		w = this;
+		w.Object.scrollBy(dx, dy);
+	};
+	window.prototype.ScrollBy = function(dx, dy) { return this.$val.ScrollBy(dx, dy); };
+	window.ptr.prototype.ScrollByLines = function(i) {
+		var $ptr, i, w;
+		w = this;
+		w.Object.scrollByLines(i);
+	};
+	window.prototype.ScrollByLines = function(i) { return this.$val.ScrollByLines(i); };
+	window.ptr.prototype.ScrollTo = function(x, y) {
+		var $ptr, w, x, y;
+		w = this;
+		w.Object.scrollTo(x, y);
+	};
+	window.prototype.ScrollTo = function(x, y) { return this.$val.ScrollTo(x, y); };
+	window.ptr.prototype.SetCursor = function(name) {
+		var $ptr, name, w;
+		w = this;
+		w.Object.setCursor($externalize(name, $String));
+	};
+	window.prototype.SetCursor = function(name) { return this.$val.SetCursor(name); };
+	window.ptr.prototype.SetInterval = function(fn, delay) {
+		var $ptr, delay, fn, w;
+		w = this;
+		return $parseInt(w.Object.setInterval($externalize(fn, funcType), delay)) >> 0;
+	};
+	window.prototype.SetInterval = function(fn, delay) { return this.$val.SetInterval(fn, delay); };
+	window.ptr.prototype.SetTimeout = function(fn, delay) {
+		var $ptr, delay, fn, w;
+		w = this;
+		return $parseInt(w.Object.setTimeout($externalize(fn, funcType), delay)) >> 0;
+	};
+	window.prototype.SetTimeout = function(fn, delay) { return this.$val.SetTimeout(fn, delay); };
+	window.ptr.prototype.Stop = function() {
+		var $ptr, w;
+		w = this;
+		w.Object.stop();
+	};
+	window.prototype.Stop = function() { return this.$val.Stop(); };
+	window.ptr.prototype.AddEventListener = function(typ, useCapture, listener) {
+		var $ptr, listener, typ, useCapture, w, wrapper;
+		w = this;
+		wrapper = (function $b(o) {
+			var $ptr, o, $s, $r;
+			/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; o = $f.o; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+			$r = listener(wrapEvent(o)); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+			/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: $b }; } $f.$ptr = $ptr; $f.o = o; $f.$s = $s; $f.$r = $r; return $f;
+		});
+		w.Object.addEventListener($externalize(typ, $String), $externalize(wrapper, funcType$1), $externalize(useCapture, $Bool));
+		return wrapper;
+	};
+	window.prototype.AddEventListener = function(typ, useCapture, listener) { return this.$val.AddEventListener(typ, useCapture, listener); };
+	window.ptr.prototype.RemoveEventListener = function(typ, useCapture, listener) {
+		var $ptr, listener, typ, useCapture, w;
+		w = this;
+		w.Object.removeEventListener($externalize(typ, $String), $externalize(listener, funcType$1), $externalize(useCapture, $Bool));
+	};
+	window.prototype.RemoveEventListener = function(typ, useCapture, listener) { return this.$val.RemoveEventListener(typ, useCapture, listener); };
+	wrapDOMHighResTimeStamp = function(o) {
+		var $ptr, o;
+		return new time.Duration(0, $parseFloat(o) * 1e+06);
+	};
+	window.ptr.prototype.RequestAnimationFrame = function(callback) {
+		var $ptr, callback, w, wrapper;
+		w = this;
+		wrapper = (function $b(o) {
+			var $ptr, o, $s, $r;
+			/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; o = $f.o; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+			$r = callback(wrapDOMHighResTimeStamp(o)); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+			/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: $b }; } $f.$ptr = $ptr; $f.o = o; $f.$s = $s; $f.$r = $r; return $f;
+		});
+		return $parseInt(w.Object.requestAnimationFrame($externalize(wrapper, funcType$1))) >> 0;
+	};
+	window.prototype.RequestAnimationFrame = function(callback) { return this.$val.RequestAnimationFrame(callback); };
+	window.ptr.prototype.CancelAnimationFrame = function(requestID) {
+		var $ptr, requestID, w;
+		w = this;
+		w.Object.cancelAnimationFrame(requestID);
+	};
+	window.prototype.CancelAnimationFrame = function(requestID) { return this.$val.CancelAnimationFrame(requestID); };
+	PositionError.ptr.prototype.Error = function() {
+		var $ptr, err;
+		err = this;
+		return $internalize(err.Object.message(), $String);
+	};
+	PositionError.prototype.Error = function() { return this.$val.Error(); };
+	BasicNode.ptr.prototype.Underlying = function() {
+		var $ptr, n;
+		n = this;
+		return n.Object;
+	};
+	BasicNode.prototype.Underlying = function() { return this.$val.Underlying(); };
+	BasicNode.ptr.prototype.AddEventListener = function(typ, useCapture, listener) {
+		var $ptr, listener, n, typ, useCapture, wrapper;
+		n = this;
+		wrapper = (function $b(o) {
+			var $ptr, o, $s, $r;
+			/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; o = $f.o; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+			$r = listener(wrapEvent(o)); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+			/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: $b }; } $f.$ptr = $ptr; $f.o = o; $f.$s = $s; $f.$r = $r; return $f;
+		});
+		n.Object.addEventListener($externalize(typ, $String), $externalize(wrapper, funcType$1), $externalize(useCapture, $Bool));
+		return wrapper;
+	};
+	BasicNode.prototype.AddEventListener = function(typ, useCapture, listener) { return this.$val.AddEventListener(typ, useCapture, listener); };
+	BasicNode.ptr.prototype.RemoveEventListener = function(typ, useCapture, listener) {
+		var $ptr, listener, n, typ, useCapture;
+		n = this;
+		n.Object.removeEventListener($externalize(typ, $String), $externalize(listener, funcType$1), $externalize(useCapture, $Bool));
+	};
+	BasicNode.prototype.RemoveEventListener = function(typ, useCapture, listener) { return this.$val.RemoveEventListener(typ, useCapture, listener); };
+	BasicNode.ptr.prototype.BaseURI = function() {
+		var $ptr, n;
+		n = this;
+		return $internalize(n.Object.baseURI, $String);
+	};
+	BasicNode.prototype.BaseURI = function() { return this.$val.BaseURI(); };
+	BasicNode.ptr.prototype.ChildNodes = function() {
+		var $ptr, n;
+		n = this;
+		return nodeListToNodes(n.Object.childNodes);
+	};
+	BasicNode.prototype.ChildNodes = function() { return this.$val.ChildNodes(); };
+	BasicNode.ptr.prototype.FirstChild = function() {
+		var $ptr, n;
+		n = this;
+		return wrapNode(n.Object.firstChild);
+	};
+	BasicNode.prototype.FirstChild = function() { return this.$val.FirstChild(); };
+	BasicNode.ptr.prototype.LastChild = function() {
+		var $ptr, n;
+		n = this;
+		return wrapNode(n.Object.lastChild);
+	};
+	BasicNode.prototype.LastChild = function() { return this.$val.LastChild(); };
+	BasicNode.ptr.prototype.NextSibling = function() {
+		var $ptr, n;
+		n = this;
+		return wrapNode(n.Object.nextSibling);
+	};
+	BasicNode.prototype.NextSibling = function() { return this.$val.NextSibling(); };
+	BasicNode.ptr.prototype.NodeName = function() {
+		var $ptr, n;
+		n = this;
+		return $internalize(n.Object.nodeName, $String);
+	};
+	BasicNode.prototype.NodeName = function() { return this.$val.NodeName(); };
+	BasicNode.ptr.prototype.NodeType = function() {
+		var $ptr, n;
+		n = this;
+		return $parseInt(n.Object.nodeType) >> 0;
+	};
+	BasicNode.prototype.NodeType = function() { return this.$val.NodeType(); };
+	BasicNode.ptr.prototype.NodeValue = function() {
+		var $ptr, n;
+		n = this;
+		return $internalize(n.Object.nodeValue, $String);
+	};
+	BasicNode.prototype.NodeValue = function() { return this.$val.NodeValue(); };
+	BasicNode.ptr.prototype.SetNodeValue = function(s) {
+		var $ptr, n, s;
+		n = this;
+		n.Object.nodeValue = $externalize(s, $String);
+	};
+	BasicNode.prototype.SetNodeValue = function(s) { return this.$val.SetNodeValue(s); };
+	BasicNode.ptr.prototype.OwnerDocument = function() {
+		var $ptr, n;
+		n = this;
+		return $ifaceNil;
+	};
+	BasicNode.prototype.OwnerDocument = function() { return this.$val.OwnerDocument(); };
+	BasicNode.ptr.prototype.ParentNode = function() {
+		var $ptr, n;
+		n = this;
+		return wrapNode(n.Object.parentNode);
+	};
+	BasicNode.prototype.ParentNode = function() { return this.$val.ParentNode(); };
+	BasicNode.ptr.prototype.ParentElement = function() {
+		var $ptr, n;
+		n = this;
+		return wrapElement(n.Object.parentElement);
+	};
+	BasicNode.prototype.ParentElement = function() { return this.$val.ParentElement(); };
+	BasicNode.ptr.prototype.PreviousSibling = function() {
+		var $ptr, n;
+		n = this;
+		return wrapNode(n.Object.previousSibling);
+	};
+	BasicNode.prototype.PreviousSibling = function() { return this.$val.PreviousSibling(); };
+	BasicNode.ptr.prototype.TextContent = function() {
+		var $ptr, n;
+		n = this;
+		return $internalize(n.Object.textContent, $String);
+	};
+	BasicNode.prototype.TextContent = function() { return this.$val.TextContent(); };
+	BasicNode.ptr.prototype.SetTextContent = function(s) {
+		var $ptr, n, s;
+		n = this;
+		n.Object.textContent = $externalize(s, $String);
+	};
+	BasicNode.prototype.SetTextContent = function(s) { return this.$val.SetTextContent(s); };
+	BasicNode.ptr.prototype.AppendChild = function(newchild) {
+		var $ptr, _r, n, newchild, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; n = $f.n; newchild = $f.newchild; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		n = this;
+		_r = newchild.Underlying(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		n.Object.appendChild(_r);
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: BasicNode.ptr.prototype.AppendChild }; } $f.$ptr = $ptr; $f._r = _r; $f.n = n; $f.newchild = newchild; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	BasicNode.prototype.AppendChild = function(newchild) { return this.$val.AppendChild(newchild); };
+	BasicNode.ptr.prototype.CloneNode = function(deep) {
+		var $ptr, deep, n;
+		n = this;
+		return wrapNode(n.Object.cloneNode($externalize(deep, $Bool)));
+	};
+	BasicNode.prototype.CloneNode = function(deep) { return this.$val.CloneNode(deep); };
+	BasicNode.ptr.prototype.CompareDocumentPosition = function(other) {
+		var $ptr, _r, n, other, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; n = $f.n; other = $f.other; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		n = this;
+		_r = other.Underlying(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		return $parseInt(n.Object.compareDocumentPosition(_r)) >> 0;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: BasicNode.ptr.prototype.CompareDocumentPosition }; } $f.$ptr = $ptr; $f._r = _r; $f.n = n; $f.other = other; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	BasicNode.prototype.CompareDocumentPosition = function(other) { return this.$val.CompareDocumentPosition(other); };
+	BasicNode.ptr.prototype.Contains = function(other) {
+		var $ptr, _r, n, other, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; n = $f.n; other = $f.other; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		n = this;
+		_r = other.Underlying(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		return !!(n.Object.contains(_r));
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: BasicNode.ptr.prototype.Contains }; } $f.$ptr = $ptr; $f._r = _r; $f.n = n; $f.other = other; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	BasicNode.prototype.Contains = function(other) { return this.$val.Contains(other); };
+	BasicNode.ptr.prototype.HasChildNodes = function() {
+		var $ptr, n;
+		n = this;
+		return !!(n.Object.hasChildNodes());
+	};
+	BasicNode.prototype.HasChildNodes = function() { return this.$val.HasChildNodes(); };
+	BasicNode.ptr.prototype.InsertBefore = function(which, before) {
+		var $ptr, _r, _r$1, before, n, o, which, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; before = $f.before; n = $f.n; o = $f.o; which = $f.which; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		n = this;
+		o = $ifaceNil;
+		/* */ if (!($interfaceIsEqual(before, $ifaceNil))) { $s = 1; continue; }
+		/* */ $s = 2; continue;
+		/* if (!($interfaceIsEqual(before, $ifaceNil))) { */ case 1:
+			_r = before.Underlying(); /* */ $s = 3; case 3: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+			o = new $jsObjectPtr(_r);
+		/* } */ case 2:
+		_r$1 = which.Underlying(); /* */ $s = 4; case 4: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		n.Object.insertBefore(_r$1, $externalize(o, $emptyInterface));
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: BasicNode.ptr.prototype.InsertBefore }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f.before = before; $f.n = n; $f.o = o; $f.which = which; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	BasicNode.prototype.InsertBefore = function(which, before) { return this.$val.InsertBefore(which, before); };
+	BasicNode.ptr.prototype.IsDefaultNamespace = function(s) {
+		var $ptr, n, s;
+		n = this;
+		return !!(n.Object.isDefaultNamespace($externalize(s, $String)));
+	};
+	BasicNode.prototype.IsDefaultNamespace = function(s) { return this.$val.IsDefaultNamespace(s); };
+	BasicNode.ptr.prototype.IsEqualNode = function(other) {
+		var $ptr, _r, n, other, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; n = $f.n; other = $f.other; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		n = this;
+		_r = other.Underlying(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		return !!(n.Object.isEqualNode(_r));
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: BasicNode.ptr.prototype.IsEqualNode }; } $f.$ptr = $ptr; $f._r = _r; $f.n = n; $f.other = other; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	BasicNode.prototype.IsEqualNode = function(other) { return this.$val.IsEqualNode(other); };
+	BasicNode.ptr.prototype.LookupPrefix = function() {
+		var $ptr, n;
+		n = this;
+		return $internalize(n.Object.lookupPrefix(), $String);
+	};
+	BasicNode.prototype.LookupPrefix = function() { return this.$val.LookupPrefix(); };
+	BasicNode.ptr.prototype.LookupNamespaceURI = function(s) {
+		var $ptr, n, s;
+		n = this;
+		return $internalize(n.Object.lookupNamespaceURI($externalize(s, $String)), $String);
+	};
+	BasicNode.prototype.LookupNamespaceURI = function(s) { return this.$val.LookupNamespaceURI(s); };
+	BasicNode.ptr.prototype.Normalize = function() {
+		var $ptr, n;
+		n = this;
+		n.Object.normalize();
+	};
+	BasicNode.prototype.Normalize = function() { return this.$val.Normalize(); };
+	BasicNode.ptr.prototype.RemoveChild = function(other) {
+		var $ptr, _r, n, other, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; n = $f.n; other = $f.other; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		n = this;
+		_r = other.Underlying(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		n.Object.removeChild(_r);
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: BasicNode.ptr.prototype.RemoveChild }; } $f.$ptr = $ptr; $f._r = _r; $f.n = n; $f.other = other; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	BasicNode.prototype.RemoveChild = function(other) { return this.$val.RemoveChild(other); };
+	BasicNode.ptr.prototype.ReplaceChild = function(newChild, oldChild) {
+		var $ptr, _r, _r$1, n, newChild, oldChild, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; n = $f.n; newChild = $f.newChild; oldChild = $f.oldChild; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		n = this;
+		_r = newChild.Underlying(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		_r$1 = oldChild.Underlying(); /* */ $s = 2; case 2: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		n.Object.replaceChild(_r, _r$1);
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: BasicNode.ptr.prototype.ReplaceChild }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f.n = n; $f.newChild = newChild; $f.oldChild = oldChild; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	BasicNode.prototype.ReplaceChild = function(newChild, oldChild) { return this.$val.ReplaceChild(newChild, oldChild); };
+	BasicHTMLElement.ptr.prototype.AccessKey = function() {
+		var $ptr, e;
+		e = this;
+		return $internalize(e.BasicElement.BasicNode.Object.accessKey, $String);
+	};
+	BasicHTMLElement.prototype.AccessKey = function() { return this.$val.AccessKey(); };
+	BasicHTMLElement.ptr.prototype.SetAccessKey = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicElement.BasicNode.Object.accessKey = $externalize(s, $String);
+	};
+	BasicHTMLElement.prototype.SetAccessKey = function(s) { return this.$val.SetAccessKey(s); };
+	BasicHTMLElement.ptr.prototype.AccessKeyLabel = function() {
+		var $ptr, e;
+		e = this;
+		return $internalize(e.BasicElement.BasicNode.Object.accessKeyLabel, $String);
+	};
+	BasicHTMLElement.prototype.AccessKeyLabel = function() { return this.$val.AccessKeyLabel(); };
+	BasicHTMLElement.ptr.prototype.SetAccessKeyLabel = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicElement.BasicNode.Object.accessKeyLabel = $externalize(s, $String);
+	};
+	BasicHTMLElement.prototype.SetAccessKeyLabel = function(s) { return this.$val.SetAccessKeyLabel(s); };
+	BasicHTMLElement.ptr.prototype.ContentEditable = function() {
+		var $ptr, e;
+		e = this;
+		return $internalize(e.BasicElement.BasicNode.Object.contentEditable, $String);
+	};
+	BasicHTMLElement.prototype.ContentEditable = function() { return this.$val.ContentEditable(); };
+	BasicHTMLElement.ptr.prototype.SetContentEditable = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicElement.BasicNode.Object.contentEditable = $externalize(s, $String);
+	};
+	BasicHTMLElement.prototype.SetContentEditable = function(s) { return this.$val.SetContentEditable(s); };
+	BasicHTMLElement.ptr.prototype.IsContentEditable = function() {
+		var $ptr, e;
+		e = this;
+		return !!(e.BasicElement.BasicNode.Object.isContentEditable);
+	};
+	BasicHTMLElement.prototype.IsContentEditable = function() { return this.$val.IsContentEditable(); };
+	BasicHTMLElement.ptr.prototype.Dataset = function() {
+		var $ptr, e;
+		e = this;
+	};
+	BasicHTMLElement.prototype.Dataset = function() { return this.$val.Dataset(); };
+	BasicHTMLElement.ptr.prototype.Dir = function() {
+		var $ptr, e;
+		e = this;
+		return $internalize(e.BasicElement.BasicNode.Object.dir, $String);
+	};
+	BasicHTMLElement.prototype.Dir = function() { return this.$val.Dir(); };
+	BasicHTMLElement.ptr.prototype.SetDir = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicElement.BasicNode.Object.dir = $externalize(s, $String);
+	};
+	BasicHTMLElement.prototype.SetDir = function(s) { return this.$val.SetDir(s); };
+	BasicHTMLElement.ptr.prototype.Draggable = function() {
+		var $ptr, e;
+		e = this;
+		return !!(e.BasicElement.BasicNode.Object.draggable);
+	};
+	BasicHTMLElement.prototype.Draggable = function() { return this.$val.Draggable(); };
+	BasicHTMLElement.ptr.prototype.SetDraggable = function(b) {
+		var $ptr, b, e;
+		e = this;
+		e.BasicElement.BasicNode.Object.draggable = $externalize(b, $Bool);
+	};
+	BasicHTMLElement.prototype.SetDraggable = function(b) { return this.$val.SetDraggable(b); };
+	BasicHTMLElement.ptr.prototype.Lang = function() {
+		var $ptr, e;
+		e = this;
+		return $internalize(e.BasicElement.BasicNode.Object.lang, $String);
+	};
+	BasicHTMLElement.prototype.Lang = function() { return this.$val.Lang(); };
+	BasicHTMLElement.ptr.prototype.SetLang = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicElement.BasicNode.Object.lang = $externalize(s, $String);
+	};
+	BasicHTMLElement.prototype.SetLang = function(s) { return this.$val.SetLang(s); };
+	BasicHTMLElement.ptr.prototype.OffsetHeight = function() {
+		var $ptr, e;
+		e = this;
+		return $parseFloat(e.BasicElement.BasicNode.Object.offsetHeight);
+	};
+	BasicHTMLElement.prototype.OffsetHeight = function() { return this.$val.OffsetHeight(); };
+	BasicHTMLElement.ptr.prototype.OffsetLeft = function() {
+		var $ptr, e;
+		e = this;
+		return $parseFloat(e.BasicElement.BasicNode.Object.offsetLeft);
+	};
+	BasicHTMLElement.prototype.OffsetLeft = function() { return this.$val.OffsetLeft(); };
+	BasicHTMLElement.ptr.prototype.OffsetParent = function() {
+		var $ptr, e;
+		e = this;
+		return wrapHTMLElement(e.BasicElement.BasicNode.Object.offsetParent);
+	};
+	BasicHTMLElement.prototype.OffsetParent = function() { return this.$val.OffsetParent(); };
+	BasicHTMLElement.ptr.prototype.OffsetTop = function() {
+		var $ptr, e;
+		e = this;
+		return $parseFloat(e.BasicElement.BasicNode.Object.offsetTop);
+	};
+	BasicHTMLElement.prototype.OffsetTop = function() { return this.$val.OffsetTop(); };
+	BasicHTMLElement.ptr.prototype.OffsetWidth = function() {
+		var $ptr, e;
+		e = this;
+		return $parseFloat(e.BasicElement.BasicNode.Object.offsetWidth);
+	};
+	BasicHTMLElement.prototype.OffsetWidth = function() { return this.$val.OffsetWidth(); };
+	BasicHTMLElement.ptr.prototype.Style = function() {
+		var $ptr, e;
+		e = this;
+		return new CSSStyleDeclaration.ptr(e.BasicElement.BasicNode.Object.style);
+	};
+	BasicHTMLElement.prototype.Style = function() { return this.$val.Style(); };
+	BasicHTMLElement.ptr.prototype.TabIndex = function() {
+		var $ptr, e;
+		e = this;
+		return $parseInt(e.BasicElement.BasicNode.Object.tabIndex) >> 0;
+	};
+	BasicHTMLElement.prototype.TabIndex = function() { return this.$val.TabIndex(); };
+	BasicHTMLElement.ptr.prototype.SetTabIndex = function(i) {
+		var $ptr, e, i;
+		e = this;
+		e.BasicElement.BasicNode.Object.tabIndex = i;
+	};
+	BasicHTMLElement.prototype.SetTabIndex = function(i) { return this.$val.SetTabIndex(i); };
+	BasicHTMLElement.ptr.prototype.Title = function() {
+		var $ptr, e;
+		e = this;
+		return $internalize(e.BasicElement.BasicNode.Object.title, $String);
+	};
+	BasicHTMLElement.prototype.Title = function() { return this.$val.Title(); };
+	BasicHTMLElement.ptr.prototype.SetTitle = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicElement.BasicNode.Object.title = $externalize(s, $String);
+	};
+	BasicHTMLElement.prototype.SetTitle = function(s) { return this.$val.SetTitle(s); };
+	BasicHTMLElement.ptr.prototype.Blur = function() {
+		var $ptr, e;
+		e = this;
+		e.BasicElement.BasicNode.Object.blur();
+	};
+	BasicHTMLElement.prototype.Blur = function() { return this.$val.Blur(); };
+	BasicHTMLElement.ptr.prototype.Click = function() {
+		var $ptr, e;
+		e = this;
+		e.BasicElement.BasicNode.Object.click();
+	};
+	BasicHTMLElement.prototype.Click = function() { return this.$val.Click(); };
+	BasicHTMLElement.ptr.prototype.Focus = function() {
+		var $ptr, e;
+		e = this;
+		e.BasicElement.BasicNode.Object.focus();
+	};
+	BasicHTMLElement.prototype.Focus = function() { return this.$val.Focus(); };
+	BasicElement.ptr.prototype.GetBoundingClientRect = function() {
+		var $ptr, e, obj;
+		e = this;
+		obj = e.BasicNode.Object.getBoundingClientRect();
+		return new ClientRect.ptr(obj, 0, 0, 0, 0, 0, 0);
+	};
+	BasicElement.prototype.GetBoundingClientRect = function() { return this.$val.GetBoundingClientRect(); };
+	BasicElement.ptr.prototype.PreviousElementSibling = function() {
+		var $ptr, e;
+		e = this;
+		return wrapElement(e.BasicNode.Object.previousElementSibling);
+	};
+	BasicElement.prototype.PreviousElementSibling = function() { return this.$val.PreviousElementSibling(); };
+	BasicElement.ptr.prototype.NextElementSibling = function() {
+		var $ptr, e;
+		e = this;
+		return wrapElement(e.BasicNode.Object.nextElementSibling);
+	};
+	BasicElement.prototype.NextElementSibling = function() { return this.$val.NextElementSibling(); };
+	BasicElement.ptr.prototype.Class = function() {
+		var $ptr, e;
+		e = this;
+		return new TokenList.ptr(e.BasicNode.Object.classList, e.BasicNode.Object, "className", 0);
+	};
+	BasicElement.prototype.Class = function() { return this.$val.Class(); };
+	BasicElement.ptr.prototype.SetClass = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicNode.Object.className = $externalize(s, $String);
+	};
+	BasicElement.prototype.SetClass = function(s) { return this.$val.SetClass(s); };
+	BasicElement.ptr.prototype.ID = function() {
+		var $ptr, e;
+		e = this;
+		return $internalize(e.BasicNode.Object.id, $String);
+	};
+	BasicElement.prototype.ID = function() { return this.$val.ID(); };
+	BasicElement.ptr.prototype.SetID = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicNode.Object.id = $externalize(s, $String);
+	};
+	BasicElement.prototype.SetID = function(s) { return this.$val.SetID(s); };
+	BasicElement.ptr.prototype.TagName = function() {
+		var $ptr, e;
+		e = this;
+		return $internalize(e.BasicNode.Object.tagName, $String);
+	};
+	BasicElement.prototype.TagName = function() { return this.$val.TagName(); };
+	BasicElement.ptr.prototype.GetAttribute = function(name) {
+		var $ptr, e, name;
+		e = this;
+		return $internalize(e.BasicNode.Object.getAttribute($externalize(name, $String)), $String);
+	};
+	BasicElement.prototype.GetAttribute = function(name) { return this.$val.GetAttribute(name); };
+	BasicElement.ptr.prototype.GetAttributeNS = function(ns, name) {
+		var $ptr, e, name, ns;
+		e = this;
+		return $internalize(e.BasicNode.Object.getAttributeNS($externalize(ns, $String), $externalize(name, $String)), $String);
+	};
+	BasicElement.prototype.GetAttributeNS = function(ns, name) { return this.$val.GetAttributeNS(ns, name); };
+	BasicElement.ptr.prototype.GetElementsByClassName = function(s) {
+		var $ptr, e, s;
+		e = this;
+		return nodeListToElements(e.BasicNode.Object.getElementsByClassName($externalize(s, $String)));
+	};
+	BasicElement.prototype.GetElementsByClassName = function(s) { return this.$val.GetElementsByClassName(s); };
+	BasicElement.ptr.prototype.GetElementsByTagName = function(s) {
+		var $ptr, e, s;
+		e = this;
+		return nodeListToElements(e.BasicNode.Object.getElementsByTagName($externalize(s, $String)));
+	};
+	BasicElement.prototype.GetElementsByTagName = function(s) { return this.$val.GetElementsByTagName(s); };
+	BasicElement.ptr.prototype.GetElementsByTagNameNS = function(ns, name) {
+		var $ptr, e, name, ns;
+		e = this;
+		return nodeListToElements(e.BasicNode.Object.getElementsByTagNameNS($externalize(ns, $String), $externalize(name, $String)));
+	};
+	BasicElement.prototype.GetElementsByTagNameNS = function(ns, name) { return this.$val.GetElementsByTagNameNS(ns, name); };
+	BasicElement.ptr.prototype.HasAttribute = function(s) {
+		var $ptr, e, s;
+		e = this;
+		return !!(e.BasicNode.Object.hasAttribute($externalize(s, $String)));
+	};
+	BasicElement.prototype.HasAttribute = function(s) { return this.$val.HasAttribute(s); };
+	BasicElement.ptr.prototype.HasAttributeNS = function(ns, name) {
+		var $ptr, e, name, ns;
+		e = this;
+		return !!(e.BasicNode.Object.hasAttributeNS($externalize(ns, $String), $externalize(name, $String)));
+	};
+	BasicElement.prototype.HasAttributeNS = function(ns, name) { return this.$val.HasAttributeNS(ns, name); };
+	BasicElement.ptr.prototype.QuerySelector = function(s) {
+		var $ptr, e, s;
+		e = this;
+		return wrapElement(e.BasicNode.Object.querySelector($externalize(s, $String)));
+	};
+	BasicElement.prototype.QuerySelector = function(s) { return this.$val.QuerySelector(s); };
+	BasicElement.ptr.prototype.QuerySelectorAll = function(s) {
+		var $ptr, e, s;
+		e = this;
+		return nodeListToElements(e.BasicNode.Object.querySelectorAll($externalize(s, $String)));
+	};
+	BasicElement.prototype.QuerySelectorAll = function(s) { return this.$val.QuerySelectorAll(s); };
+	BasicElement.ptr.prototype.RemoveAttribute = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicNode.Object.removeAttribute($externalize(s, $String));
+	};
+	BasicElement.prototype.RemoveAttribute = function(s) { return this.$val.RemoveAttribute(s); };
+	BasicElement.ptr.prototype.RemoveAttributeNS = function(ns, name) {
+		var $ptr, e, name, ns;
+		e = this;
+		e.BasicNode.Object.removeAttributeNS($externalize(ns, $String), $externalize(name, $String));
+	};
+	BasicElement.prototype.RemoveAttributeNS = function(ns, name) { return this.$val.RemoveAttributeNS(ns, name); };
+	BasicElement.ptr.prototype.SetAttribute = function(name, value) {
+		var $ptr, e, name, value;
+		e = this;
+		e.BasicNode.Object.setAttribute($externalize(name, $String), $externalize(value, $String));
+	};
+	BasicElement.prototype.SetAttribute = function(name, value) { return this.$val.SetAttribute(name, value); };
+	BasicElement.ptr.prototype.SetAttributeNS = function(ns, name, value) {
+		var $ptr, e, name, ns, value;
+		e = this;
+		e.BasicNode.Object.setAttributeNS($externalize(ns, $String), $externalize(name, $String), $externalize(value, $String));
+	};
+	BasicElement.prototype.SetAttributeNS = function(ns, name, value) { return this.$val.SetAttributeNS(ns, name, value); };
+	BasicElement.ptr.prototype.InnerHTML = function() {
+		var $ptr, e;
+		e = this;
+		return $internalize(e.BasicNode.Object.innerHTML, $String);
+	};
+	BasicElement.prototype.InnerHTML = function() { return this.$val.InnerHTML(); };
+	BasicElement.ptr.prototype.SetInnerHTML = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicNode.Object.innerHTML = $externalize(s, $String);
+	};
+	BasicElement.prototype.SetInnerHTML = function(s) { return this.$val.SetInnerHTML(s); };
+	HTMLAnchorElement.ptr.prototype.Rel = function() {
+		var $ptr, e;
+		e = this;
+		return new TokenList.ptr(e.URLUtils.Object.relList, e.URLUtils.Object, "rel", 0);
+	};
+	HTMLAnchorElement.prototype.Rel = function() { return this.$val.Rel(); };
+	HTMLAppletElement.ptr.prototype.Rel = function() {
+		var $ptr, e;
+		e = this;
+		return new TokenList.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.relList, e.BasicHTMLElement.BasicElement.BasicNode.Object, "rel", 0);
+	};
+	HTMLAppletElement.prototype.Rel = function() { return this.$val.Rel(); };
+	HTMLAreaElement.ptr.prototype.Rel = function() {
+		var $ptr, e;
+		e = this;
+		return new TokenList.ptr(e.URLUtils.Object.relList, e.URLUtils.Object, "rel", 0);
+	};
+	HTMLAreaElement.prototype.Rel = function() { return this.$val.Rel(); };
+	HTMLButtonElement.ptr.prototype.Form = function() {
+		var $ptr, e;
+		e = this;
+		return getForm(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLButtonElement.prototype.Form = function() { return this.$val.Form(); };
+	HTMLButtonElement.ptr.prototype.Labels = function() {
+		var $ptr, e;
+		e = this;
+		return getLabels(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLButtonElement.prototype.Labels = function() { return this.$val.Labels(); };
+	HTMLButtonElement.ptr.prototype.Validity = function() {
+		var $ptr, e;
+		e = this;
+		return new ValidityState.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.validity, false, false, false, false, false, false, false, false, false);
+	};
+	HTMLButtonElement.prototype.Validity = function() { return this.$val.Validity(); };
+	HTMLButtonElement.ptr.prototype.CheckValidity = function() {
+		var $ptr, e;
+		e = this;
+		return !!(e.BasicHTMLElement.BasicElement.BasicNode.Object.checkValidity());
+	};
+	HTMLButtonElement.prototype.CheckValidity = function() { return this.$val.CheckValidity(); };
+	HTMLButtonElement.ptr.prototype.SetCustomValidity = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.setCustomValidity($externalize(s, $String));
+	};
+	HTMLButtonElement.prototype.SetCustomValidity = function(s) { return this.$val.SetCustomValidity(s); };
+	HTMLCanvasElement.ptr.prototype.GetContext2d = function() {
+		var $ptr, ctx, e;
+		e = this;
+		ctx = e.GetContext("2d");
+		return new CanvasRenderingContext2D.ptr(ctx, "", "", "", 0, 0, 0, "", "", 0, 0, "", "", "", 0, "");
+	};
+	HTMLCanvasElement.prototype.GetContext2d = function() { return this.$val.GetContext2d(); };
+	HTMLCanvasElement.ptr.prototype.GetContext = function(param) {
+		var $ptr, e, param;
+		e = this;
+		return e.BasicHTMLElement.BasicElement.BasicNode.Object.getContext($externalize(param, $String));
+	};
+	HTMLCanvasElement.prototype.GetContext = function(param) { return this.$val.GetContext(param); };
+	CanvasRenderingContext2D.ptr.prototype.CreateLinearGradient = function(x0, y0, x1, y1) {
+		var $ptr, ctx, x0, x1, y0, y1;
+		ctx = this;
+		ctx.Object.createLinearGradient(x0, y0, x1, y1);
+	};
+	CanvasRenderingContext2D.prototype.CreateLinearGradient = function(x0, y0, x1, y1) { return this.$val.CreateLinearGradient(x0, y0, x1, y1); };
+	CanvasRenderingContext2D.ptr.prototype.Rect = function(x, y, width, height) {
+		var $ptr, ctx, height, width, x, y;
+		ctx = this;
+		ctx.Object.rect(x, y, width, height);
+	};
+	CanvasRenderingContext2D.prototype.Rect = function(x, y, width, height) { return this.$val.Rect(x, y, width, height); };
+	CanvasRenderingContext2D.ptr.prototype.FillRect = function(x, y, width, height) {
+		var $ptr, ctx, height, width, x, y;
+		ctx = this;
+		ctx.Object.fillRect(x, y, width, height);
+	};
+	CanvasRenderingContext2D.prototype.FillRect = function(x, y, width, height) { return this.$val.FillRect(x, y, width, height); };
+	CanvasRenderingContext2D.ptr.prototype.StrokeRect = function(x, y, width, height) {
+		var $ptr, ctx, height, width, x, y;
+		ctx = this;
+		ctx.Object.strokeRect(x, y, width, height);
+	};
+	CanvasRenderingContext2D.prototype.StrokeRect = function(x, y, width, height) { return this.$val.StrokeRect(x, y, width, height); };
+	CanvasRenderingContext2D.ptr.prototype.ClearRect = function(x, y, width, height) {
+		var $ptr, ctx, height, width, x, y;
+		ctx = this;
+		ctx.Object.clearRect(x, y, width, height);
+	};
+	CanvasRenderingContext2D.prototype.ClearRect = function(x, y, width, height) { return this.$val.ClearRect(x, y, width, height); };
+	CanvasRenderingContext2D.ptr.prototype.Fill = function() {
+		var $ptr, ctx;
+		ctx = this;
+		ctx.Object.fill();
+	};
+	CanvasRenderingContext2D.prototype.Fill = function() { return this.$val.Fill(); };
+	CanvasRenderingContext2D.ptr.prototype.Stroke = function() {
+		var $ptr, ctx;
+		ctx = this;
+		ctx.Object.stroke();
+	};
+	CanvasRenderingContext2D.prototype.Stroke = function() { return this.$val.Stroke(); };
+	CanvasRenderingContext2D.ptr.prototype.BeginPath = function() {
+		var $ptr, ctx;
+		ctx = this;
+		ctx.Object.beginPath();
+	};
+	CanvasRenderingContext2D.prototype.BeginPath = function() { return this.$val.BeginPath(); };
+	CanvasRenderingContext2D.ptr.prototype.MoveTo = function(x, y) {
+		var $ptr, ctx, x, y;
+		ctx = this;
+		ctx.Object.moveTo(x, y);
+	};
+	CanvasRenderingContext2D.prototype.MoveTo = function(x, y) { return this.$val.MoveTo(x, y); };
+	CanvasRenderingContext2D.ptr.prototype.ClosePath = function() {
+		var $ptr, ctx;
+		ctx = this;
+		ctx.Object.closePath();
+	};
+	CanvasRenderingContext2D.prototype.ClosePath = function() { return this.$val.ClosePath(); };
+	CanvasRenderingContext2D.ptr.prototype.LineTo = function(x, y) {
+		var $ptr, ctx, x, y;
+		ctx = this;
+		ctx.Object.lineTo(x, y);
+	};
+	CanvasRenderingContext2D.prototype.LineTo = function(x, y) { return this.$val.LineTo(x, y); };
+	CanvasRenderingContext2D.ptr.prototype.Clip = function() {
+		var $ptr, ctx;
+		ctx = this;
+		ctx.Object.clip();
+	};
+	CanvasRenderingContext2D.prototype.Clip = function() { return this.$val.Clip(); };
+	CanvasRenderingContext2D.ptr.prototype.QuadraticCurveTo = function(cpx, cpy, x, y) {
+		var $ptr, cpx, cpy, ctx, x, y;
+		ctx = this;
+		ctx.Object.quadraticCurveTo(cpx, cpy, x, y);
+	};
+	CanvasRenderingContext2D.prototype.QuadraticCurveTo = function(cpx, cpy, x, y) { return this.$val.QuadraticCurveTo(cpx, cpy, x, y); };
+	CanvasRenderingContext2D.ptr.prototype.BezierCurveTo = function(cp1x, cp1y, cp2x, cp2y, x, y) {
+		var $ptr, cp1x, cp1y, cp2x, cp2y, ctx, x, y;
+		ctx = this;
+		ctx.Object.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
+	};
+	CanvasRenderingContext2D.prototype.BezierCurveTo = function(cp1x, cp1y, cp2x, cp2y, x, y) { return this.$val.BezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y); };
+	CanvasRenderingContext2D.ptr.prototype.Arc = function(x, y, r, sAngle, eAngle, counterclockwise) {
+		var $ptr, counterclockwise, ctx, eAngle, r, sAngle, x, y;
+		ctx = this;
+		ctx.Object.arc(x, y, r, sAngle, eAngle, $externalize(counterclockwise, $Bool));
+	};
+	CanvasRenderingContext2D.prototype.Arc = function(x, y, r, sAngle, eAngle, counterclockwise) { return this.$val.Arc(x, y, r, sAngle, eAngle, counterclockwise); };
+	CanvasRenderingContext2D.ptr.prototype.ArcTo = function(x1, y1, x2, y2, r) {
+		var $ptr, ctx, r, x1, x2, y1, y2;
+		ctx = this;
+		ctx.Object.arcTo(x1, y1, x2, y2, r);
+	};
+	CanvasRenderingContext2D.prototype.ArcTo = function(x1, y1, x2, y2, r) { return this.$val.ArcTo(x1, y1, x2, y2, r); };
+	CanvasRenderingContext2D.ptr.prototype.IsPointInPath = function(x, y) {
+		var $ptr, ctx, x, y;
+		ctx = this;
+		return !!(ctx.Object.isPointInPath(x, y));
+	};
+	CanvasRenderingContext2D.prototype.IsPointInPath = function(x, y) { return this.$val.IsPointInPath(x, y); };
+	CanvasRenderingContext2D.ptr.prototype.Scale = function(scaleWidth, scaleHeight) {
+		var $ptr, ctx, scaleHeight, scaleWidth;
+		ctx = this;
+		ctx.Object.scale(scaleWidth, scaleHeight);
+	};
+	CanvasRenderingContext2D.prototype.Scale = function(scaleWidth, scaleHeight) { return this.$val.Scale(scaleWidth, scaleHeight); };
+	CanvasRenderingContext2D.ptr.prototype.Rotate = function(angle) {
+		var $ptr, angle, ctx;
+		ctx = this;
+		ctx.Object.rotate(angle);
+	};
+	CanvasRenderingContext2D.prototype.Rotate = function(angle) { return this.$val.Rotate(angle); };
+	CanvasRenderingContext2D.ptr.prototype.Translate = function(x, y) {
+		var $ptr, ctx, x, y;
+		ctx = this;
+		ctx.Object.translate(x, y);
+	};
+	CanvasRenderingContext2D.prototype.Translate = function(x, y) { return this.$val.Translate(x, y); };
+	CanvasRenderingContext2D.ptr.prototype.Transform = function(a, b, c, d, e, f) {
+		var $ptr, a, b, c, ctx, d, e, f;
+		ctx = this;
+		ctx.Object.transform(a, b, c, d, e, f);
+	};
+	CanvasRenderingContext2D.prototype.Transform = function(a, b, c, d, e, f) { return this.$val.Transform(a, b, c, d, e, f); };
+	CanvasRenderingContext2D.ptr.prototype.SetTransform = function(a, b, c, d, e, f) {
+		var $ptr, a, b, c, ctx, d, e, f;
+		ctx = this;
+		ctx.Object.setTransform(a, b, c, d, e, f);
+	};
+	CanvasRenderingContext2D.prototype.SetTransform = function(a, b, c, d, e, f) { return this.$val.SetTransform(a, b, c, d, e, f); };
+	CanvasRenderingContext2D.ptr.prototype.FillText = function(text, x, y, maxWidth) {
+		var $ptr, ctx, maxWidth, text, x, y;
+		ctx = this;
+		if (maxWidth === -1) {
+			ctx.Object.fillText($externalize(text, $String), x, y);
+			return;
+		}
+		ctx.Object.fillText($externalize(text, $String), x, y, maxWidth);
+	};
+	CanvasRenderingContext2D.prototype.FillText = function(text, x, y, maxWidth) { return this.$val.FillText(text, x, y, maxWidth); };
+	CanvasRenderingContext2D.ptr.prototype.StrokeText = function(text, x, y, maxWidth) {
+		var $ptr, ctx, maxWidth, text, x, y;
+		ctx = this;
+		if (maxWidth === -1) {
+			ctx.Object.strokeText($externalize(text, $String), x, y);
+			return;
+		}
+		ctx.Object.strokeText($externalize(text, $String), x, y, maxWidth);
+	};
+	CanvasRenderingContext2D.prototype.StrokeText = function(text, x, y, maxWidth) { return this.$val.StrokeText(text, x, y, maxWidth); };
+	HTMLDataListElement.ptr.prototype.Options = function() {
+		var $ptr, e;
+		e = this;
+		return getOptions(e.BasicHTMLElement.BasicElement.BasicNode.Object, "options");
+	};
+	HTMLDataListElement.prototype.Options = function() { return this.$val.Options(); };
+	HTMLFieldSetElement.ptr.prototype.Elements = function() {
+		var $ptr, e;
+		e = this;
+		return nodeListToHTMLElements(e.BasicHTMLElement.BasicElement.BasicNode.Object.elements);
+	};
+	HTMLFieldSetElement.prototype.Elements = function() { return this.$val.Elements(); };
+	HTMLFieldSetElement.ptr.prototype.Form = function() {
+		var $ptr, e;
+		e = this;
+		return getForm(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLFieldSetElement.prototype.Form = function() { return this.$val.Form(); };
+	HTMLFieldSetElement.ptr.prototype.Validity = function() {
+		var $ptr, e;
+		e = this;
+		return new ValidityState.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.validity, false, false, false, false, false, false, false, false, false);
+	};
+	HTMLFieldSetElement.prototype.Validity = function() { return this.$val.Validity(); };
+	HTMLFieldSetElement.ptr.prototype.CheckValidity = function() {
+		var $ptr, e;
+		e = this;
+		return !!(e.BasicHTMLElement.BasicElement.BasicNode.Object.checkValidity());
+	};
+	HTMLFieldSetElement.prototype.CheckValidity = function() { return this.$val.CheckValidity(); };
+	HTMLFieldSetElement.ptr.prototype.SetCustomValidity = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.setCustomValidity($externalize(s, $String));
+	};
+	HTMLFieldSetElement.prototype.SetCustomValidity = function(s) { return this.$val.SetCustomValidity(s); };
+	HTMLFormElement.ptr.prototype.Elements = function() {
+		var $ptr, e;
+		e = this;
+		return nodeListToHTMLElements(e.BasicHTMLElement.BasicElement.BasicNode.Object.elements);
+	};
+	HTMLFormElement.prototype.Elements = function() { return this.$val.Elements(); };
+	HTMLFormElement.ptr.prototype.CheckValidity = function() {
+		var $ptr, e;
+		e = this;
+		return !!(e.BasicHTMLElement.BasicElement.BasicNode.Object.checkValidity());
+	};
+	HTMLFormElement.prototype.CheckValidity = function() { return this.$val.CheckValidity(); };
+	HTMLFormElement.ptr.prototype.Submit = function() {
+		var $ptr, e;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.submit();
+	};
+	HTMLFormElement.prototype.Submit = function() { return this.$val.Submit(); };
+	HTMLFormElement.ptr.prototype.Reset = function() {
+		var $ptr, e;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.reset();
+	};
+	HTMLFormElement.prototype.Reset = function() { return this.$val.Reset(); };
+	HTMLFormElement.ptr.prototype.Item = function(index) {
+		var $ptr, e, index;
+		e = this;
+		return wrapHTMLElement(e.BasicHTMLElement.BasicElement.BasicNode.Object.item(index));
+	};
+	HTMLFormElement.prototype.Item = function(index) { return this.$val.Item(index); };
+	HTMLFormElement.ptr.prototype.NamedItem = function(name) {
+		var $ptr, e, name;
+		e = this;
+		return wrapHTMLElement(e.BasicHTMLElement.BasicElement.BasicNode.Object.namedItem($externalize(name, $String)));
+	};
+	HTMLFormElement.prototype.NamedItem = function(name) { return this.$val.NamedItem(name); };
+	HTMLIFrameElement.ptr.prototype.ContentDocument = function() {
+		var $ptr, e;
+		e = this;
+		return wrapDocument(e.BasicHTMLElement.BasicElement.BasicNode.Object.contentDocument);
+	};
+	HTMLIFrameElement.prototype.ContentDocument = function() { return this.$val.ContentDocument(); };
+	HTMLIFrameElement.ptr.prototype.ContentWindow = function() {
+		var $ptr, e;
+		e = this;
+		return new window.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.contentWindow);
+	};
+	HTMLIFrameElement.prototype.ContentWindow = function() { return this.$val.ContentWindow(); };
+	HTMLInputElement.ptr.prototype.Files = function() {
+		var $ptr, _i, _ref, e, files, i, out;
+		e = this;
+		files = e.BasicHTMLElement.BasicElement.BasicNode.Object.files;
+		out = $makeSlice(sliceType$12, ($parseInt(files.length) >> 0));
+		_ref = out;
+		_i = 0;
+		while (true) {
+			if (!(_i < _ref.$length)) { break; }
+			i = _i;
+			((i < 0 || i >= out.$length) ? $throwRuntimeError("index out of range") : out.$array[out.$offset + i] = new File.ptr(files.item(i)));
+			_i++;
+		}
+		return out;
+	};
+	HTMLInputElement.prototype.Files = function() { return this.$val.Files(); };
+	HTMLInputElement.ptr.prototype.List = function() {
+		var $ptr, e, list;
+		e = this;
+		list = wrapHTMLElement(e.BasicHTMLElement.BasicElement.BasicNode.Object.list);
+		if ($interfaceIsEqual(list, $ifaceNil)) {
+			return ptrType$13.nil;
+		}
+		return $assertType(list, ptrType$13);
+	};
+	HTMLInputElement.prototype.List = function() { return this.$val.List(); };
+	HTMLInputElement.ptr.prototype.Labels = function() {
+		var $ptr, e;
+		e = this;
+		return getLabels(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLInputElement.prototype.Labels = function() { return this.$val.Labels(); };
+	HTMLInputElement.ptr.prototype.Form = function() {
+		var $ptr, e;
+		e = this;
+		return getForm(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLInputElement.prototype.Form = function() { return this.$val.Form(); };
+	HTMLInputElement.ptr.prototype.Validity = function() {
+		var $ptr, e;
+		e = this;
+		return new ValidityState.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.validity, false, false, false, false, false, false, false, false, false);
+	};
+	HTMLInputElement.prototype.Validity = function() { return this.$val.Validity(); };
+	HTMLInputElement.ptr.prototype.CheckValidity = function() {
+		var $ptr, e;
+		e = this;
+		return !!(e.BasicHTMLElement.BasicElement.BasicNode.Object.checkValidity());
+	};
+	HTMLInputElement.prototype.CheckValidity = function() { return this.$val.CheckValidity(); };
+	HTMLInputElement.ptr.prototype.SetCustomValidity = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.setCustomValidity($externalize(s, $String));
+	};
+	HTMLInputElement.prototype.SetCustomValidity = function(s) { return this.$val.SetCustomValidity(s); };
+	HTMLInputElement.ptr.prototype.Select = function() {
+		var $ptr, e;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.select();
+	};
+	HTMLInputElement.prototype.Select = function() { return this.$val.Select(); };
+	HTMLInputElement.ptr.prototype.SetSelectionRange = function(start, end, direction) {
+		var $ptr, direction, e, end, start;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.setSelectionRange(start, end, $externalize(direction, $String));
+	};
+	HTMLInputElement.prototype.SetSelectionRange = function(start, end, direction) { return this.$val.SetSelectionRange(start, end, direction); };
+	HTMLInputElement.ptr.prototype.StepDown = function(n) {
+		var $ptr, e, n;
+		e = this;
+		return callRecover(e.BasicHTMLElement.BasicElement.BasicNode.Object, "stepDown", new sliceType([new $Int(n)]));
+	};
+	HTMLInputElement.prototype.StepDown = function(n) { return this.$val.StepDown(n); };
+	HTMLInputElement.ptr.prototype.StepUp = function(n) {
+		var $ptr, e, n;
+		e = this;
+		return callRecover(e.BasicHTMLElement.BasicElement.BasicNode.Object, "stepUp", new sliceType([new $Int(n)]));
+	};
+	HTMLInputElement.prototype.StepUp = function(n) { return this.$val.StepUp(n); };
+	HTMLKeygenElement.ptr.prototype.Form = function() {
+		var $ptr, e;
+		e = this;
+		return getForm(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLKeygenElement.prototype.Form = function() { return this.$val.Form(); };
+	HTMLKeygenElement.ptr.prototype.Labels = function() {
+		var $ptr, e;
+		e = this;
+		return getLabels(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLKeygenElement.prototype.Labels = function() { return this.$val.Labels(); };
+	HTMLKeygenElement.ptr.prototype.Validity = function() {
+		var $ptr, e;
+		e = this;
+		return new ValidityState.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.validity, false, false, false, false, false, false, false, false, false);
+	};
+	HTMLKeygenElement.prototype.Validity = function() { return this.$val.Validity(); };
+	HTMLKeygenElement.ptr.prototype.CheckValidity = function() {
+		var $ptr, e;
+		e = this;
+		return !!(e.BasicHTMLElement.BasicElement.BasicNode.Object.checkValidity());
+	};
+	HTMLKeygenElement.prototype.CheckValidity = function() { return this.$val.CheckValidity(); };
+	HTMLKeygenElement.ptr.prototype.SetCustomValidity = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.setCustomValidity($externalize(s, $String));
+	};
+	HTMLKeygenElement.prototype.SetCustomValidity = function(s) { return this.$val.SetCustomValidity(s); };
+	HTMLLabelElement.ptr.prototype.Control = function() {
+		var $ptr, e;
+		e = this;
+		return wrapHTMLElement(e.BasicHTMLElement.BasicElement.BasicNode.Object.control);
+	};
+	HTMLLabelElement.prototype.Control = function() { return this.$val.Control(); };
+	HTMLLabelElement.ptr.prototype.Form = function() {
+		var $ptr, e;
+		e = this;
+		return getForm(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLLabelElement.prototype.Form = function() { return this.$val.Form(); };
+	HTMLLegendElement.ptr.prototype.Form = function() {
+		var $ptr, e;
+		e = this;
+		return getForm(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLLegendElement.prototype.Form = function() { return this.$val.Form(); };
+	HTMLLinkElement.ptr.prototype.Rel = function() {
+		var $ptr, e;
+		e = this;
+		return new TokenList.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.relList, e.BasicHTMLElement.BasicElement.BasicNode.Object, "rel", 0);
+	};
+	HTMLLinkElement.prototype.Rel = function() { return this.$val.Rel(); };
+	HTMLLinkElement.ptr.prototype.Sizes = function() {
+		var $ptr, e;
+		e = this;
+		return new TokenList.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.sizes, e.BasicHTMLElement.BasicElement.BasicNode.Object, "", 0);
+	};
+	HTMLLinkElement.prototype.Sizes = function() { return this.$val.Sizes(); };
+	HTMLLinkElement.ptr.prototype.Sheet = function() {
+		var $ptr, e;
+		e = this;
+		return $ifaceNil;
+	};
+	HTMLLinkElement.prototype.Sheet = function() { return this.$val.Sheet(); };
+	HTMLMapElement.ptr.prototype.Areas = function() {
+		var $ptr, _i, _ref, area, areas, e, i, out;
+		e = this;
+		areas = nodeListToElements(e.BasicHTMLElement.BasicElement.BasicNode.Object.areas);
+		out = $makeSlice(sliceType$13, areas.$length);
+		_ref = areas;
+		_i = 0;
+		while (true) {
+			if (!(_i < _ref.$length)) { break; }
+			i = _i;
+			area = ((_i < 0 || _i >= _ref.$length) ? $throwRuntimeError("index out of range") : _ref.$array[_ref.$offset + _i]);
+			((i < 0 || i >= out.$length) ? $throwRuntimeError("index out of range") : out.$array[out.$offset + i] = $assertType(area, ptrType$14));
+			_i++;
+		}
+		return out;
+	};
+	HTMLMapElement.prototype.Areas = function() { return this.$val.Areas(); };
+	HTMLMapElement.ptr.prototype.Images = function() {
+		var $ptr, e;
+		e = this;
+		return nodeListToHTMLElements(e.BasicHTMLElement.BasicElement.BasicNode.Object.areas);
+	};
+	HTMLMapElement.prototype.Images = function() { return this.$val.Images(); };
+	HTMLMeterElement.ptr.prototype.Labels = function() {
+		var $ptr, e;
+		e = $clone(this, HTMLMeterElement);
+		return getLabels(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLMeterElement.prototype.Labels = function() { return this.$val.Labels(); };
+	HTMLObjectElement.ptr.prototype.Form = function() {
+		var $ptr, e;
+		e = this;
+		return getForm(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLObjectElement.prototype.Form = function() { return this.$val.Form(); };
+	HTMLObjectElement.ptr.prototype.ContentDocument = function() {
+		var $ptr, e;
+		e = this;
+		return wrapDocument(e.BasicHTMLElement.BasicElement.BasicNode.Object.contentDocument);
+	};
+	HTMLObjectElement.prototype.ContentDocument = function() { return this.$val.ContentDocument(); };
+	HTMLObjectElement.ptr.prototype.ContentWindow = function() {
+		var $ptr, e;
+		e = this;
+		return new window.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.contentWindow);
+	};
+	HTMLObjectElement.prototype.ContentWindow = function() { return this.$val.ContentWindow(); };
+	HTMLObjectElement.ptr.prototype.Validity = function() {
+		var $ptr, e;
+		e = this;
+		return new ValidityState.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.validity, false, false, false, false, false, false, false, false, false);
+	};
+	HTMLObjectElement.prototype.Validity = function() { return this.$val.Validity(); };
+	HTMLObjectElement.ptr.prototype.CheckValidity = function() {
+		var $ptr, e;
+		e = this;
+		return !!(e.BasicHTMLElement.BasicElement.BasicNode.Object.checkValidity());
+	};
+	HTMLObjectElement.prototype.CheckValidity = function() { return this.$val.CheckValidity(); };
+	HTMLObjectElement.ptr.prototype.SetCustomValidity = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.setCustomValidity($externalize(s, $String));
+	};
+	HTMLObjectElement.prototype.SetCustomValidity = function(s) { return this.$val.SetCustomValidity(s); };
+	HTMLOptionElement.ptr.prototype.Form = function() {
+		var $ptr, e;
+		e = this;
+		return getForm(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLOptionElement.prototype.Form = function() { return this.$val.Form(); };
+	HTMLOutputElement.ptr.prototype.Form = function() {
+		var $ptr, e;
+		e = this;
+		return getForm(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLOutputElement.prototype.Form = function() { return this.$val.Form(); };
+	HTMLOutputElement.ptr.prototype.Labels = function() {
+		var $ptr, e;
+		e = this;
+		return getLabels(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLOutputElement.prototype.Labels = function() { return this.$val.Labels(); };
+	HTMLOutputElement.ptr.prototype.Validity = function() {
+		var $ptr, e;
+		e = this;
+		return new ValidityState.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.validity, false, false, false, false, false, false, false, false, false);
+	};
+	HTMLOutputElement.prototype.Validity = function() { return this.$val.Validity(); };
+	HTMLOutputElement.ptr.prototype.For = function() {
+		var $ptr, e;
+		e = this;
+		return new TokenList.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.htmlFor, e.BasicHTMLElement.BasicElement.BasicNode.Object, "", 0);
+	};
+	HTMLOutputElement.prototype.For = function() { return this.$val.For(); };
+	HTMLOutputElement.ptr.prototype.CheckValidity = function() {
+		var $ptr, e;
+		e = this;
+		return !!(e.BasicHTMLElement.BasicElement.BasicNode.Object.checkValidity());
+	};
+	HTMLOutputElement.prototype.CheckValidity = function() { return this.$val.CheckValidity(); };
+	HTMLOutputElement.ptr.prototype.SetCustomValidity = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.setCustomValidity($externalize(s, $String));
+	};
+	HTMLOutputElement.prototype.SetCustomValidity = function(s) { return this.$val.SetCustomValidity(s); };
+	HTMLProgressElement.ptr.prototype.Labels = function() {
+		var $ptr, e;
+		e = $clone(this, HTMLProgressElement);
+		return getLabels(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLProgressElement.prototype.Labels = function() { return this.$val.Labels(); };
+	HTMLSelectElement.ptr.prototype.Labels = function() {
+		var $ptr, e;
+		e = this;
+		return getLabels(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLSelectElement.prototype.Labels = function() { return this.$val.Labels(); };
+	HTMLSelectElement.ptr.prototype.Form = function() {
+		var $ptr, e;
+		e = this;
+		return getForm(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLSelectElement.prototype.Form = function() { return this.$val.Form(); };
+	HTMLSelectElement.ptr.prototype.Options = function() {
+		var $ptr, e;
+		e = this;
+		return getOptions(e.BasicHTMLElement.BasicElement.BasicNode.Object, "options");
+	};
+	HTMLSelectElement.prototype.Options = function() { return this.$val.Options(); };
+	HTMLSelectElement.ptr.prototype.SelectedOptions = function() {
+		var $ptr, e;
+		e = this;
+		return getOptions(e.BasicHTMLElement.BasicElement.BasicNode.Object, "selectedOptions");
+	};
+	HTMLSelectElement.prototype.SelectedOptions = function() { return this.$val.SelectedOptions(); };
+	HTMLSelectElement.ptr.prototype.Item = function(index) {
+		var $ptr, e, el, index;
+		e = this;
+		el = wrapHTMLElement(e.BasicHTMLElement.BasicElement.BasicNode.Object.item(index));
+		if ($interfaceIsEqual(el, $ifaceNil)) {
+			return ptrType$5.nil;
+		}
+		return $assertType(el, ptrType$5);
+	};
+	HTMLSelectElement.prototype.Item = function(index) { return this.$val.Item(index); };
+	HTMLSelectElement.ptr.prototype.NamedItem = function(name) {
+		var $ptr, e, el, name;
+		e = this;
+		el = wrapHTMLElement(e.BasicHTMLElement.BasicElement.BasicNode.Object.namedItem($externalize(name, $String)));
+		if ($interfaceIsEqual(el, $ifaceNil)) {
+			return ptrType$5.nil;
+		}
+		return $assertType(el, ptrType$5);
+	};
+	HTMLSelectElement.prototype.NamedItem = function(name) { return this.$val.NamedItem(name); };
+	HTMLSelectElement.ptr.prototype.Validity = function() {
+		var $ptr, e;
+		e = this;
+		return new ValidityState.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.validity, false, false, false, false, false, false, false, false, false);
+	};
+	HTMLSelectElement.prototype.Validity = function() { return this.$val.Validity(); };
+	HTMLSelectElement.ptr.prototype.CheckValidity = function() {
+		var $ptr, e;
+		e = this;
+		return !!(e.BasicHTMLElement.BasicElement.BasicNode.Object.checkValidity());
+	};
+	HTMLSelectElement.prototype.CheckValidity = function() { return this.$val.CheckValidity(); };
+	HTMLSelectElement.ptr.prototype.SetCustomValidity = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.setCustomValidity($externalize(s, $String));
+	};
+	HTMLSelectElement.prototype.SetCustomValidity = function(s) { return this.$val.SetCustomValidity(s); };
+	HTMLTableRowElement.ptr.prototype.Cells = function() {
+		var $ptr, _i, _ref, cell, cells, e, i, out;
+		e = this;
+		cells = nodeListToElements(e.BasicHTMLElement.BasicElement.BasicNode.Object.cells);
+		out = $makeSlice(sliceType$14, cells.$length);
+		_ref = cells;
+		_i = 0;
+		while (true) {
+			if (!(_i < _ref.$length)) { break; }
+			i = _i;
+			cell = ((_i < 0 || _i >= _ref.$length) ? $throwRuntimeError("index out of range") : _ref.$array[_ref.$offset + _i]);
+			((i < 0 || i >= out.$length) ? $throwRuntimeError("index out of range") : out.$array[out.$offset + i] = $assertType(cell, ptrType$15));
+			_i++;
+		}
+		return out;
+	};
+	HTMLTableRowElement.prototype.Cells = function() { return this.$val.Cells(); };
+	HTMLTableRowElement.ptr.prototype.InsertCell = function(index) {
+		var $ptr, e, index;
+		e = this;
+		return $assertType(wrapHTMLElement(e.BasicHTMLElement.BasicElement.BasicNode.Object.insertCell(index)), ptrType$15);
+	};
+	HTMLTableRowElement.prototype.InsertCell = function(index) { return this.$val.InsertCell(index); };
+	HTMLTableRowElement.ptr.prototype.DeleteCell = function(index) {
+		var $ptr, e, index;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.deleteCell(index);
+	};
+	HTMLTableRowElement.prototype.DeleteCell = function(index) { return this.$val.DeleteCell(index); };
+	HTMLTableSectionElement.ptr.prototype.Rows = function() {
+		var $ptr, _i, _ref, e, i, out, row, rows;
+		e = this;
+		rows = nodeListToElements(e.BasicHTMLElement.BasicElement.BasicNode.Object.rows);
+		out = $makeSlice(sliceType$15, rows.$length);
+		_ref = rows;
+		_i = 0;
+		while (true) {
+			if (!(_i < _ref.$length)) { break; }
+			i = _i;
+			row = ((_i < 0 || _i >= _ref.$length) ? $throwRuntimeError("index out of range") : _ref.$array[_ref.$offset + _i]);
+			((i < 0 || i >= out.$length) ? $throwRuntimeError("index out of range") : out.$array[out.$offset + i] = $assertType(row, ptrType$16));
+			_i++;
+		}
+		return out;
+	};
+	HTMLTableSectionElement.prototype.Rows = function() { return this.$val.Rows(); };
+	HTMLTableSectionElement.ptr.prototype.DeleteRow = function(index) {
+		var $ptr, e, index;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.deleteRow(index);
+	};
+	HTMLTableSectionElement.prototype.DeleteRow = function(index) { return this.$val.DeleteRow(index); };
+	HTMLTableSectionElement.ptr.prototype.InsertRow = function(index) {
+		var $ptr, e, index;
+		e = this;
+		return $assertType(wrapHTMLElement(e.BasicHTMLElement.BasicElement.BasicNode.Object.insertRow(index)), ptrType$16);
+	};
+	HTMLTableSectionElement.prototype.InsertRow = function(index) { return this.$val.InsertRow(index); };
+	HTMLTextAreaElement.ptr.prototype.Form = function() {
+		var $ptr, e;
+		e = this;
+		return getForm(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLTextAreaElement.prototype.Form = function() { return this.$val.Form(); };
+	HTMLTextAreaElement.ptr.prototype.Labels = function() {
+		var $ptr, e;
+		e = this;
+		return getLabels(e.BasicHTMLElement.BasicElement.BasicNode.Object);
+	};
+	HTMLTextAreaElement.prototype.Labels = function() { return this.$val.Labels(); };
+	HTMLTextAreaElement.ptr.prototype.Validity = function() {
+		var $ptr, e;
+		e = this;
+		return new ValidityState.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.validity, false, false, false, false, false, false, false, false, false);
+	};
+	HTMLTextAreaElement.prototype.Validity = function() { return this.$val.Validity(); };
+	HTMLTextAreaElement.ptr.prototype.CheckValidity = function() {
+		var $ptr, e;
+		e = this;
+		return !!(e.BasicHTMLElement.BasicElement.BasicNode.Object.checkValidity());
+	};
+	HTMLTextAreaElement.prototype.CheckValidity = function() { return this.$val.CheckValidity(); };
+	HTMLTextAreaElement.ptr.prototype.SetCustomValidity = function(s) {
+		var $ptr, e, s;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.setCustomValidity($externalize(s, $String));
+	};
+	HTMLTextAreaElement.prototype.SetCustomValidity = function(s) { return this.$val.SetCustomValidity(s); };
+	HTMLTextAreaElement.ptr.prototype.Select = function() {
+		var $ptr, e;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.select();
+	};
+	HTMLTextAreaElement.prototype.Select = function() { return this.$val.Select(); };
+	HTMLTextAreaElement.ptr.prototype.SetSelectionRange = function(start, end, direction) {
+		var $ptr, direction, e, end, start;
+		e = this;
+		e.BasicHTMLElement.BasicElement.BasicNode.Object.setSelectionRange(start, end, $externalize(direction, $String));
+	};
+	HTMLTextAreaElement.prototype.SetSelectionRange = function(start, end, direction) { return this.$val.SetSelectionRange(start, end, direction); };
+	HTMLTrackElement.ptr.prototype.Track = function() {
+		var $ptr, e;
+		e = this;
+		return new TextTrack.ptr(e.BasicHTMLElement.BasicElement.BasicNode.Object.track);
+	};
+	HTMLTrackElement.prototype.Track = function() { return this.$val.Track(); };
+	HTMLBaseElement.ptr.prototype.Href = function() {
+		var $ptr, e;
+		e = this;
+		return $internalize(e.BasicHTMLElement.BasicElement.BasicNode.Object.href, $String);
+	};
+	HTMLBaseElement.prototype.Href = function() { return this.$val.Href(); };
+	HTMLBaseElement.ptr.prototype.Target = function() {
+		var $ptr, e;
+		e = this;
+		return $internalize(e.BasicHTMLElement.BasicElement.BasicNode.Object.target, $String);
+	};
+	HTMLBaseElement.prototype.Target = function() { return this.$val.Target(); };
+	CSSStyleDeclaration.ptr.prototype.ToMap = function() {
+		var $ptr, N, _key, css, i, m, name, value;
+		css = this;
+		m = new $Map();
+		N = $parseInt(css.Object.length) >> 0;
+		i = 0;
+		while (true) {
+			if (!(i < N)) { break; }
+			name = $internalize(css.Object.index(i), $String);
+			value = $internalize(css.Object.getPropertyValue(), $String);
+			_key = name; (m || $throwRuntimeError("assignment to entry in nil map"))[$String.keyFor(_key)] = { k: _key, v: value };
+			i = i + (1) >> 0;
+		}
 		return m;
 	};
-	$pkg.DepthFirst = DepthFirst;
+	CSSStyleDeclaration.prototype.ToMap = function() { return this.$val.ToMap(); };
+	CSSStyleDeclaration.ptr.prototype.RemoveProperty = function(name) {
+		var $ptr, css, name;
+		css = this;
+		css.Object.removeProperty($externalize(name, $String));
+	};
+	CSSStyleDeclaration.prototype.RemoveProperty = function(name) { return this.$val.RemoveProperty(name); };
+	CSSStyleDeclaration.ptr.prototype.GetPropertyValue = function(name) {
+		var $ptr, css, name;
+		css = this;
+		return $internalize(css.Object.getPropertyValue($externalize(name, $String)), $String);
+	};
+	CSSStyleDeclaration.prototype.GetPropertyValue = function(name) { return this.$val.GetPropertyValue(name); };
+	CSSStyleDeclaration.ptr.prototype.GetPropertyPriority = function(name) {
+		var $ptr, css, name;
+		css = this;
+		return $internalize(css.Object.getPropertyPriority($externalize(name, $String)), $String);
+	};
+	CSSStyleDeclaration.prototype.GetPropertyPriority = function(name) { return this.$val.GetPropertyPriority(name); };
+	CSSStyleDeclaration.ptr.prototype.SetProperty = function(name, value, priority) {
+		var $ptr, css, name, priority, value;
+		css = this;
+		css.Object.setProperty($externalize(name, $String), $externalize(value, $String), $externalize(priority, $String));
+	};
+	CSSStyleDeclaration.prototype.SetProperty = function(name, value, priority) { return this.$val.SetProperty(name, value, priority); };
+	CSSStyleDeclaration.ptr.prototype.Index = function(idx) {
+		var $ptr, css, idx;
+		css = this;
+		return $internalize(css.Object.index(idx), $String);
+	};
+	CSSStyleDeclaration.prototype.Index = function(idx) { return this.$val.Index(idx); };
+	CSSStyleDeclaration.ptr.prototype.Length = function() {
+		var $ptr, css;
+		css = this;
+		return $parseInt(css.Object.length) >> 0;
+	};
+	CSSStyleDeclaration.prototype.Length = function() { return this.$val.Length(); };
+	wrapEvent = function(o) {
+		var $ptr, _ref, c, ev, o;
+		if (o === null || o === undefined) {
+			return $ifaceNil;
+		}
+		ev = new BasicEvent.ptr(o);
+		c = o.constructor;
+		_ref = c;
+		if (_ref === $global.AnimationEvent) {
+			return new AnimationEvent.ptr(ev);
+		} else if (_ref === $global.AudioProcessingEvent) {
+			return new AudioProcessingEvent.ptr(ev);
+		} else if (_ref === $global.BeforeInputEvent) {
+			return new BeforeInputEvent.ptr(ev);
+		} else if (_ref === $global.BeforeUnloadEvent) {
+			return new BeforeUnloadEvent.ptr(ev);
+		} else if (_ref === $global.BlobEvent) {
+			return new BlobEvent.ptr(ev);
+		} else if (_ref === $global.ClipboardEvent) {
+			return new ClipboardEvent.ptr(ev);
+		} else if (_ref === $global.CloseEvent) {
+			return new CloseEvent.ptr(ev, 0, "", false);
+		} else if (_ref === $global.CompositionEvent) {
+			return new CompositionEvent.ptr(ev);
+		} else if (_ref === $global.CSSFontFaceLoadEvent) {
+			return new CSSFontFaceLoadEvent.ptr(ev);
+		} else if (_ref === $global.CustomEvent) {
+			return new CustomEvent.ptr(ev);
+		} else if (_ref === $global.DeviceLightEvent) {
+			return new DeviceLightEvent.ptr(ev);
+		} else if (_ref === $global.DeviceMotionEvent) {
+			return new DeviceMotionEvent.ptr(ev);
+		} else if (_ref === $global.DeviceOrientationEvent) {
+			return new DeviceOrientationEvent.ptr(ev);
+		} else if (_ref === $global.DeviceProximityEvent) {
+			return new DeviceProximityEvent.ptr(ev);
+		} else if (_ref === $global.DOMTransactionEvent) {
+			return new DOMTransactionEvent.ptr(ev);
+		} else if (_ref === $global.DragEvent) {
+			return new DragEvent.ptr(ev);
+		} else if (_ref === $global.EditingBeforeInputEvent) {
+			return new EditingBeforeInputEvent.ptr(ev);
+		} else if (_ref === $global.ErrorEvent) {
+			return new ErrorEvent.ptr(ev);
+		} else if (_ref === $global.FocusEvent) {
+			return new FocusEvent.ptr(ev);
+		} else if (_ref === $global.GamepadEvent) {
+			return new GamepadEvent.ptr(ev);
+		} else if (_ref === $global.HashChangeEvent) {
+			return new HashChangeEvent.ptr(ev);
+		} else if (_ref === $global.IDBVersionChangeEvent) {
+			return new IDBVersionChangeEvent.ptr(ev);
+		} else if (_ref === $global.KeyboardEvent) {
+			return new KeyboardEvent.ptr(ev, false, 0, false, "", "", 0, "", 0, 0, false, false, false);
+		} else if (_ref === $global.MediaStreamEvent) {
+			return new MediaStreamEvent.ptr(ev);
+		} else if (_ref === $global.MessageEvent) {
+			return new MessageEvent.ptr(ev, null);
+		} else if (_ref === $global.MouseEvent) {
+			return new MouseEvent.ptr(new UIEvent.ptr(ev), false, 0, 0, 0, false, false, 0, 0, 0, 0, false);
+		} else if (_ref === $global.MutationEvent) {
+			return new MutationEvent.ptr(ev);
+		} else if (_ref === $global.OfflineAudioCompletionEvent) {
+			return new OfflineAudioCompletionEvent.ptr(ev);
+		} else if (_ref === $global.PageTransitionEvent) {
+			return new PageTransitionEvent.ptr(ev);
+		} else if (_ref === $global.PointerEvent) {
+			return new PointerEvent.ptr(ev);
+		} else if (_ref === $global.PopStateEvent) {
+			return new PopStateEvent.ptr(ev);
+		} else if (_ref === $global.ProgressEvent) {
+			return new ProgressEvent.ptr(ev);
+		} else if (_ref === $global.RelatedEvent) {
+			return new RelatedEvent.ptr(ev);
+		} else if (_ref === $global.RTCPeerConnectionIceEvent) {
+			return new RTCPeerConnectionIceEvent.ptr(ev);
+		} else if (_ref === $global.SensorEvent) {
+			return new SensorEvent.ptr(ev);
+		} else if (_ref === $global.StorageEvent) {
+			return new StorageEvent.ptr(ev);
+		} else if (_ref === $global.SVGEvent) {
+			return new SVGEvent.ptr(ev);
+		} else if (_ref === $global.SVGZoomEvent) {
+			return new SVGZoomEvent.ptr(ev);
+		} else if (_ref === $global.TimeEvent) {
+			return new TimeEvent.ptr(ev);
+		} else if (_ref === $global.TouchEvent) {
+			return new TouchEvent.ptr(ev);
+		} else if (_ref === $global.TrackEvent) {
+			return new TrackEvent.ptr(ev);
+		} else if (_ref === $global.TransitionEvent) {
+			return new TransitionEvent.ptr(ev);
+		} else if (_ref === $global.UIEvent) {
+			return new UIEvent.ptr(ev);
+		} else if (_ref === $global.UserProximityEvent) {
+			return new UserProximityEvent.ptr(ev);
+		} else if (_ref === $global.WheelEvent) {
+			return new WheelEvent.ptr(ev, 0, 0, 0, 0);
+		} else {
+			return ev;
+		}
+	};
+	BasicEvent.ptr.prototype.Bubbles = function() {
+		var $ptr, ev;
+		ev = this;
+		return !!(ev.Object.bubbles);
+	};
+	BasicEvent.prototype.Bubbles = function() { return this.$val.Bubbles(); };
+	BasicEvent.ptr.prototype.Cancelable = function() {
+		var $ptr, ev;
+		ev = this;
+		return !!(ev.Object.cancelable);
+	};
+	BasicEvent.prototype.Cancelable = function() { return this.$val.Cancelable(); };
+	BasicEvent.ptr.prototype.CurrentTarget = function() {
+		var $ptr, ev;
+		ev = this;
+		return wrapElement(ev.Object.currentTarget);
+	};
+	BasicEvent.prototype.CurrentTarget = function() { return this.$val.CurrentTarget(); };
+	BasicEvent.ptr.prototype.DefaultPrevented = function() {
+		var $ptr, ev;
+		ev = this;
+		return !!(ev.Object.defaultPrevented);
+	};
+	BasicEvent.prototype.DefaultPrevented = function() { return this.$val.DefaultPrevented(); };
+	BasicEvent.ptr.prototype.EventPhase = function() {
+		var $ptr, ev;
+		ev = this;
+		return $parseInt(ev.Object.eventPhase) >> 0;
+	};
+	BasicEvent.prototype.EventPhase = function() { return this.$val.EventPhase(); };
+	BasicEvent.ptr.prototype.Target = function() {
+		var $ptr, ev;
+		ev = this;
+		return wrapElement(ev.Object.target);
+	};
+	BasicEvent.prototype.Target = function() { return this.$val.Target(); };
+	BasicEvent.ptr.prototype.Timestamp = function() {
+		var $ptr, _q, _r, ev, ms, ns, s;
+		ev = this;
+		ms = $parseInt(ev.Object.timeStamp) >> 0;
+		s = (_q = ms / 1000, (_q === _q && _q !== 1/0 && _q !== -1/0) ? _q >> 0 : $throwRuntimeError("integer divide by zero"));
+		ns = ((_r = ms % 1000, _r === _r ? _r : $throwRuntimeError("integer divide by zero")) * 1000000 >> 0);
+		return time.Unix(new $Int64(0, s), new $Int64(0, ns));
+	};
+	BasicEvent.prototype.Timestamp = function() { return this.$val.Timestamp(); };
+	BasicEvent.ptr.prototype.Type = function() {
+		var $ptr, ev;
+		ev = this;
+		return $internalize(ev.Object.type, $String);
+	};
+	BasicEvent.prototype.Type = function() { return this.$val.Type(); };
+	BasicEvent.ptr.prototype.PreventDefault = function() {
+		var $ptr, ev;
+		ev = this;
+		ev.Object.preventDefault();
+	};
+	BasicEvent.prototype.PreventDefault = function() { return this.$val.PreventDefault(); };
+	BasicEvent.ptr.prototype.StopImmediatePropagation = function() {
+		var $ptr, ev;
+		ev = this;
+		ev.Object.stopImmediatePropagation();
+	};
+	BasicEvent.prototype.StopImmediatePropagation = function() { return this.$val.StopImmediatePropagation(); };
+	BasicEvent.ptr.prototype.StopPropagation = function() {
+		var $ptr, ev;
+		ev = this;
+		ev.Object.stopPropagation();
+	};
+	BasicEvent.prototype.StopPropagation = function() { return this.$val.StopPropagation(); };
+	KeyboardEvent.ptr.prototype.ModifierState = function(mod) {
+		var $ptr, ev, mod;
+		ev = this;
+		return !!(ev.BasicEvent.Object.getModifierState($externalize(mod, $String)));
+	};
+	KeyboardEvent.prototype.ModifierState = function(mod) { return this.$val.ModifierState(mod); };
+	MouseEvent.ptr.prototype.RelatedTarget = function() {
+		var $ptr, ev;
+		ev = this;
+		return wrapElement(ev.UIEvent.BasicEvent.Object.target);
+	};
+	MouseEvent.prototype.RelatedTarget = function() { return this.$val.RelatedTarget(); };
+	MouseEvent.ptr.prototype.ModifierState = function(mod) {
+		var $ptr, ev, mod;
+		ev = this;
+		return !!(ev.UIEvent.BasicEvent.Object.getModifierState($externalize(mod, $String)));
+	};
+	MouseEvent.prototype.ModifierState = function(mod) { return this.$val.ModifierState(mod); };
+	ptrType$19.methods = [{prop: "Item", name: "Item", pkg: "", typ: $funcType([$Int], [$String], false)}, {prop: "Contains", name: "Contains", pkg: "", typ: $funcType([$String], [$Bool], false)}, {prop: "Add", name: "Add", pkg: "", typ: $funcType([$String], [], false)}, {prop: "Remove", name: "Remove", pkg: "", typ: $funcType([$String], [], false)}, {prop: "Toggle", name: "Toggle", pkg: "", typ: $funcType([$String], [], false)}, {prop: "String", name: "String", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Slice", name: "Slice", pkg: "", typ: $funcType([], [sliceType$6], false)}, {prop: "SetString", name: "SetString", pkg: "", typ: $funcType([$String], [], false)}, {prop: "Set", name: "Set", pkg: "", typ: $funcType([sliceType$6], [], false)}];
+	document.methods = [{prop: "Async", name: "Async", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "SetAsync", name: "SetAsync", pkg: "", typ: $funcType([$Bool], [], false)}, {prop: "Doctype", name: "Doctype", pkg: "", typ: $funcType([], [DocumentType], false)}, {prop: "DocumentElement", name: "DocumentElement", pkg: "", typ: $funcType([], [Element], false)}, {prop: "DocumentURI", name: "DocumentURI", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Implementation", name: "Implementation", pkg: "", typ: $funcType([], [DOMImplementation], false)}, {prop: "LastStyleSheetSet", name: "LastStyleSheetSet", pkg: "", typ: $funcType([], [$String], false)}, {prop: "PreferredStyleSheetSet", name: "PreferredStyleSheetSet", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SelectedStyleSheetSet", name: "SelectedStyleSheetSet", pkg: "", typ: $funcType([], [$String], false)}, {prop: "StyleSheets", name: "StyleSheets", pkg: "", typ: $funcType([], [sliceType$11], false)}, {prop: "StyleSheetSets", name: "StyleSheetSets", pkg: "", typ: $funcType([], [sliceType$11], false)}, {prop: "AdoptNode", name: "AdoptNode", pkg: "", typ: $funcType([Node], [Node], false)}, {prop: "ImportNode", name: "ImportNode", pkg: "", typ: $funcType([Node, $Bool], [Node], false)}, {prop: "CreateElement", name: "CreateElement", pkg: "", typ: $funcType([$String], [Element], false)}, {prop: "CreateElementNS", name: "CreateElementNS", pkg: "", typ: $funcType([$String, $String], [Element], false)}, {prop: "CreateTextNode", name: "CreateTextNode", pkg: "", typ: $funcType([$String], [ptrType$10], false)}, {prop: "ElementFromPoint", name: "ElementFromPoint", pkg: "", typ: $funcType([$Int, $Int], [Element], false)}, {prop: "EnableStyleSheetsForSet", name: "EnableStyleSheetsForSet", pkg: "", typ: $funcType([$String], [], false)}, {prop: "GetElementsByClassName", name: "GetElementsByClassName", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "GetElementsByTagName", name: "GetElementsByTagName", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "GetElementsByTagNameNS", name: "GetElementsByTagNameNS", pkg: "", typ: $funcType([$String, $String], [sliceType$2], false)}, {prop: "GetElementByID", name: "GetElementByID", pkg: "", typ: $funcType([$String], [Element], false)}, {prop: "QuerySelector", name: "QuerySelector", pkg: "", typ: $funcType([$String], [Element], false)}, {prop: "QuerySelectorAll", name: "QuerySelectorAll", pkg: "", typ: $funcType([$String], [sliceType$2], false)}];
+	ptrType$23.methods = [{prop: "ActiveElement", name: "ActiveElement", pkg: "", typ: $funcType([], [HTMLElement], false)}, {prop: "Body", name: "Body", pkg: "", typ: $funcType([], [HTMLElement], false)}, {prop: "Cookie", name: "Cookie", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetCookie", name: "SetCookie", pkg: "", typ: $funcType([$String], [], false)}, {prop: "DefaultView", name: "DefaultView", pkg: "", typ: $funcType([], [Window], false)}, {prop: "DesignMode", name: "DesignMode", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "SetDesignMode", name: "SetDesignMode", pkg: "", typ: $funcType([$Bool], [], false)}, {prop: "Domain", name: "Domain", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetDomain", name: "SetDomain", pkg: "", typ: $funcType([$String], [], false)}, {prop: "Forms", name: "Forms", pkg: "", typ: $funcType([], [sliceType$7], false)}, {prop: "Head", name: "Head", pkg: "", typ: $funcType([], [ptrType$6], false)}, {prop: "Images", name: "Images", pkg: "", typ: $funcType([], [sliceType$8], false)}, {prop: "LastModified", name: "LastModified", pkg: "", typ: $funcType([], [time.Time], false)}, {prop: "Links", name: "Links", pkg: "", typ: $funcType([], [sliceType$3], false)}, {prop: "Location", name: "Location", pkg: "", typ: $funcType([], [ptrType$20], false)}, {prop: "Plugins", name: "Plugins", pkg: "", typ: $funcType([], [sliceType$9], false)}, {prop: "ReadyState", name: "ReadyState", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Referrer", name: "Referrer", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Scripts", name: "Scripts", pkg: "", typ: $funcType([], [sliceType$10], false)}, {prop: "Title", name: "Title", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetTitle", name: "SetTitle", pkg: "", typ: $funcType([$String], [], false)}, {prop: "URL", name: "URL", pkg: "", typ: $funcType([], [$String], false)}];
+	ptrType$27.methods = [{prop: "Console", name: "Console", pkg: "", typ: $funcType([], [ptrType$25], false)}, {prop: "Document", name: "Document", pkg: "", typ: $funcType([], [Document], false)}, {prop: "FrameElement", name: "FrameElement", pkg: "", typ: $funcType([], [Element], false)}, {prop: "Location", name: "Location", pkg: "", typ: $funcType([], [ptrType$20], false)}, {prop: "Name", name: "Name", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetName", name: "SetName", pkg: "", typ: $funcType([$String], [], false)}, {prop: "InnerHeight", name: "InnerHeight", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "InnerWidth", name: "InnerWidth", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Length", name: "Length", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Opener", name: "Opener", pkg: "", typ: $funcType([], [Window], false)}, {prop: "OuterHeight", name: "OuterHeight", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "OuterWidth", name: "OuterWidth", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "ScrollX", name: "ScrollX", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "ScrollY", name: "ScrollY", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Parent", name: "Parent", pkg: "", typ: $funcType([], [Window], false)}, {prop: "ScreenX", name: "ScreenX", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "ScreenY", name: "ScreenY", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "ScrollMaxX", name: "ScrollMaxX", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "ScrollMaxY", name: "ScrollMaxY", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Top", name: "Top", pkg: "", typ: $funcType([], [Window], false)}, {prop: "History", name: "History", pkg: "", typ: $funcType([], [History], false)}, {prop: "Navigator", name: "Navigator", pkg: "", typ: $funcType([], [Navigator], false)}, {prop: "Screen", name: "Screen", pkg: "", typ: $funcType([], [ptrType$26], false)}, {prop: "Alert", name: "Alert", pkg: "", typ: $funcType([$String], [], false)}, {prop: "Back", name: "Back", pkg: "", typ: $funcType([], [], false)}, {prop: "Blur", name: "Blur", pkg: "", typ: $funcType([], [], false)}, {prop: "ClearInterval", name: "ClearInterval", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "ClearTimeout", name: "ClearTimeout", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "Close", name: "Close", pkg: "", typ: $funcType([], [], false)}, {prop: "Confirm", name: "Confirm", pkg: "", typ: $funcType([$String], [$Bool], false)}, {prop: "Focus", name: "Focus", pkg: "", typ: $funcType([], [], false)}, {prop: "Forward", name: "Forward", pkg: "", typ: $funcType([], [], false)}, {prop: "GetComputedStyle", name: "GetComputedStyle", pkg: "", typ: $funcType([Element, $String], [ptrType$24], false)}, {prop: "GetSelection", name: "GetSelection", pkg: "", typ: $funcType([], [Selection], false)}, {prop: "Home", name: "Home", pkg: "", typ: $funcType([], [], false)}, {prop: "MoveBy", name: "MoveBy", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "MoveTo", name: "MoveTo", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "Open", name: "Open", pkg: "", typ: $funcType([$String, $String, $String], [Window], false)}, {prop: "OpenDialog", name: "OpenDialog", pkg: "", typ: $funcType([$String, $String, $String, sliceType], [Window], false)}, {prop: "PostMessage", name: "PostMessage", pkg: "", typ: $funcType([$String, $String, sliceType], [], false)}, {prop: "Print", name: "Print", pkg: "", typ: $funcType([], [], false)}, {prop: "Prompt", name: "Prompt", pkg: "", typ: $funcType([$String, $String], [$String], false)}, {prop: "ResizeBy", name: "ResizeBy", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "ResizeTo", name: "ResizeTo", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "Scroll", name: "Scroll", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "ScrollBy", name: "ScrollBy", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "ScrollByLines", name: "ScrollByLines", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "ScrollTo", name: "ScrollTo", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "SetCursor", name: "SetCursor", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetInterval", name: "SetInterval", pkg: "", typ: $funcType([funcType, $Int], [$Int], false)}, {prop: "SetTimeout", name: "SetTimeout", pkg: "", typ: $funcType([funcType, $Int], [$Int], false)}, {prop: "Stop", name: "Stop", pkg: "", typ: $funcType([], [], false)}, {prop: "AddEventListener", name: "AddEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$2], [funcType$1], false)}, {prop: "RemoveEventListener", name: "RemoveEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$1], [], false)}, {prop: "RequestAnimationFrame", name: "RequestAnimationFrame", pkg: "", typ: $funcType([funcType$3], [$Int], false)}, {prop: "CancelAnimationFrame", name: "CancelAnimationFrame", pkg: "", typ: $funcType([$Int], [], false)}];
+	ptrType$28.methods = [{prop: "Error", name: "Error", pkg: "", typ: $funcType([], [$String], false)}];
+	ptrType$21.methods = [{prop: "Underlying", name: "Underlying", pkg: "", typ: $funcType([], [ptrType$11], false)}, {prop: "AddEventListener", name: "AddEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$2], [funcType$1], false)}, {prop: "RemoveEventListener", name: "RemoveEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$1], [], false)}, {prop: "BaseURI", name: "BaseURI", pkg: "", typ: $funcType([], [$String], false)}, {prop: "ChildNodes", name: "ChildNodes", pkg: "", typ: $funcType([], [sliceType$1], false)}, {prop: "FirstChild", name: "FirstChild", pkg: "", typ: $funcType([], [Node], false)}, {prop: "LastChild", name: "LastChild", pkg: "", typ: $funcType([], [Node], false)}, {prop: "NextSibling", name: "NextSibling", pkg: "", typ: $funcType([], [Node], false)}, {prop: "NodeName", name: "NodeName", pkg: "", typ: $funcType([], [$String], false)}, {prop: "NodeType", name: "NodeType", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "NodeValue", name: "NodeValue", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetNodeValue", name: "SetNodeValue", pkg: "", typ: $funcType([$String], [], false)}, {prop: "OwnerDocument", name: "OwnerDocument", pkg: "", typ: $funcType([], [Document], false)}, {prop: "ParentNode", name: "ParentNode", pkg: "", typ: $funcType([], [Node], false)}, {prop: "ParentElement", name: "ParentElement", pkg: "", typ: $funcType([], [Element], false)}, {prop: "PreviousSibling", name: "PreviousSibling", pkg: "", typ: $funcType([], [Node], false)}, {prop: "TextContent", name: "TextContent", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetTextContent", name: "SetTextContent", pkg: "", typ: $funcType([$String], [], false)}, {prop: "AppendChild", name: "AppendChild", pkg: "", typ: $funcType([Node], [], false)}, {prop: "CloneNode", name: "CloneNode", pkg: "", typ: $funcType([$Bool], [Node], false)}, {prop: "CompareDocumentPosition", name: "CompareDocumentPosition", pkg: "", typ: $funcType([Node], [$Int], false)}, {prop: "Contains", name: "Contains", pkg: "", typ: $funcType([Node], [$Bool], false)}, {prop: "HasChildNodes", name: "HasChildNodes", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "InsertBefore", name: "InsertBefore", pkg: "", typ: $funcType([Node, Node], [], false)}, {prop: "IsDefaultNamespace", name: "IsDefaultNamespace", pkg: "", typ: $funcType([$String], [$Bool], false)}, {prop: "IsEqualNode", name: "IsEqualNode", pkg: "", typ: $funcType([Node], [$Bool], false)}, {prop: "LookupPrefix", name: "LookupPrefix", pkg: "", typ: $funcType([], [$String], false)}, {prop: "LookupNamespaceURI", name: "LookupNamespaceURI", pkg: "", typ: $funcType([$String], [$String], false)}, {prop: "Normalize", name: "Normalize", pkg: "", typ: $funcType([], [], false)}, {prop: "RemoveChild", name: "RemoveChild", pkg: "", typ: $funcType([Node], [], false)}, {prop: "ReplaceChild", name: "ReplaceChild", pkg: "", typ: $funcType([Node, Node], [], false)}];
+	ptrType.methods = [{prop: "AccessKey", name: "AccessKey", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetAccessKey", name: "SetAccessKey", pkg: "", typ: $funcType([$String], [], false)}, {prop: "AccessKeyLabel", name: "AccessKeyLabel", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetAccessKeyLabel", name: "SetAccessKeyLabel", pkg: "", typ: $funcType([$String], [], false)}, {prop: "ContentEditable", name: "ContentEditable", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetContentEditable", name: "SetContentEditable", pkg: "", typ: $funcType([$String], [], false)}, {prop: "IsContentEditable", name: "IsContentEditable", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "Dataset", name: "Dataset", pkg: "", typ: $funcType([], [], false)}, {prop: "Dir", name: "Dir", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetDir", name: "SetDir", pkg: "", typ: $funcType([$String], [], false)}, {prop: "Draggable", name: "Draggable", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "SetDraggable", name: "SetDraggable", pkg: "", typ: $funcType([$Bool], [], false)}, {prop: "Lang", name: "Lang", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetLang", name: "SetLang", pkg: "", typ: $funcType([$String], [], false)}, {prop: "OffsetHeight", name: "OffsetHeight", pkg: "", typ: $funcType([], [$Float64], false)}, {prop: "OffsetLeft", name: "OffsetLeft", pkg: "", typ: $funcType([], [$Float64], false)}, {prop: "OffsetParent", name: "OffsetParent", pkg: "", typ: $funcType([], [HTMLElement], false)}, {prop: "OffsetTop", name: "OffsetTop", pkg: "", typ: $funcType([], [$Float64], false)}, {prop: "OffsetWidth", name: "OffsetWidth", pkg: "", typ: $funcType([], [$Float64], false)}, {prop: "Style", name: "Style", pkg: "", typ: $funcType([], [ptrType$24], false)}, {prop: "TabIndex", name: "TabIndex", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "SetTabIndex", name: "SetTabIndex", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "Title", name: "Title", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetTitle", name: "SetTitle", pkg: "", typ: $funcType([$String], [], false)}, {prop: "Blur", name: "Blur", pkg: "", typ: $funcType([], [], false)}, {prop: "Click", name: "Click", pkg: "", typ: $funcType([], [], false)}, {prop: "Focus", name: "Focus", pkg: "", typ: $funcType([], [], false)}];
+	ptrType$30.methods = [{prop: "GetBoundingClientRect", name: "GetBoundingClientRect", pkg: "", typ: $funcType([], [ClientRect], false)}, {prop: "PreviousElementSibling", name: "PreviousElementSibling", pkg: "", typ: $funcType([], [Element], false)}, {prop: "NextElementSibling", name: "NextElementSibling", pkg: "", typ: $funcType([], [Element], false)}, {prop: "Class", name: "Class", pkg: "", typ: $funcType([], [ptrType$19], false)}, {prop: "SetClass", name: "SetClass", pkg: "", typ: $funcType([$String], [], false)}, {prop: "ID", name: "ID", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetID", name: "SetID", pkg: "", typ: $funcType([$String], [], false)}, {prop: "TagName", name: "TagName", pkg: "", typ: $funcType([], [$String], false)}, {prop: "GetAttribute", name: "GetAttribute", pkg: "", typ: $funcType([$String], [$String], false)}, {prop: "GetAttributeNS", name: "GetAttributeNS", pkg: "", typ: $funcType([$String, $String], [$String], false)}, {prop: "GetElementsByClassName", name: "GetElementsByClassName", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "GetElementsByTagName", name: "GetElementsByTagName", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "GetElementsByTagNameNS", name: "GetElementsByTagNameNS", pkg: "", typ: $funcType([$String, $String], [sliceType$2], false)}, {prop: "HasAttribute", name: "HasAttribute", pkg: "", typ: $funcType([$String], [$Bool], false)}, {prop: "HasAttributeNS", name: "HasAttributeNS", pkg: "", typ: $funcType([$String, $String], [$Bool], false)}, {prop: "QuerySelector", name: "QuerySelector", pkg: "", typ: $funcType([$String], [Element], false)}, {prop: "QuerySelectorAll", name: "QuerySelectorAll", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "RemoveAttribute", name: "RemoveAttribute", pkg: "", typ: $funcType([$String], [], false)}, {prop: "RemoveAttributeNS", name: "RemoveAttributeNS", pkg: "", typ: $funcType([$String, $String], [], false)}, {prop: "SetAttribute", name: "SetAttribute", pkg: "", typ: $funcType([$String, $String], [], false)}, {prop: "SetAttributeNS", name: "SetAttributeNS", pkg: "", typ: $funcType([$String, $String, $String], [], false)}, {prop: "InnerHTML", name: "InnerHTML", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetInnerHTML", name: "SetInnerHTML", pkg: "", typ: $funcType([$String], [], false)}];
+	ptrType$31.methods = [{prop: "Rel", name: "Rel", pkg: "", typ: $funcType([], [ptrType$19], false)}];
+	ptrType$32.methods = [{prop: "Rel", name: "Rel", pkg: "", typ: $funcType([], [ptrType$19], false)}];
+	ptrType$14.methods = [{prop: "Rel", name: "Rel", pkg: "", typ: $funcType([], [ptrType$19], false)}];
+	ptrType$33.methods = [{prop: "Href", name: "Href", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Target", name: "Target", pkg: "", typ: $funcType([], [$String], false)}];
+	ptrType$35.methods = [{prop: "Form", name: "Form", pkg: "", typ: $funcType([], [ptrType$3], false)}, {prop: "Labels", name: "Labels", pkg: "", typ: $funcType([], [sliceType$4], false)}, {prop: "Validity", name: "Validity", pkg: "", typ: $funcType([], [ptrType$34], false)}, {prop: "CheckValidity", name: "CheckValidity", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "SetCustomValidity", name: "SetCustomValidity", pkg: "", typ: $funcType([$String], [], false)}];
+	ptrType$37.methods = [{prop: "GetContext2d", name: "GetContext2d", pkg: "", typ: $funcType([], [ptrType$36], false)}, {prop: "GetContext", name: "GetContext", pkg: "", typ: $funcType([$String], [ptrType$11], false)}];
+	ptrType$36.methods = [{prop: "CreateLinearGradient", name: "CreateLinearGradient", pkg: "", typ: $funcType([$Int, $Int, $Int, $Int], [], false)}, {prop: "Rect", name: "Rect", pkg: "", typ: $funcType([$Int, $Int, $Int, $Int], [], false)}, {prop: "FillRect", name: "FillRect", pkg: "", typ: $funcType([$Int, $Int, $Int, $Int], [], false)}, {prop: "StrokeRect", name: "StrokeRect", pkg: "", typ: $funcType([$Int, $Int, $Int, $Int], [], false)}, {prop: "ClearRect", name: "ClearRect", pkg: "", typ: $funcType([$Int, $Int, $Int, $Int], [], false)}, {prop: "Fill", name: "Fill", pkg: "", typ: $funcType([], [], false)}, {prop: "Stroke", name: "Stroke", pkg: "", typ: $funcType([], [], false)}, {prop: "BeginPath", name: "BeginPath", pkg: "", typ: $funcType([], [], false)}, {prop: "MoveTo", name: "MoveTo", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "ClosePath", name: "ClosePath", pkg: "", typ: $funcType([], [], false)}, {prop: "LineTo", name: "LineTo", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "Clip", name: "Clip", pkg: "", typ: $funcType([], [], false)}, {prop: "QuadraticCurveTo", name: "QuadraticCurveTo", pkg: "", typ: $funcType([$Int, $Int, $Int, $Int], [], false)}, {prop: "BezierCurveTo", name: "BezierCurveTo", pkg: "", typ: $funcType([$Int, $Int, $Int, $Int, $Int, $Int], [], false)}, {prop: "Arc", name: "Arc", pkg: "", typ: $funcType([$Int, $Int, $Int, $Int, $Int, $Bool], [], false)}, {prop: "ArcTo", name: "ArcTo", pkg: "", typ: $funcType([$Int, $Int, $Int, $Int, $Int], [], false)}, {prop: "IsPointInPath", name: "IsPointInPath", pkg: "", typ: $funcType([$Int, $Int], [$Bool], false)}, {prop: "Scale", name: "Scale", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "Rotate", name: "Rotate", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "Translate", name: "Translate", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "Transform", name: "Transform", pkg: "", typ: $funcType([$Int, $Int, $Int, $Int, $Int, $Int], [], false)}, {prop: "SetTransform", name: "SetTransform", pkg: "", typ: $funcType([$Int, $Int, $Int, $Int, $Int, $Int], [], false)}, {prop: "FillText", name: "FillText", pkg: "", typ: $funcType([$String, $Int, $Int, $Int], [], false)}, {prop: "StrokeText", name: "StrokeText", pkg: "", typ: $funcType([$String, $Int, $Int, $Int], [], false)}];
+	ptrType$13.methods = [{prop: "Options", name: "Options", pkg: "", typ: $funcType([], [sliceType$5], false)}];
+	ptrType$38.methods = [{prop: "Elements", name: "Elements", pkg: "", typ: $funcType([], [sliceType$3], false)}, {prop: "Form", name: "Form", pkg: "", typ: $funcType([], [ptrType$3], false)}, {prop: "Validity", name: "Validity", pkg: "", typ: $funcType([], [ptrType$34], false)}, {prop: "CheckValidity", name: "CheckValidity", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "SetCustomValidity", name: "SetCustomValidity", pkg: "", typ: $funcType([$String], [], false)}];
+	ptrType$3.methods = [{prop: "Elements", name: "Elements", pkg: "", typ: $funcType([], [sliceType$3], false)}, {prop: "CheckValidity", name: "CheckValidity", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "Submit", name: "Submit", pkg: "", typ: $funcType([], [], false)}, {prop: "Reset", name: "Reset", pkg: "", typ: $funcType([], [], false)}, {prop: "Item", name: "Item", pkg: "", typ: $funcType([$Int], [HTMLElement], false)}, {prop: "NamedItem", name: "NamedItem", pkg: "", typ: $funcType([$String], [HTMLElement], false)}];
+	ptrType$39.methods = [{prop: "ContentDocument", name: "ContentDocument", pkg: "", typ: $funcType([], [Document], false)}, {prop: "ContentWindow", name: "ContentWindow", pkg: "", typ: $funcType([], [Window], false)}];
+	ptrType$40.methods = [{prop: "Files", name: "Files", pkg: "", typ: $funcType([], [sliceType$12], false)}, {prop: "List", name: "List", pkg: "", typ: $funcType([], [ptrType$13], false)}, {prop: "Labels", name: "Labels", pkg: "", typ: $funcType([], [sliceType$4], false)}, {prop: "Form", name: "Form", pkg: "", typ: $funcType([], [ptrType$3], false)}, {prop: "Validity", name: "Validity", pkg: "", typ: $funcType([], [ptrType$34], false)}, {prop: "CheckValidity", name: "CheckValidity", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "SetCustomValidity", name: "SetCustomValidity", pkg: "", typ: $funcType([$String], [], false)}, {prop: "Select", name: "Select", pkg: "", typ: $funcType([], [], false)}, {prop: "SetSelectionRange", name: "SetSelectionRange", pkg: "", typ: $funcType([$Int, $Int, $String], [], false)}, {prop: "StepDown", name: "StepDown", pkg: "", typ: $funcType([$Int], [$error], false)}, {prop: "StepUp", name: "StepUp", pkg: "", typ: $funcType([$Int], [$error], false)}];
+	ptrType$41.methods = [{prop: "Form", name: "Form", pkg: "", typ: $funcType([], [ptrType$3], false)}, {prop: "Labels", name: "Labels", pkg: "", typ: $funcType([], [sliceType$4], false)}, {prop: "Validity", name: "Validity", pkg: "", typ: $funcType([], [ptrType$34], false)}, {prop: "CheckValidity", name: "CheckValidity", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "SetCustomValidity", name: "SetCustomValidity", pkg: "", typ: $funcType([$String], [], false)}];
+	ptrType$4.methods = [{prop: "Control", name: "Control", pkg: "", typ: $funcType([], [HTMLElement], false)}, {prop: "Form", name: "Form", pkg: "", typ: $funcType([], [ptrType$3], false)}];
+	ptrType$42.methods = [{prop: "Form", name: "Form", pkg: "", typ: $funcType([], [ptrType$3], false)}];
+	ptrType$43.methods = [{prop: "Rel", name: "Rel", pkg: "", typ: $funcType([], [ptrType$19], false)}, {prop: "Sizes", name: "Sizes", pkg: "", typ: $funcType([], [ptrType$19], false)}, {prop: "Sheet", name: "Sheet", pkg: "", typ: $funcType([], [StyleSheet], false)}];
+	ptrType$44.methods = [{prop: "Areas", name: "Areas", pkg: "", typ: $funcType([], [sliceType$13], false)}, {prop: "Images", name: "Images", pkg: "", typ: $funcType([], [sliceType$3], false)}];
+	HTMLMeterElement.methods = [{prop: "Labels", name: "Labels", pkg: "", typ: $funcType([], [sliceType$4], false)}];
+	ptrType$45.methods = [{prop: "Form", name: "Form", pkg: "", typ: $funcType([], [ptrType$3], false)}, {prop: "ContentDocument", name: "ContentDocument", pkg: "", typ: $funcType([], [Document], false)}, {prop: "ContentWindow", name: "ContentWindow", pkg: "", typ: $funcType([], [Window], false)}, {prop: "Validity", name: "Validity", pkg: "", typ: $funcType([], [ptrType$34], false)}, {prop: "CheckValidity", name: "CheckValidity", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "SetCustomValidity", name: "SetCustomValidity", pkg: "", typ: $funcType([$String], [], false)}];
+	ptrType$5.methods = [{prop: "Form", name: "Form", pkg: "", typ: $funcType([], [ptrType$3], false)}];
+	ptrType$46.methods = [{prop: "Form", name: "Form", pkg: "", typ: $funcType([], [ptrType$3], false)}, {prop: "Labels", name: "Labels", pkg: "", typ: $funcType([], [sliceType$4], false)}, {prop: "Validity", name: "Validity", pkg: "", typ: $funcType([], [ptrType$34], false)}, {prop: "For", name: "For", pkg: "", typ: $funcType([], [ptrType$19], false)}, {prop: "CheckValidity", name: "CheckValidity", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "SetCustomValidity", name: "SetCustomValidity", pkg: "", typ: $funcType([$String], [], false)}];
+	HTMLProgressElement.methods = [{prop: "Labels", name: "Labels", pkg: "", typ: $funcType([], [sliceType$4], false)}];
+	ptrType$47.methods = [{prop: "Labels", name: "Labels", pkg: "", typ: $funcType([], [sliceType$4], false)}, {prop: "Form", name: "Form", pkg: "", typ: $funcType([], [ptrType$3], false)}, {prop: "Options", name: "Options", pkg: "", typ: $funcType([], [sliceType$5], false)}, {prop: "SelectedOptions", name: "SelectedOptions", pkg: "", typ: $funcType([], [sliceType$5], false)}, {prop: "Item", name: "Item", pkg: "", typ: $funcType([$Int], [ptrType$5], false)}, {prop: "NamedItem", name: "NamedItem", pkg: "", typ: $funcType([$String], [ptrType$5], false)}, {prop: "Validity", name: "Validity", pkg: "", typ: $funcType([], [ptrType$34], false)}, {prop: "CheckValidity", name: "CheckValidity", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "SetCustomValidity", name: "SetCustomValidity", pkg: "", typ: $funcType([$String], [], false)}];
+	ptrType$16.methods = [{prop: "Cells", name: "Cells", pkg: "", typ: $funcType([], [sliceType$14], false)}, {prop: "InsertCell", name: "InsertCell", pkg: "", typ: $funcType([$Int], [ptrType$15], false)}, {prop: "DeleteCell", name: "DeleteCell", pkg: "", typ: $funcType([$Int], [], false)}];
+	ptrType$48.methods = [{prop: "Rows", name: "Rows", pkg: "", typ: $funcType([], [sliceType$15], false)}, {prop: "DeleteRow", name: "DeleteRow", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "InsertRow", name: "InsertRow", pkg: "", typ: $funcType([$Int], [ptrType$16], false)}];
+	ptrType$49.methods = [{prop: "Form", name: "Form", pkg: "", typ: $funcType([], [ptrType$3], false)}, {prop: "Labels", name: "Labels", pkg: "", typ: $funcType([], [sliceType$4], false)}, {prop: "Validity", name: "Validity", pkg: "", typ: $funcType([], [ptrType$34], false)}, {prop: "CheckValidity", name: "CheckValidity", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "SetCustomValidity", name: "SetCustomValidity", pkg: "", typ: $funcType([$String], [], false)}, {prop: "Select", name: "Select", pkg: "", typ: $funcType([], [], false)}, {prop: "SetSelectionRange", name: "SetSelectionRange", pkg: "", typ: $funcType([$Int, $Int, $String], [], false)}];
+	ptrType$51.methods = [{prop: "Track", name: "Track", pkg: "", typ: $funcType([], [ptrType$50], false)}];
+	ptrType$24.methods = [{prop: "ToMap", name: "ToMap", pkg: "", typ: $funcType([], [mapType], false)}, {prop: "RemoveProperty", name: "RemoveProperty", pkg: "", typ: $funcType([$String], [], false)}, {prop: "GetPropertyValue", name: "GetPropertyValue", pkg: "", typ: $funcType([$String], [$String], false)}, {prop: "GetPropertyPriority", name: "GetPropertyPriority", pkg: "", typ: $funcType([$String], [$String], false)}, {prop: "SetProperty", name: "SetProperty", pkg: "", typ: $funcType([$String, $String, $String], [], false)}, {prop: "Index", name: "Index", pkg: "", typ: $funcType([$Int], [$String], false)}, {prop: "Length", name: "Length", pkg: "", typ: $funcType([], [$Int], false)}];
+	ptrType$17.methods = [{prop: "Bubbles", name: "Bubbles", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "Cancelable", name: "Cancelable", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "CurrentTarget", name: "CurrentTarget", pkg: "", typ: $funcType([], [Element], false)}, {prop: "DefaultPrevented", name: "DefaultPrevented", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "EventPhase", name: "EventPhase", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Target", name: "Target", pkg: "", typ: $funcType([], [Element], false)}, {prop: "Timestamp", name: "Timestamp", pkg: "", typ: $funcType([], [time.Time], false)}, {prop: "Type", name: "Type", pkg: "", typ: $funcType([], [$String], false)}, {prop: "PreventDefault", name: "PreventDefault", pkg: "", typ: $funcType([], [], false)}, {prop: "StopImmediatePropagation", name: "StopImmediatePropagation", pkg: "", typ: $funcType([], [], false)}, {prop: "StopPropagation", name: "StopPropagation", pkg: "", typ: $funcType([], [], false)}];
+	ptrType$52.methods = [{prop: "ModifierState", name: "ModifierState", pkg: "", typ: $funcType([$String], [$Bool], false)}];
+	ptrType$53.methods = [{prop: "RelatedTarget", name: "RelatedTarget", pkg: "", typ: $funcType([], [Element], false)}, {prop: "ModifierState", name: "ModifierState", pkg: "", typ: $funcType([$String], [$Bool], false)}];
+	TokenList.init([{prop: "dtl", name: "dtl", pkg: "honnef.co/go/js/dom", typ: ptrType$11, tag: ""}, {prop: "o", name: "o", pkg: "honnef.co/go/js/dom", typ: ptrType$11, tag: ""}, {prop: "sa", name: "sa", pkg: "honnef.co/go/js/dom", typ: $String, tag: ""}, {prop: "Length", name: "Length", pkg: "", typ: $Int, tag: "js:\"length\""}]);
+	Document.init([{prop: "AddEventListener", name: "AddEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$2], [funcType$1], false)}, {prop: "AdoptNode", name: "AdoptNode", pkg: "", typ: $funcType([Node], [Node], false)}, {prop: "AppendChild", name: "AppendChild", pkg: "", typ: $funcType([Node], [], false)}, {prop: "Async", name: "Async", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "BaseURI", name: "BaseURI", pkg: "", typ: $funcType([], [$String], false)}, {prop: "ChildNodes", name: "ChildNodes", pkg: "", typ: $funcType([], [sliceType$1], false)}, {prop: "CloneNode", name: "CloneNode", pkg: "", typ: $funcType([$Bool], [Node], false)}, {prop: "CompareDocumentPosition", name: "CompareDocumentPosition", pkg: "", typ: $funcType([Node], [$Int], false)}, {prop: "Contains", name: "Contains", pkg: "", typ: $funcType([Node], [$Bool], false)}, {prop: "CreateElement", name: "CreateElement", pkg: "", typ: $funcType([$String], [Element], false)}, {prop: "CreateElementNS", name: "CreateElementNS", pkg: "", typ: $funcType([$String, $String], [Element], false)}, {prop: "CreateTextNode", name: "CreateTextNode", pkg: "", typ: $funcType([$String], [ptrType$10], false)}, {prop: "Doctype", name: "Doctype", pkg: "", typ: $funcType([], [DocumentType], false)}, {prop: "DocumentElement", name: "DocumentElement", pkg: "", typ: $funcType([], [Element], false)}, {prop: "DocumentURI", name: "DocumentURI", pkg: "", typ: $funcType([], [$String], false)}, {prop: "ElementFromPoint", name: "ElementFromPoint", pkg: "", typ: $funcType([$Int, $Int], [Element], false)}, {prop: "EnableStyleSheetsForSet", name: "EnableStyleSheetsForSet", pkg: "", typ: $funcType([$String], [], false)}, {prop: "FirstChild", name: "FirstChild", pkg: "", typ: $funcType([], [Node], false)}, {prop: "GetElementByID", name: "GetElementByID", pkg: "", typ: $funcType([$String], [Element], false)}, {prop: "GetElementsByClassName", name: "GetElementsByClassName", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "GetElementsByTagName", name: "GetElementsByTagName", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "GetElementsByTagNameNS", name: "GetElementsByTagNameNS", pkg: "", typ: $funcType([$String, $String], [sliceType$2], false)}, {prop: "HasChildNodes", name: "HasChildNodes", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "Implementation", name: "Implementation", pkg: "", typ: $funcType([], [DOMImplementation], false)}, {prop: "ImportNode", name: "ImportNode", pkg: "", typ: $funcType([Node, $Bool], [Node], false)}, {prop: "InsertBefore", name: "InsertBefore", pkg: "", typ: $funcType([Node, Node], [], false)}, {prop: "IsDefaultNamespace", name: "IsDefaultNamespace", pkg: "", typ: $funcType([$String], [$Bool], false)}, {prop: "IsEqualNode", name: "IsEqualNode", pkg: "", typ: $funcType([Node], [$Bool], false)}, {prop: "LastChild", name: "LastChild", pkg: "", typ: $funcType([], [Node], false)}, {prop: "LastStyleSheetSet", name: "LastStyleSheetSet", pkg: "", typ: $funcType([], [$String], false)}, {prop: "LookupNamespaceURI", name: "LookupNamespaceURI", pkg: "", typ: $funcType([$String], [$String], false)}, {prop: "LookupPrefix", name: "LookupPrefix", pkg: "", typ: $funcType([], [$String], false)}, {prop: "NextSibling", name: "NextSibling", pkg: "", typ: $funcType([], [Node], false)}, {prop: "NodeName", name: "NodeName", pkg: "", typ: $funcType([], [$String], false)}, {prop: "NodeType", name: "NodeType", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "NodeValue", name: "NodeValue", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Normalize", name: "Normalize", pkg: "", typ: $funcType([], [], false)}, {prop: "OwnerDocument", name: "OwnerDocument", pkg: "", typ: $funcType([], [Document], false)}, {prop: "ParentElement", name: "ParentElement", pkg: "", typ: $funcType([], [Element], false)}, {prop: "ParentNode", name: "ParentNode", pkg: "", typ: $funcType([], [Node], false)}, {prop: "PreferredStyleSheetSet", name: "PreferredStyleSheetSet", pkg: "", typ: $funcType([], [$String], false)}, {prop: "PreviousSibling", name: "PreviousSibling", pkg: "", typ: $funcType([], [Node], false)}, {prop: "QuerySelector", name: "QuerySelector", pkg: "", typ: $funcType([$String], [Element], false)}, {prop: "QuerySelectorAll", name: "QuerySelectorAll", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "RemoveChild", name: "RemoveChild", pkg: "", typ: $funcType([Node], [], false)}, {prop: "RemoveEventListener", name: "RemoveEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$1], [], false)}, {prop: "ReplaceChild", name: "ReplaceChild", pkg: "", typ: $funcType([Node, Node], [], false)}, {prop: "SelectedStyleSheetSet", name: "SelectedStyleSheetSet", pkg: "", typ: $funcType([], [$String], false)}, {prop: "SetAsync", name: "SetAsync", pkg: "", typ: $funcType([$Bool], [], false)}, {prop: "SetNodeValue", name: "SetNodeValue", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetTextContent", name: "SetTextContent", pkg: "", typ: $funcType([$String], [], false)}, {prop: "StyleSheetSets", name: "StyleSheetSets", pkg: "", typ: $funcType([], [sliceType$11], false)}, {prop: "StyleSheets", name: "StyleSheets", pkg: "", typ: $funcType([], [sliceType$11], false)}, {prop: "TextContent", name: "TextContent", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Underlying", name: "Underlying", pkg: "", typ: $funcType([], [ptrType$11], false)}]);
+	document.init([{prop: "BasicNode", name: "", pkg: "", typ: ptrType$21, tag: ""}]);
+	htmlDocument.init([{prop: "document", name: "", pkg: "honnef.co/go/js/dom", typ: ptrType$22, tag: ""}]);
+	URLUtils.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}, {prop: "Href", name: "Href", pkg: "", typ: $String, tag: "js:\"href\""}, {prop: "Protocol", name: "Protocol", pkg: "", typ: $String, tag: "js:\"protocol\""}, {prop: "Host", name: "Host", pkg: "", typ: $String, tag: "js:\"host\""}, {prop: "Hostname", name: "Hostname", pkg: "", typ: $String, tag: "js:\"hostname\""}, {prop: "Port", name: "Port", pkg: "", typ: $String, tag: "js:\"port\""}, {prop: "Pathname", name: "Pathname", pkg: "", typ: $String, tag: "js:\"pathname\""}, {prop: "Search", name: "Search", pkg: "", typ: $String, tag: "js:\"search\""}, {prop: "Hash", name: "Hash", pkg: "", typ: $String, tag: "js:\"hash\""}, {prop: "Username", name: "Username", pkg: "", typ: $String, tag: "js:\"username\""}, {prop: "Password", name: "Password", pkg: "", typ: $String, tag: "js:\"password\""}, {prop: "Origin", name: "Origin", pkg: "", typ: $String, tag: "js:\"origin\""}]);
+	Location.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}, {prop: "URLUtils", name: "", pkg: "", typ: ptrType$1, tag: ""}]);
+	HTMLElement.init([{prop: "AccessKey", name: "AccessKey", pkg: "", typ: $funcType([], [$String], false)}, {prop: "AccessKeyLabel", name: "AccessKeyLabel", pkg: "", typ: $funcType([], [$String], false)}, {prop: "AddEventListener", name: "AddEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$2], [funcType$1], false)}, {prop: "AppendChild", name: "AppendChild", pkg: "", typ: $funcType([Node], [], false)}, {prop: "BaseURI", name: "BaseURI", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Blur", name: "Blur", pkg: "", typ: $funcType([], [], false)}, {prop: "ChildNodes", name: "ChildNodes", pkg: "", typ: $funcType([], [sliceType$1], false)}, {prop: "Class", name: "Class", pkg: "", typ: $funcType([], [ptrType$19], false)}, {prop: "Click", name: "Click", pkg: "", typ: $funcType([], [], false)}, {prop: "CloneNode", name: "CloneNode", pkg: "", typ: $funcType([$Bool], [Node], false)}, {prop: "CompareDocumentPosition", name: "CompareDocumentPosition", pkg: "", typ: $funcType([Node], [$Int], false)}, {prop: "Contains", name: "Contains", pkg: "", typ: $funcType([Node], [$Bool], false)}, {prop: "ContentEditable", name: "ContentEditable", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Dataset", name: "Dataset", pkg: "", typ: $funcType([], [], false)}, {prop: "Dir", name: "Dir", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Draggable", name: "Draggable", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "FirstChild", name: "FirstChild", pkg: "", typ: $funcType([], [Node], false)}, {prop: "Focus", name: "Focus", pkg: "", typ: $funcType([], [], false)}, {prop: "GetAttribute", name: "GetAttribute", pkg: "", typ: $funcType([$String], [$String], false)}, {prop: "GetAttributeNS", name: "GetAttributeNS", pkg: "", typ: $funcType([$String, $String], [$String], false)}, {prop: "GetBoundingClientRect", name: "GetBoundingClientRect", pkg: "", typ: $funcType([], [ClientRect], false)}, {prop: "GetElementsByClassName", name: "GetElementsByClassName", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "GetElementsByTagName", name: "GetElementsByTagName", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "GetElementsByTagNameNS", name: "GetElementsByTagNameNS", pkg: "", typ: $funcType([$String, $String], [sliceType$2], false)}, {prop: "HasAttribute", name: "HasAttribute", pkg: "", typ: $funcType([$String], [$Bool], false)}, {prop: "HasAttributeNS", name: "HasAttributeNS", pkg: "", typ: $funcType([$String, $String], [$Bool], false)}, {prop: "HasChildNodes", name: "HasChildNodes", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "ID", name: "ID", pkg: "", typ: $funcType([], [$String], false)}, {prop: "InnerHTML", name: "InnerHTML", pkg: "", typ: $funcType([], [$String], false)}, {prop: "InsertBefore", name: "InsertBefore", pkg: "", typ: $funcType([Node, Node], [], false)}, {prop: "IsContentEditable", name: "IsContentEditable", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "IsDefaultNamespace", name: "IsDefaultNamespace", pkg: "", typ: $funcType([$String], [$Bool], false)}, {prop: "IsEqualNode", name: "IsEqualNode", pkg: "", typ: $funcType([Node], [$Bool], false)}, {prop: "Lang", name: "Lang", pkg: "", typ: $funcType([], [$String], false)}, {prop: "LastChild", name: "LastChild", pkg: "", typ: $funcType([], [Node], false)}, {prop: "LookupNamespaceURI", name: "LookupNamespaceURI", pkg: "", typ: $funcType([$String], [$String], false)}, {prop: "LookupPrefix", name: "LookupPrefix", pkg: "", typ: $funcType([], [$String], false)}, {prop: "NextElementSibling", name: "NextElementSibling", pkg: "", typ: $funcType([], [Element], false)}, {prop: "NextSibling", name: "NextSibling", pkg: "", typ: $funcType([], [Node], false)}, {prop: "NodeName", name: "NodeName", pkg: "", typ: $funcType([], [$String], false)}, {prop: "NodeType", name: "NodeType", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "NodeValue", name: "NodeValue", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Normalize", name: "Normalize", pkg: "", typ: $funcType([], [], false)}, {prop: "OffsetHeight", name: "OffsetHeight", pkg: "", typ: $funcType([], [$Float64], false)}, {prop: "OffsetLeft", name: "OffsetLeft", pkg: "", typ: $funcType([], [$Float64], false)}, {prop: "OffsetParent", name: "OffsetParent", pkg: "", typ: $funcType([], [HTMLElement], false)}, {prop: "OffsetTop", name: "OffsetTop", pkg: "", typ: $funcType([], [$Float64], false)}, {prop: "OffsetWidth", name: "OffsetWidth", pkg: "", typ: $funcType([], [$Float64], false)}, {prop: "OwnerDocument", name: "OwnerDocument", pkg: "", typ: $funcType([], [Document], false)}, {prop: "ParentElement", name: "ParentElement", pkg: "", typ: $funcType([], [Element], false)}, {prop: "ParentNode", name: "ParentNode", pkg: "", typ: $funcType([], [Node], false)}, {prop: "PreviousElementSibling", name: "PreviousElementSibling", pkg: "", typ: $funcType([], [Element], false)}, {prop: "PreviousSibling", name: "PreviousSibling", pkg: "", typ: $funcType([], [Node], false)}, {prop: "QuerySelector", name: "QuerySelector", pkg: "", typ: $funcType([$String], [Element], false)}, {prop: "QuerySelectorAll", name: "QuerySelectorAll", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "RemoveAttribute", name: "RemoveAttribute", pkg: "", typ: $funcType([$String], [], false)}, {prop: "RemoveAttributeNS", name: "RemoveAttributeNS", pkg: "", typ: $funcType([$String, $String], [], false)}, {prop: "RemoveChild", name: "RemoveChild", pkg: "", typ: $funcType([Node], [], false)}, {prop: "RemoveEventListener", name: "RemoveEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$1], [], false)}, {prop: "ReplaceChild", name: "ReplaceChild", pkg: "", typ: $funcType([Node, Node], [], false)}, {prop: "SetAccessKey", name: "SetAccessKey", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetAccessKeyLabel", name: "SetAccessKeyLabel", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetAttribute", name: "SetAttribute", pkg: "", typ: $funcType([$String, $String], [], false)}, {prop: "SetAttributeNS", name: "SetAttributeNS", pkg: "", typ: $funcType([$String, $String, $String], [], false)}, {prop: "SetContentEditable", name: "SetContentEditable", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetDir", name: "SetDir", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetDraggable", name: "SetDraggable", pkg: "", typ: $funcType([$Bool], [], false)}, {prop: "SetID", name: "SetID", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetInnerHTML", name: "SetInnerHTML", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetLang", name: "SetLang", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetNodeValue", name: "SetNodeValue", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetTextContent", name: "SetTextContent", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetTitle", name: "SetTitle", pkg: "", typ: $funcType([$String], [], false)}, {prop: "Style", name: "Style", pkg: "", typ: $funcType([], [ptrType$24], false)}, {prop: "TagName", name: "TagName", pkg: "", typ: $funcType([], [$String], false)}, {prop: "TextContent", name: "TextContent", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Title", name: "Title", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Underlying", name: "Underlying", pkg: "", typ: $funcType([], [ptrType$11], false)}]);
+	Window.init([{prop: "AddEventListener", name: "AddEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$2], [funcType$1], false)}, {prop: "Alert", name: "Alert", pkg: "", typ: $funcType([$String], [], false)}, {prop: "Back", name: "Back", pkg: "", typ: $funcType([], [], false)}, {prop: "Blur", name: "Blur", pkg: "", typ: $funcType([], [], false)}, {prop: "CancelAnimationFrame", name: "CancelAnimationFrame", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "ClearInterval", name: "ClearInterval", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "ClearTimeout", name: "ClearTimeout", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "Close", name: "Close", pkg: "", typ: $funcType([], [], false)}, {prop: "Confirm", name: "Confirm", pkg: "", typ: $funcType([$String], [$Bool], false)}, {prop: "Console", name: "Console", pkg: "", typ: $funcType([], [ptrType$25], false)}, {prop: "Document", name: "Document", pkg: "", typ: $funcType([], [Document], false)}, {prop: "Focus", name: "Focus", pkg: "", typ: $funcType([], [], false)}, {prop: "Forward", name: "Forward", pkg: "", typ: $funcType([], [], false)}, {prop: "FrameElement", name: "FrameElement", pkg: "", typ: $funcType([], [Element], false)}, {prop: "GetComputedStyle", name: "GetComputedStyle", pkg: "", typ: $funcType([Element, $String], [ptrType$24], false)}, {prop: "GetSelection", name: "GetSelection", pkg: "", typ: $funcType([], [Selection], false)}, {prop: "History", name: "History", pkg: "", typ: $funcType([], [History], false)}, {prop: "Home", name: "Home", pkg: "", typ: $funcType([], [], false)}, {prop: "InnerHeight", name: "InnerHeight", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "InnerWidth", name: "InnerWidth", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Length", name: "Length", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Location", name: "Location", pkg: "", typ: $funcType([], [ptrType$20], false)}, {prop: "MoveBy", name: "MoveBy", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "MoveTo", name: "MoveTo", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "Name", name: "Name", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Navigator", name: "Navigator", pkg: "", typ: $funcType([], [Navigator], false)}, {prop: "Open", name: "Open", pkg: "", typ: $funcType([$String, $String, $String], [Window], false)}, {prop: "OpenDialog", name: "OpenDialog", pkg: "", typ: $funcType([$String, $String, $String, sliceType], [Window], false)}, {prop: "Opener", name: "Opener", pkg: "", typ: $funcType([], [Window], false)}, {prop: "OuterHeight", name: "OuterHeight", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "OuterWidth", name: "OuterWidth", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Parent", name: "Parent", pkg: "", typ: $funcType([], [Window], false)}, {prop: "PostMessage", name: "PostMessage", pkg: "", typ: $funcType([$String, $String, sliceType], [], false)}, {prop: "Print", name: "Print", pkg: "", typ: $funcType([], [], false)}, {prop: "Prompt", name: "Prompt", pkg: "", typ: $funcType([$String, $String], [$String], false)}, {prop: "RemoveEventListener", name: "RemoveEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$1], [], false)}, {prop: "RequestAnimationFrame", name: "RequestAnimationFrame", pkg: "", typ: $funcType([funcType$3], [$Int], false)}, {prop: "ResizeBy", name: "ResizeBy", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "ResizeTo", name: "ResizeTo", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "Screen", name: "Screen", pkg: "", typ: $funcType([], [ptrType$26], false)}, {prop: "ScreenX", name: "ScreenX", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "ScreenY", name: "ScreenY", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Scroll", name: "Scroll", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "ScrollBy", name: "ScrollBy", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "ScrollByLines", name: "ScrollByLines", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "ScrollMaxX", name: "ScrollMaxX", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "ScrollMaxY", name: "ScrollMaxY", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "ScrollTo", name: "ScrollTo", pkg: "", typ: $funcType([$Int, $Int], [], false)}, {prop: "ScrollX", name: "ScrollX", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "ScrollY", name: "ScrollY", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "SetCursor", name: "SetCursor", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetInterval", name: "SetInterval", pkg: "", typ: $funcType([funcType, $Int], [$Int], false)}, {prop: "SetName", name: "SetName", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetTimeout", name: "SetTimeout", pkg: "", typ: $funcType([funcType, $Int], [$Int], false)}, {prop: "Stop", name: "Stop", pkg: "", typ: $funcType([], [], false)}, {prop: "Top", name: "Top", pkg: "", typ: $funcType([], [Window], false)}]);
+	window.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}]);
+	Selection.init([]);
+	Screen.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}, {prop: "AvailTop", name: "AvailTop", pkg: "", typ: $Int, tag: "js:\"availTop\""}, {prop: "AvailLeft", name: "AvailLeft", pkg: "", typ: $Int, tag: "js:\"availLeft\""}, {prop: "AvailHeight", name: "AvailHeight", pkg: "", typ: $Int, tag: "js:\"availHeight\""}, {prop: "AvailWidth", name: "AvailWidth", pkg: "", typ: $Int, tag: "js:\"availWidth\""}, {prop: "ColorDepth", name: "ColorDepth", pkg: "", typ: $Int, tag: "js:\"colorDepth\""}, {prop: "Height", name: "Height", pkg: "", typ: $Int, tag: "js:\"height\""}, {prop: "Left", name: "Left", pkg: "", typ: $Int, tag: "js:\"left\""}, {prop: "PixelDepth", name: "PixelDepth", pkg: "", typ: $Int, tag: "js:\"pixelDepth\""}, {prop: "Top", name: "Top", pkg: "", typ: $Int, tag: "js:\"top\""}, {prop: "Width", name: "Width", pkg: "", typ: $Int, tag: "js:\"width\""}]);
+	Navigator.init([{prop: "AppName", name: "AppName", pkg: "", typ: $funcType([], [$String], false)}, {prop: "AppVersion", name: "AppVersion", pkg: "", typ: $funcType([], [$String], false)}, {prop: "CookieEnabled", name: "CookieEnabled", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "DoNotTrack", name: "DoNotTrack", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Geolocation", name: "Geolocation", pkg: "", typ: $funcType([], [Geolocation], false)}, {prop: "Language", name: "Language", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Online", name: "Online", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "Platform", name: "Platform", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Product", name: "Product", pkg: "", typ: $funcType([], [$String], false)}, {prop: "RegisterProtocolHandler", name: "RegisterProtocolHandler", pkg: "", typ: $funcType([$String, $String, $String], [], false)}, {prop: "UserAgent", name: "UserAgent", pkg: "", typ: $funcType([], [$String], false)}]);
+	Geolocation.init([{prop: "ClearWatch", name: "ClearWatch", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "CurrentPosition", name: "CurrentPosition", pkg: "", typ: $funcType([funcType$4, funcType$5, PositionOptions], [Position], false)}, {prop: "WatchPosition", name: "WatchPosition", pkg: "", typ: $funcType([funcType$4, funcType$5, PositionOptions], [$Int], false)}]);
+	PositionError.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}, {prop: "Code", name: "Code", pkg: "", typ: $Int, tag: "js:\"code\""}]);
+	PositionOptions.init([{prop: "EnableHighAccuracy", name: "EnableHighAccuracy", pkg: "", typ: $Bool, tag: ""}, {prop: "Timeout", name: "Timeout", pkg: "", typ: time.Duration, tag: ""}, {prop: "MaximumAge", name: "MaximumAge", pkg: "", typ: time.Duration, tag: ""}]);
+	Position.init([{prop: "Coords", name: "Coords", pkg: "", typ: ptrType$29, tag: ""}, {prop: "Timestamp", name: "Timestamp", pkg: "", typ: time.Time, tag: ""}]);
+	Coordinates.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}, {prop: "Latitude", name: "Latitude", pkg: "", typ: $Float64, tag: "js:\"latitude\""}, {prop: "Longitude", name: "Longitude", pkg: "", typ: $Float64, tag: "js:\"longitude\""}, {prop: "Altitude", name: "Altitude", pkg: "", typ: $Float64, tag: "js:\"altitude\""}, {prop: "Accuracy", name: "Accuracy", pkg: "", typ: $Float64, tag: "js:\"accuracy\""}, {prop: "AltitudeAccuracy", name: "AltitudeAccuracy", pkg: "", typ: $Float64, tag: "js:\"altitudeAccuracy\""}, {prop: "Heading", name: "Heading", pkg: "", typ: $Float64, tag: "js:\"heading\""}, {prop: "Speed", name: "Speed", pkg: "", typ: $Float64, tag: "js:\"speed\""}]);
+	History.init([{prop: "Back", name: "Back", pkg: "", typ: $funcType([], [], false)}, {prop: "Forward", name: "Forward", pkg: "", typ: $funcType([], [], false)}, {prop: "Go", name: "Go", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "Length", name: "Length", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "PushState", name: "PushState", pkg: "", typ: $funcType([$emptyInterface, $String, $String], [], false)}, {prop: "ReplaceState", name: "ReplaceState", pkg: "", typ: $funcType([$emptyInterface, $String, $String], [], false)}, {prop: "State", name: "State", pkg: "", typ: $funcType([], [$emptyInterface], false)}]);
+	Console.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}]);
+	DocumentType.init([]);
+	DOMImplementation.init([]);
+	StyleSheet.init([]);
+	Node.init([{prop: "AddEventListener", name: "AddEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$2], [funcType$1], false)}, {prop: "AppendChild", name: "AppendChild", pkg: "", typ: $funcType([Node], [], false)}, {prop: "BaseURI", name: "BaseURI", pkg: "", typ: $funcType([], [$String], false)}, {prop: "ChildNodes", name: "ChildNodes", pkg: "", typ: $funcType([], [sliceType$1], false)}, {prop: "CloneNode", name: "CloneNode", pkg: "", typ: $funcType([$Bool], [Node], false)}, {prop: "CompareDocumentPosition", name: "CompareDocumentPosition", pkg: "", typ: $funcType([Node], [$Int], false)}, {prop: "Contains", name: "Contains", pkg: "", typ: $funcType([Node], [$Bool], false)}, {prop: "FirstChild", name: "FirstChild", pkg: "", typ: $funcType([], [Node], false)}, {prop: "HasChildNodes", name: "HasChildNodes", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "InsertBefore", name: "InsertBefore", pkg: "", typ: $funcType([Node, Node], [], false)}, {prop: "IsDefaultNamespace", name: "IsDefaultNamespace", pkg: "", typ: $funcType([$String], [$Bool], false)}, {prop: "IsEqualNode", name: "IsEqualNode", pkg: "", typ: $funcType([Node], [$Bool], false)}, {prop: "LastChild", name: "LastChild", pkg: "", typ: $funcType([], [Node], false)}, {prop: "LookupNamespaceURI", name: "LookupNamespaceURI", pkg: "", typ: $funcType([$String], [$String], false)}, {prop: "LookupPrefix", name: "LookupPrefix", pkg: "", typ: $funcType([], [$String], false)}, {prop: "NextSibling", name: "NextSibling", pkg: "", typ: $funcType([], [Node], false)}, {prop: "NodeName", name: "NodeName", pkg: "", typ: $funcType([], [$String], false)}, {prop: "NodeType", name: "NodeType", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "NodeValue", name: "NodeValue", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Normalize", name: "Normalize", pkg: "", typ: $funcType([], [], false)}, {prop: "OwnerDocument", name: "OwnerDocument", pkg: "", typ: $funcType([], [Document], false)}, {prop: "ParentElement", name: "ParentElement", pkg: "", typ: $funcType([], [Element], false)}, {prop: "ParentNode", name: "ParentNode", pkg: "", typ: $funcType([], [Node], false)}, {prop: "PreviousSibling", name: "PreviousSibling", pkg: "", typ: $funcType([], [Node], false)}, {prop: "RemoveChild", name: "RemoveChild", pkg: "", typ: $funcType([Node], [], false)}, {prop: "RemoveEventListener", name: "RemoveEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$1], [], false)}, {prop: "ReplaceChild", name: "ReplaceChild", pkg: "", typ: $funcType([Node, Node], [], false)}, {prop: "SetNodeValue", name: "SetNodeValue", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetTextContent", name: "SetTextContent", pkg: "", typ: $funcType([$String], [], false)}, {prop: "TextContent", name: "TextContent", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Underlying", name: "Underlying", pkg: "", typ: $funcType([], [ptrType$11], false)}]);
+	BasicNode.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}]);
+	Element.init([{prop: "AddEventListener", name: "AddEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$2], [funcType$1], false)}, {prop: "AppendChild", name: "AppendChild", pkg: "", typ: $funcType([Node], [], false)}, {prop: "BaseURI", name: "BaseURI", pkg: "", typ: $funcType([], [$String], false)}, {prop: "ChildNodes", name: "ChildNodes", pkg: "", typ: $funcType([], [sliceType$1], false)}, {prop: "Class", name: "Class", pkg: "", typ: $funcType([], [ptrType$19], false)}, {prop: "CloneNode", name: "CloneNode", pkg: "", typ: $funcType([$Bool], [Node], false)}, {prop: "CompareDocumentPosition", name: "CompareDocumentPosition", pkg: "", typ: $funcType([Node], [$Int], false)}, {prop: "Contains", name: "Contains", pkg: "", typ: $funcType([Node], [$Bool], false)}, {prop: "FirstChild", name: "FirstChild", pkg: "", typ: $funcType([], [Node], false)}, {prop: "GetAttribute", name: "GetAttribute", pkg: "", typ: $funcType([$String], [$String], false)}, {prop: "GetAttributeNS", name: "GetAttributeNS", pkg: "", typ: $funcType([$String, $String], [$String], false)}, {prop: "GetBoundingClientRect", name: "GetBoundingClientRect", pkg: "", typ: $funcType([], [ClientRect], false)}, {prop: "GetElementsByClassName", name: "GetElementsByClassName", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "GetElementsByTagName", name: "GetElementsByTagName", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "GetElementsByTagNameNS", name: "GetElementsByTagNameNS", pkg: "", typ: $funcType([$String, $String], [sliceType$2], false)}, {prop: "HasAttribute", name: "HasAttribute", pkg: "", typ: $funcType([$String], [$Bool], false)}, {prop: "HasAttributeNS", name: "HasAttributeNS", pkg: "", typ: $funcType([$String, $String], [$Bool], false)}, {prop: "HasChildNodes", name: "HasChildNodes", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "ID", name: "ID", pkg: "", typ: $funcType([], [$String], false)}, {prop: "InnerHTML", name: "InnerHTML", pkg: "", typ: $funcType([], [$String], false)}, {prop: "InsertBefore", name: "InsertBefore", pkg: "", typ: $funcType([Node, Node], [], false)}, {prop: "IsDefaultNamespace", name: "IsDefaultNamespace", pkg: "", typ: $funcType([$String], [$Bool], false)}, {prop: "IsEqualNode", name: "IsEqualNode", pkg: "", typ: $funcType([Node], [$Bool], false)}, {prop: "LastChild", name: "LastChild", pkg: "", typ: $funcType([], [Node], false)}, {prop: "LookupNamespaceURI", name: "LookupNamespaceURI", pkg: "", typ: $funcType([$String], [$String], false)}, {prop: "LookupPrefix", name: "LookupPrefix", pkg: "", typ: $funcType([], [$String], false)}, {prop: "NextElementSibling", name: "NextElementSibling", pkg: "", typ: $funcType([], [Element], false)}, {prop: "NextSibling", name: "NextSibling", pkg: "", typ: $funcType([], [Node], false)}, {prop: "NodeName", name: "NodeName", pkg: "", typ: $funcType([], [$String], false)}, {prop: "NodeType", name: "NodeType", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "NodeValue", name: "NodeValue", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Normalize", name: "Normalize", pkg: "", typ: $funcType([], [], false)}, {prop: "OwnerDocument", name: "OwnerDocument", pkg: "", typ: $funcType([], [Document], false)}, {prop: "ParentElement", name: "ParentElement", pkg: "", typ: $funcType([], [Element], false)}, {prop: "ParentNode", name: "ParentNode", pkg: "", typ: $funcType([], [Node], false)}, {prop: "PreviousElementSibling", name: "PreviousElementSibling", pkg: "", typ: $funcType([], [Element], false)}, {prop: "PreviousSibling", name: "PreviousSibling", pkg: "", typ: $funcType([], [Node], false)}, {prop: "QuerySelector", name: "QuerySelector", pkg: "", typ: $funcType([$String], [Element], false)}, {prop: "QuerySelectorAll", name: "QuerySelectorAll", pkg: "", typ: $funcType([$String], [sliceType$2], false)}, {prop: "RemoveAttribute", name: "RemoveAttribute", pkg: "", typ: $funcType([$String], [], false)}, {prop: "RemoveAttributeNS", name: "RemoveAttributeNS", pkg: "", typ: $funcType([$String, $String], [], false)}, {prop: "RemoveChild", name: "RemoveChild", pkg: "", typ: $funcType([Node], [], false)}, {prop: "RemoveEventListener", name: "RemoveEventListener", pkg: "", typ: $funcType([$String, $Bool, funcType$1], [], false)}, {prop: "ReplaceChild", name: "ReplaceChild", pkg: "", typ: $funcType([Node, Node], [], false)}, {prop: "SetAttribute", name: "SetAttribute", pkg: "", typ: $funcType([$String, $String], [], false)}, {prop: "SetAttributeNS", name: "SetAttributeNS", pkg: "", typ: $funcType([$String, $String, $String], [], false)}, {prop: "SetID", name: "SetID", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetInnerHTML", name: "SetInnerHTML", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetNodeValue", name: "SetNodeValue", pkg: "", typ: $funcType([$String], [], false)}, {prop: "SetTextContent", name: "SetTextContent", pkg: "", typ: $funcType([$String], [], false)}, {prop: "TagName", name: "TagName", pkg: "", typ: $funcType([], [$String], false)}, {prop: "TextContent", name: "TextContent", pkg: "", typ: $funcType([], [$String], false)}, {prop: "Underlying", name: "Underlying", pkg: "", typ: $funcType([], [ptrType$11], false)}]);
+	ClientRect.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}, {prop: "Height", name: "Height", pkg: "", typ: $Int, tag: "js:\"height\""}, {prop: "Width", name: "Width", pkg: "", typ: $Int, tag: "js:\"width\""}, {prop: "Left", name: "Left", pkg: "", typ: $Int, tag: "js:\"left\""}, {prop: "Right", name: "Right", pkg: "", typ: $Int, tag: "js:\"right\""}, {prop: "Top", name: "Top", pkg: "", typ: $Int, tag: "js:\"top\""}, {prop: "Bottom", name: "Bottom", pkg: "", typ: $Int, tag: "js:\"bottom\""}]);
+	BasicHTMLElement.init([{prop: "BasicElement", name: "", pkg: "", typ: ptrType$30, tag: ""}]);
+	BasicElement.init([{prop: "BasicNode", name: "", pkg: "", typ: ptrType$21, tag: ""}]);
+	HTMLAnchorElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "URLUtils", name: "", pkg: "", typ: ptrType$1, tag: ""}, {prop: "HrefLang", name: "HrefLang", pkg: "", typ: $String, tag: "js:\"hreflang\""}, {prop: "Media", name: "Media", pkg: "", typ: $String, tag: "js:\"media\""}, {prop: "TabIndex", name: "TabIndex", pkg: "", typ: $Int, tag: "js:\"tabIndex\""}, {prop: "Target", name: "Target", pkg: "", typ: $String, tag: "js:\"target\""}, {prop: "Text", name: "Text", pkg: "", typ: $String, tag: "js:\"text\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}]);
+	HTMLAppletElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Alt", name: "Alt", pkg: "", typ: $String, tag: "js:\"alt\""}, {prop: "Coords", name: "Coords", pkg: "", typ: $String, tag: "js:\"coords\""}, {prop: "HrefLang", name: "HrefLang", pkg: "", typ: $String, tag: "js:\"hreflang\""}, {prop: "Media", name: "Media", pkg: "", typ: $String, tag: "js:\"media\""}, {prop: "Search", name: "Search", pkg: "", typ: $String, tag: "js:\"search\""}, {prop: "Shape", name: "Shape", pkg: "", typ: $String, tag: "js:\"shape\""}, {prop: "TabIndex", name: "TabIndex", pkg: "", typ: $Int, tag: "js:\"tabIndex\""}, {prop: "Target", name: "Target", pkg: "", typ: $String, tag: "js:\"target\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}]);
+	HTMLAreaElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "URLUtils", name: "", pkg: "", typ: ptrType$1, tag: ""}, {prop: "Alt", name: "Alt", pkg: "", typ: $String, tag: "js:\"alt\""}, {prop: "Coords", name: "Coords", pkg: "", typ: $String, tag: "js:\"coords\""}, {prop: "HrefLang", name: "HrefLang", pkg: "", typ: $String, tag: "js:\"hreflang\""}, {prop: "Media", name: "Media", pkg: "", typ: $String, tag: "js:\"media\""}, {prop: "Search", name: "Search", pkg: "", typ: $String, tag: "js:\"search\""}, {prop: "Shape", name: "Shape", pkg: "", typ: $String, tag: "js:\"shape\""}, {prop: "TabIndex", name: "TabIndex", pkg: "", typ: $Int, tag: "js:\"tabIndex\""}, {prop: "Target", name: "Target", pkg: "", typ: $String, tag: "js:\"target\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}]);
+	HTMLAudioElement.init([{prop: "HTMLMediaElement", name: "", pkg: "", typ: ptrType$2, tag: ""}]);
+	HTMLBRElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLBaseElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLBodyElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	ValidityState.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}, {prop: "CustomError", name: "CustomError", pkg: "", typ: $Bool, tag: "js:\"customError\""}, {prop: "PatternMismatch", name: "PatternMismatch", pkg: "", typ: $Bool, tag: "js:\"patternMismatch\""}, {prop: "RangeOverflow", name: "RangeOverflow", pkg: "", typ: $Bool, tag: "js:\"rangeOverflow\""}, {prop: "RangeUnderflow", name: "RangeUnderflow", pkg: "", typ: $Bool, tag: "js:\"rangeUnderflow\""}, {prop: "StepMismatch", name: "StepMismatch", pkg: "", typ: $Bool, tag: "js:\"stepMismatch\""}, {prop: "TooLong", name: "TooLong", pkg: "", typ: $Bool, tag: "js:\"tooLong\""}, {prop: "TypeMismatch", name: "TypeMismatch", pkg: "", typ: $Bool, tag: "js:\"typeMismatch\""}, {prop: "Valid", name: "Valid", pkg: "", typ: $Bool, tag: "js:\"valid\""}, {prop: "ValueMissing", name: "ValueMissing", pkg: "", typ: $Bool, tag: "js:\"valueMissing\""}]);
+	HTMLButtonElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "AutoFocus", name: "AutoFocus", pkg: "", typ: $Bool, tag: "js:\"autofocus\""}, {prop: "Disabled", name: "Disabled", pkg: "", typ: $Bool, tag: "js:\"disabled\""}, {prop: "FormAction", name: "FormAction", pkg: "", typ: $String, tag: "js:\"formAction\""}, {prop: "FormEncType", name: "FormEncType", pkg: "", typ: $String, tag: "js:\"formEncType\""}, {prop: "FormMethod", name: "FormMethod", pkg: "", typ: $String, tag: "js:\"formMethod\""}, {prop: "FormNoValidate", name: "FormNoValidate", pkg: "", typ: $Bool, tag: "js:\"formNoValidate\""}, {prop: "FormTarget", name: "FormTarget", pkg: "", typ: $String, tag: "js:\"formTarget\""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}, {prop: "TabIndex", name: "TabIndex", pkg: "", typ: $Int, tag: "js:\"tabIndex\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}, {prop: "ValidationMessage", name: "ValidationMessage", pkg: "", typ: $String, tag: "js:\"validationMessage\""}, {prop: "Value", name: "Value", pkg: "", typ: $String, tag: "js:\"value\""}, {prop: "WillValidate", name: "WillValidate", pkg: "", typ: $Bool, tag: "js:\"willValidate\""}]);
+	HTMLCanvasElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Height", name: "Height", pkg: "", typ: $Int, tag: "js:\"height\""}, {prop: "Width", name: "Width", pkg: "", typ: $Int, tag: "js:\"width\""}]);
+	CanvasRenderingContext2D.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}, {prop: "FillStyle", name: "FillStyle", pkg: "", typ: $String, tag: "js:\"fillStyle\""}, {prop: "StrokeStyle", name: "StrokeStyle", pkg: "", typ: $String, tag: "js:\"strokeStyle\""}, {prop: "ShadowColor", name: "ShadowColor", pkg: "", typ: $String, tag: "js:\"shadowColor\""}, {prop: "ShadowBlur", name: "ShadowBlur", pkg: "", typ: $Int, tag: "js:\"shadowBlur\""}, {prop: "ShadowOffsetX", name: "ShadowOffsetX", pkg: "", typ: $Int, tag: "js:\"shadowOffsetX\""}, {prop: "ShadowOffsetY", name: "ShadowOffsetY", pkg: "", typ: $Int, tag: "js:\"shadowOffsetY\""}, {prop: "LineCap", name: "LineCap", pkg: "", typ: $String, tag: "js:\"lineCap\""}, {prop: "LineJoin", name: "LineJoin", pkg: "", typ: $String, tag: "js:\"lineJoin\""}, {prop: "LineWidth", name: "LineWidth", pkg: "", typ: $Int, tag: "js:\"lineWidth\""}, {prop: "MiterLimit", name: "MiterLimit", pkg: "", typ: $Int, tag: "js:\"miterLimit\""}, {prop: "Font", name: "Font", pkg: "", typ: $String, tag: "js:\"font\""}, {prop: "TextAlign", name: "TextAlign", pkg: "", typ: $String, tag: "js:\"textAlign\""}, {prop: "TextBaseline", name: "TextBaseline", pkg: "", typ: $String, tag: "js:\"textBaseline\""}, {prop: "GlobalAlpha", name: "GlobalAlpha", pkg: "", typ: $Float64, tag: "js:\"globalAlpha\""}, {prop: "GlobalCompositeOperation", name: "GlobalCompositeOperation", pkg: "", typ: $String, tag: "js:\"globalCompositeOperation\""}]);
+	HTMLDListElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLDataElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Value", name: "Value", pkg: "", typ: $String, tag: "js:\"value\""}]);
+	HTMLDataListElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLDirectoryElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLDivElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLEmbedElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Src", name: "Src", pkg: "", typ: $String, tag: "js:\"src\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}, {prop: "Width", name: "Width", pkg: "", typ: $String, tag: "js:\"width\""}]);
+	HTMLFieldSetElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Disabled", name: "Disabled", pkg: "", typ: $Bool, tag: "js:\"disabled\""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}, {prop: "ValidationMessage", name: "ValidationMessage", pkg: "", typ: $String, tag: "js:\"validationMessage\""}, {prop: "WillValidate", name: "WillValidate", pkg: "", typ: $Bool, tag: "js:\"willValidate\""}]);
+	HTMLFontElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLFormElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "AcceptCharset", name: "AcceptCharset", pkg: "", typ: $String, tag: "js:\"acceptCharset\""}, {prop: "Action", name: "Action", pkg: "", typ: $String, tag: "js:\"action\""}, {prop: "Autocomplete", name: "Autocomplete", pkg: "", typ: $String, tag: "js:\"autocomplete\""}, {prop: "Encoding", name: "Encoding", pkg: "", typ: $String, tag: "js:\"encoding\""}, {prop: "Enctype", name: "Enctype", pkg: "", typ: $String, tag: "js:\"enctype\""}, {prop: "Length", name: "Length", pkg: "", typ: $Int, tag: "js:\"length\""}, {prop: "Method", name: "Method", pkg: "", typ: $String, tag: "js:\"method\""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}, {prop: "NoValidate", name: "NoValidate", pkg: "", typ: $Bool, tag: "js:\"noValidate\""}, {prop: "Target", name: "Target", pkg: "", typ: $String, tag: "js:\"target\""}]);
+	HTMLFrameElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLFrameSetElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLHRElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLHeadElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLHeadingElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLHtmlElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLIFrameElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Width", name: "Width", pkg: "", typ: $String, tag: "js:\"width\""}, {prop: "Height", name: "Height", pkg: "", typ: $String, tag: "js:\"height\""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}, {prop: "Src", name: "Src", pkg: "", typ: $String, tag: "js:\"src\""}, {prop: "SrcDoc", name: "SrcDoc", pkg: "", typ: $String, tag: "js:\"srcdoc\""}, {prop: "Seamless", name: "Seamless", pkg: "", typ: $Bool, tag: "js:\"seamless\""}]);
+	HTMLImageElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Complete", name: "Complete", pkg: "", typ: $Bool, tag: "js:\"complete\""}, {prop: "CrossOrigin", name: "CrossOrigin", pkg: "", typ: $String, tag: "js:\"crossOrigin\""}, {prop: "Height", name: "Height", pkg: "", typ: $Int, tag: "js:\"height\""}, {prop: "IsMap", name: "IsMap", pkg: "", typ: $Bool, tag: "js:\"isMap\""}, {prop: "NaturalHeight", name: "NaturalHeight", pkg: "", typ: $Int, tag: "js:\"naturalHeight\""}, {prop: "NaturalWidth", name: "NaturalWidth", pkg: "", typ: $Int, tag: "js:\"naturalWidth\""}, {prop: "Src", name: "Src", pkg: "", typ: $String, tag: "js:\"src\""}, {prop: "UseMap", name: "UseMap", pkg: "", typ: $String, tag: "js:\"useMap\""}, {prop: "Width", name: "Width", pkg: "", typ: $Int, tag: "js:\"width\""}]);
+	HTMLInputElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Accept", name: "Accept", pkg: "", typ: $String, tag: "js:\"accept\""}, {prop: "Alt", name: "Alt", pkg: "", typ: $String, tag: "js:\"alt\""}, {prop: "Autocomplete", name: "Autocomplete", pkg: "", typ: $String, tag: "js:\"autocomplete\""}, {prop: "Autofocus", name: "Autofocus", pkg: "", typ: $Bool, tag: "js:\"autofocus\""}, {prop: "Checked", name: "Checked", pkg: "", typ: $Bool, tag: "js:\"checked\""}, {prop: "DefaultChecked", name: "DefaultChecked", pkg: "", typ: $Bool, tag: "js:\"defaultChecked\""}, {prop: "DefaultValue", name: "DefaultValue", pkg: "", typ: $String, tag: "js:\"defaultValue\""}, {prop: "DirName", name: "DirName", pkg: "", typ: $String, tag: "js:\"dirName\""}, {prop: "Disabled", name: "Disabled", pkg: "", typ: $Bool, tag: "js:\"disabled\""}, {prop: "FormAction", name: "FormAction", pkg: "", typ: $String, tag: "js:\"formAction\""}, {prop: "FormEncType", name: "FormEncType", pkg: "", typ: $String, tag: "js:\"formEncType\""}, {prop: "FormMethod", name: "FormMethod", pkg: "", typ: $String, tag: "js:\"formMethod\""}, {prop: "FormNoValidate", name: "FormNoValidate", pkg: "", typ: $Bool, tag: "js:\"formNoValidate\""}, {prop: "FormTarget", name: "FormTarget", pkg: "", typ: $String, tag: "js:\"formTarget\""}, {prop: "Height", name: "Height", pkg: "", typ: $String, tag: "js:\"height\""}, {prop: "Indeterminate", name: "Indeterminate", pkg: "", typ: $Bool, tag: "js:\"indeterminate\""}, {prop: "Max", name: "Max", pkg: "", typ: $String, tag: "js:\"max\""}, {prop: "MaxLength", name: "MaxLength", pkg: "", typ: $Int, tag: "js:\"maxLength\""}, {prop: "Min", name: "Min", pkg: "", typ: $String, tag: "js:\"min\""}, {prop: "Multiple", name: "Multiple", pkg: "", typ: $Bool, tag: "js:\"multiple\""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}, {prop: "Pattern", name: "Pattern", pkg: "", typ: $String, tag: "js:\"pattern\""}, {prop: "Placeholder", name: "Placeholder", pkg: "", typ: $String, tag: "js:\"placeholder\""}, {prop: "ReadOnly", name: "ReadOnly", pkg: "", typ: $Bool, tag: "js:\"readOnly\""}, {prop: "Required", name: "Required", pkg: "", typ: $Bool, tag: "js:\"required\""}, {prop: "SelectionDirection", name: "SelectionDirection", pkg: "", typ: $String, tag: "js:\"selectionDirection\""}, {prop: "SelectionEnd", name: "SelectionEnd", pkg: "", typ: $Int, tag: "js:\"selectionEnd\""}, {prop: "SelectionStart", name: "SelectionStart", pkg: "", typ: $Int, tag: "js:\"selectionStart\""}, {prop: "Size", name: "Size", pkg: "", typ: $Int, tag: "js:\"size\""}, {prop: "Src", name: "Src", pkg: "", typ: $String, tag: "js:\"src\""}, {prop: "Step", name: "Step", pkg: "", typ: $String, tag: "js:\"step\""}, {prop: "TabIndex", name: "TabIndex", pkg: "", typ: $Int, tag: "js:\"tabIndex\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}, {prop: "ValidationMessage", name: "ValidationMessage", pkg: "", typ: $String, tag: "js:\"validationMessage\""}, {prop: "Value", name: "Value", pkg: "", typ: $String, tag: "js:\"value\""}, {prop: "ValueAsDate", name: "ValueAsDate", pkg: "", typ: time.Time, tag: "js:\"valueAsDate\""}, {prop: "ValueAsNumber", name: "ValueAsNumber", pkg: "", typ: $Float64, tag: "js:\"valueAsNumber\""}, {prop: "Width", name: "Width", pkg: "", typ: $String, tag: "js:\"width\""}, {prop: "WillValidate", name: "WillValidate", pkg: "", typ: $Bool, tag: "js:\"willValidate\""}]);
+	File.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}]);
+	HTMLKeygenElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Autofocus", name: "Autofocus", pkg: "", typ: $Bool, tag: "js:\"autofocus\""}, {prop: "Challenge", name: "Challenge", pkg: "", typ: $String, tag: "js:\"challenge\""}, {prop: "Disabled", name: "Disabled", pkg: "", typ: $Bool, tag: "js:\"disabled\""}, {prop: "Keytype", name: "Keytype", pkg: "", typ: $String, tag: "js:\"keytype\""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}, {prop: "ValidationMessage", name: "ValidationMessage", pkg: "", typ: $String, tag: "js:\"validationMessage\""}, {prop: "WillValidate", name: "WillValidate", pkg: "", typ: $Bool, tag: "js:\"willValidate\""}]);
+	HTMLLIElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Value", name: "Value", pkg: "", typ: $Int, tag: "js:\"value\""}]);
+	HTMLLabelElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "For", name: "For", pkg: "", typ: $String, tag: "js:\"htmlFor\""}]);
+	HTMLLegendElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLLinkElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Disabled", name: "Disabled", pkg: "", typ: $Bool, tag: "js:\"disabled\""}, {prop: "Href", name: "Href", pkg: "", typ: $String, tag: "js:\"href\""}, {prop: "HrefLang", name: "HrefLang", pkg: "", typ: $String, tag: "js:\"hrefLang\""}, {prop: "Media", name: "Media", pkg: "", typ: $String, tag: "js:\"media\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}]);
+	HTMLMapElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}]);
+	HTMLMediaElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLMenuElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLMetaElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Content", name: "Content", pkg: "", typ: $String, tag: "js:\"content\""}, {prop: "HTTPEquiv", name: "HTTPEquiv", pkg: "", typ: $String, tag: "js:\"httpEquiv\""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}]);
+	HTMLMeterElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "High", name: "High", pkg: "", typ: $Float64, tag: "js:\"high\""}, {prop: "Low", name: "Low", pkg: "", typ: $Float64, tag: "js:\"low\""}, {prop: "Max", name: "Max", pkg: "", typ: $Float64, tag: "js:\"max\""}, {prop: "Min", name: "Min", pkg: "", typ: $Float64, tag: "js:\"min\""}, {prop: "Optimum", name: "Optimum", pkg: "", typ: $Float64, tag: "js:\"optimum\""}]);
+	HTMLModElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Cite", name: "Cite", pkg: "", typ: $String, tag: "js:\"cite\""}, {prop: "DateTime", name: "DateTime", pkg: "", typ: $String, tag: "js:\"dateTime\""}]);
+	HTMLOListElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Reversed", name: "Reversed", pkg: "", typ: $Bool, tag: "js:\"reversed\""}, {prop: "Start", name: "Start", pkg: "", typ: $Int, tag: "js:\"start\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}]);
+	HTMLObjectElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Data", name: "Data", pkg: "", typ: $String, tag: "js:\"data\""}, {prop: "Height", name: "Height", pkg: "", typ: $String, tag: "js:\"height\""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}, {prop: "TabIndex", name: "TabIndex", pkg: "", typ: $Int, tag: "js:\"tabIndex\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}, {prop: "TypeMustMatch", name: "TypeMustMatch", pkg: "", typ: $Bool, tag: "js:\"typeMustMatch\""}, {prop: "UseMap", name: "UseMap", pkg: "", typ: $String, tag: "js:\"useMap\""}, {prop: "ValidationMessage", name: "ValidationMessage", pkg: "", typ: $String, tag: "js:\"validationMessage\""}, {prop: "With", name: "With", pkg: "", typ: $String, tag: "js:\"with\""}, {prop: "WillValidate", name: "WillValidate", pkg: "", typ: $Bool, tag: "js:\"willValidate\""}]);
+	HTMLOptGroupElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Disabled", name: "Disabled", pkg: "", typ: $Bool, tag: "js:\"disabled\""}, {prop: "Label", name: "Label", pkg: "", typ: $String, tag: "js:\"label\""}]);
+	HTMLOptionElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "DefaultSelected", name: "DefaultSelected", pkg: "", typ: $Bool, tag: "js:\"defaultSelected\""}, {prop: "Disabled", name: "Disabled", pkg: "", typ: $Bool, tag: "js:\"disabled\""}, {prop: "Index", name: "Index", pkg: "", typ: $Int, tag: "js:\"index\""}, {prop: "Label", name: "Label", pkg: "", typ: $String, tag: "js:\"label\""}, {prop: "Selected", name: "Selected", pkg: "", typ: $Bool, tag: "js:\"selected\""}, {prop: "Text", name: "Text", pkg: "", typ: $String, tag: "js:\"text\""}, {prop: "Value", name: "Value", pkg: "", typ: $String, tag: "js:\"value\""}]);
+	HTMLOutputElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "DefaultValue", name: "DefaultValue", pkg: "", typ: $String, tag: "js:\"defaultValue\""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}, {prop: "ValidationMessage", name: "ValidationMessage", pkg: "", typ: $String, tag: "js:\"validationMessage\""}, {prop: "Value", name: "Value", pkg: "", typ: $String, tag: "js:\"value\""}, {prop: "WillValidate", name: "WillValidate", pkg: "", typ: $Bool, tag: "js:\"willValidate\""}]);
+	HTMLParagraphElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLParamElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}, {prop: "Value", name: "Value", pkg: "", typ: $String, tag: "js:\"value\""}]);
+	HTMLPreElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLProgressElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Max", name: "Max", pkg: "", typ: $Float64, tag: "js:\"max\""}, {prop: "Position", name: "Position", pkg: "", typ: $Float64, tag: "js:\"position\""}, {prop: "Value", name: "Value", pkg: "", typ: $Float64, tag: "js:\"value\""}]);
+	HTMLQuoteElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Cite", name: "Cite", pkg: "", typ: $String, tag: "js:\"cite\""}]);
+	HTMLScriptElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}, {prop: "Src", name: "Src", pkg: "", typ: $String, tag: "js:\"src\""}, {prop: "Charset", name: "Charset", pkg: "", typ: $String, tag: "js:\"charset\""}, {prop: "Async", name: "Async", pkg: "", typ: $Bool, tag: "js:\"async\""}, {prop: "Defer", name: "Defer", pkg: "", typ: $Bool, tag: "js:\"defer\""}, {prop: "Text", name: "Text", pkg: "", typ: $String, tag: "js:\"text\""}]);
+	HTMLSelectElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Autofocus", name: "Autofocus", pkg: "", typ: $Bool, tag: "js:\"autofocus\""}, {prop: "Disabled", name: "Disabled", pkg: "", typ: $Bool, tag: "js:\"disabled\""}, {prop: "Length", name: "Length", pkg: "", typ: $Int, tag: "js:\"length\""}, {prop: "Multiple", name: "Multiple", pkg: "", typ: $Bool, tag: "js:\"multiple\""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}, {prop: "Required", name: "Required", pkg: "", typ: $Bool, tag: "js:\"required\""}, {prop: "SelectedIndex", name: "SelectedIndex", pkg: "", typ: $Int, tag: "js:\"selectedIndex\""}, {prop: "Size", name: "Size", pkg: "", typ: $Int, tag: "js:\"size\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}, {prop: "ValidationMessage", name: "ValidationMessage", pkg: "", typ: $String, tag: "js:\"validationMessage\""}, {prop: "Value", name: "Value", pkg: "", typ: $String, tag: "js:\"value\""}, {prop: "WillValidate", name: "WillValidate", pkg: "", typ: $Bool, tag: "js:\"willValidate\""}]);
+	HTMLSourceElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Media", name: "Media", pkg: "", typ: $String, tag: "js:\"media\""}, {prop: "Src", name: "Src", pkg: "", typ: $String, tag: "js:\"src\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}]);
+	HTMLSpanElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLStyleElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLTableCaptionElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLTableCellElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "ColSpan", name: "ColSpan", pkg: "", typ: $Int, tag: "js:\"colSpan\""}, {prop: "RowSpan", name: "RowSpan", pkg: "", typ: $Int, tag: "js:\"rowSpan\""}, {prop: "CellIndex", name: "CellIndex", pkg: "", typ: $Int, tag: "js:\"cellIndex\""}]);
+	HTMLTableColElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Span", name: "Span", pkg: "", typ: $Int, tag: "js:\"span\""}]);
+	HTMLTableDataCellElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLTableElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLTableHeaderCellElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Abbr", name: "Abbr", pkg: "", typ: $String, tag: "js:\"abbr\""}, {prop: "Scope", name: "Scope", pkg: "", typ: $String, tag: "js:\"scope\""}]);
+	HTMLTableRowElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "RowIndex", name: "RowIndex", pkg: "", typ: $Int, tag: "js:\"rowIndex\""}, {prop: "SectionRowIndex", name: "SectionRowIndex", pkg: "", typ: $Int, tag: "js:\"sectionRowIndex\""}]);
+	HTMLTableSectionElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLTextAreaElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Autocomplete", name: "Autocomplete", pkg: "", typ: $String, tag: "js:\"autocomplete\""}, {prop: "Autofocus", name: "Autofocus", pkg: "", typ: $Bool, tag: "js:\"autofocus\""}, {prop: "Cols", name: "Cols", pkg: "", typ: $Int, tag: "js:\"cols\""}, {prop: "DefaultValue", name: "DefaultValue", pkg: "", typ: $String, tag: "js:\"defaultValue\""}, {prop: "DirName", name: "DirName", pkg: "", typ: $String, tag: "js:\"dirName\""}, {prop: "Disabled", name: "Disabled", pkg: "", typ: $Bool, tag: "js:\"disabled\""}, {prop: "MaxLength", name: "MaxLength", pkg: "", typ: $Int, tag: "js:\"maxLength\""}, {prop: "Name", name: "Name", pkg: "", typ: $String, tag: "js:\"name\""}, {prop: "Placeholder", name: "Placeholder", pkg: "", typ: $String, tag: "js:\"placeholder\""}, {prop: "ReadOnly", name: "ReadOnly", pkg: "", typ: $Bool, tag: "js:\"readOnly\""}, {prop: "Required", name: "Required", pkg: "", typ: $Bool, tag: "js:\"required\""}, {prop: "Rows", name: "Rows", pkg: "", typ: $Int, tag: "js:\"rows\""}, {prop: "SelectionDirection", name: "SelectionDirection", pkg: "", typ: $String, tag: "js:\"selectionDirection\""}, {prop: "SelectionStart", name: "SelectionStart", pkg: "", typ: $Int, tag: "js:\"selectionStart\""}, {prop: "SelectionEnd", name: "SelectionEnd", pkg: "", typ: $Int, tag: "js:\"selectionEnd\""}, {prop: "TabIndex", name: "TabIndex", pkg: "", typ: $Int, tag: "js:\"tabIndex\""}, {prop: "TextLength", name: "TextLength", pkg: "", typ: $Int, tag: "js:\"textLength\""}, {prop: "Type", name: "Type", pkg: "", typ: $String, tag: "js:\"type\""}, {prop: "ValidationMessage", name: "ValidationMessage", pkg: "", typ: $String, tag: "js:\"validationMessage\""}, {prop: "Value", name: "Value", pkg: "", typ: $String, tag: "js:\"value\""}, {prop: "WillValidate", name: "WillValidate", pkg: "", typ: $Bool, tag: "js:\"willValidate\""}, {prop: "Wrap", name: "Wrap", pkg: "", typ: $String, tag: "js:\"wrap\""}]);
+	HTMLTimeElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "DateTime", name: "DateTime", pkg: "", typ: $String, tag: "js:\"dateTime\""}]);
+	HTMLTitleElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Text", name: "Text", pkg: "", typ: $String, tag: "js:\"text\""}]);
+	TextTrack.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}]);
+	HTMLTrackElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}, {prop: "Kind", name: "Kind", pkg: "", typ: $String, tag: "js:\"kind\""}, {prop: "Src", name: "Src", pkg: "", typ: $String, tag: "js:\"src\""}, {prop: "Srclang", name: "Srclang", pkg: "", typ: $String, tag: "js:\"srclang\""}, {prop: "Label", name: "Label", pkg: "", typ: $String, tag: "js:\"label\""}, {prop: "Default", name: "Default", pkg: "", typ: $Bool, tag: "js:\"default\""}, {prop: "ReadyState", name: "ReadyState", pkg: "", typ: $Int, tag: "js:\"readyState\""}]);
+	HTMLUListElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLUnknownElement.init([{prop: "BasicHTMLElement", name: "", pkg: "", typ: ptrType, tag: ""}]);
+	HTMLVideoElement.init([{prop: "HTMLMediaElement", name: "", pkg: "", typ: ptrType$2, tag: ""}]);
+	CSSStyleDeclaration.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}]);
+	Text.init([{prop: "BasicNode", name: "", pkg: "", typ: ptrType$21, tag: ""}]);
+	Event.init([{prop: "Bubbles", name: "Bubbles", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "Cancelable", name: "Cancelable", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "CurrentTarget", name: "CurrentTarget", pkg: "", typ: $funcType([], [Element], false)}, {prop: "DefaultPrevented", name: "DefaultPrevented", pkg: "", typ: $funcType([], [$Bool], false)}, {prop: "EventPhase", name: "EventPhase", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "PreventDefault", name: "PreventDefault", pkg: "", typ: $funcType([], [], false)}, {prop: "StopImmediatePropagation", name: "StopImmediatePropagation", pkg: "", typ: $funcType([], [], false)}, {prop: "StopPropagation", name: "StopPropagation", pkg: "", typ: $funcType([], [], false)}, {prop: "Target", name: "Target", pkg: "", typ: $funcType([], [Element], false)}, {prop: "Timestamp", name: "Timestamp", pkg: "", typ: $funcType([], [time.Time], false)}, {prop: "Type", name: "Type", pkg: "", typ: $funcType([], [$String], false)}]);
+	BasicEvent.init([{prop: "Object", name: "", pkg: "", typ: ptrType$11, tag: ""}]);
+	AnimationEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	AudioProcessingEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	BeforeInputEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	BeforeUnloadEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	BlobEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	ClipboardEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	CloseEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}, {prop: "Code", name: "Code", pkg: "", typ: $Int, tag: "js:\"code\""}, {prop: "Reason", name: "Reason", pkg: "", typ: $String, tag: "js:\"reason\""}, {prop: "WasClean", name: "WasClean", pkg: "", typ: $Bool, tag: "js:\"wasClean\""}]);
+	CompositionEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	CSSFontFaceLoadEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	CustomEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	DeviceLightEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	DeviceMotionEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	DeviceOrientationEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	DeviceProximityEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	DOMTransactionEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	DragEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	EditingBeforeInputEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	ErrorEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	FocusEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	GamepadEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	HashChangeEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	IDBVersionChangeEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	KeyboardEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}, {prop: "AltKey", name: "AltKey", pkg: "", typ: $Bool, tag: "js:\"altKey\""}, {prop: "CharCode", name: "CharCode", pkg: "", typ: $Int, tag: "js:\"charCode\""}, {prop: "CtrlKey", name: "CtrlKey", pkg: "", typ: $Bool, tag: "js:\"ctrlKey\""}, {prop: "Key", name: "Key", pkg: "", typ: $String, tag: "js:\"key\""}, {prop: "KeyIdentifier", name: "KeyIdentifier", pkg: "", typ: $String, tag: "js:\"keyIdentifier\""}, {prop: "KeyCode", name: "KeyCode", pkg: "", typ: $Int, tag: "js:\"keyCode\""}, {prop: "Locale", name: "Locale", pkg: "", typ: $String, tag: "js:\"locale\""}, {prop: "Location", name: "Location", pkg: "", typ: $Int, tag: "js:\"location\""}, {prop: "KeyLocation", name: "KeyLocation", pkg: "", typ: $Int, tag: "js:\"keyLocation\""}, {prop: "MetaKey", name: "MetaKey", pkg: "", typ: $Bool, tag: "js:\"metaKey\""}, {prop: "Repeat", name: "Repeat", pkg: "", typ: $Bool, tag: "js:\"repeat\""}, {prop: "ShiftKey", name: "ShiftKey", pkg: "", typ: $Bool, tag: "js:\"shiftKey\""}]);
+	MediaStreamEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	MessageEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}, {prop: "Data", name: "Data", pkg: "", typ: ptrType$11, tag: "js:\"data\""}]);
+	MouseEvent.init([{prop: "UIEvent", name: "", pkg: "", typ: ptrType$18, tag: ""}, {prop: "AltKey", name: "AltKey", pkg: "", typ: $Bool, tag: "js:\"altKey\""}, {prop: "Button", name: "Button", pkg: "", typ: $Int, tag: "js:\"button\""}, {prop: "ClientX", name: "ClientX", pkg: "", typ: $Int, tag: "js:\"clientX\""}, {prop: "ClientY", name: "ClientY", pkg: "", typ: $Int, tag: "js:\"clientY\""}, {prop: "CtrlKey", name: "CtrlKey", pkg: "", typ: $Bool, tag: "js:\"ctrlKey\""}, {prop: "MetaKey", name: "MetaKey", pkg: "", typ: $Bool, tag: "js:\"metaKey\""}, {prop: "MovementX", name: "MovementX", pkg: "", typ: $Int, tag: "js:\"movementX\""}, {prop: "MovementY", name: "MovementY", pkg: "", typ: $Int, tag: "js:\"movementY\""}, {prop: "ScreenX", name: "ScreenX", pkg: "", typ: $Int, tag: "js:\"screenX\""}, {prop: "ScreenY", name: "ScreenY", pkg: "", typ: $Int, tag: "js:\"screenY\""}, {prop: "ShiftKey", name: "ShiftKey", pkg: "", typ: $Bool, tag: "js:\"shiftKey\""}]);
+	MutationEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	OfflineAudioCompletionEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	PageTransitionEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	PointerEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	PopStateEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	ProgressEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	RelatedEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	RTCPeerConnectionIceEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	SensorEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	StorageEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	SVGEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	SVGZoomEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	TimeEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	TouchEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	TrackEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	TransitionEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	UIEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	UserProximityEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}]);
+	WheelEvent.init([{prop: "BasicEvent", name: "", pkg: "", typ: ptrType$17, tag: ""}, {prop: "DeltaX", name: "DeltaX", pkg: "", typ: $Float64, tag: "js:\"deltaX\""}, {prop: "DeltaY", name: "DeltaY", pkg: "", typ: $Float64, tag: "js:\"deltaY\""}, {prop: "DeltaZ", name: "DeltaZ", pkg: "", typ: $Float64, tag: "js:\"deltaZ\""}, {prop: "DeltaMode", name: "DeltaMode", pkg: "", typ: $Int, tag: "js:\"deltaMode\""}]);
 	$init = function() {
 		$pkg.$init = function() {};
 		/* */ var $f, $c = false, $s = 0, $r; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
-		$r = mazelib.$init(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = js.$init(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = strings.$init(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = time.$init(); /* */ $s = 3; case 3: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		/* */ } return; } if ($f === undefined) { $f = { $blk: $init }; } $f.$s = $s; $f.$r = $r; return $f;
 	};
 	$pkg.$init = $init;
 	return $pkg;
 })();
 $packages["main"] = (function() {
-	var $pkg = {}, $init, fmt, generators, sliceType, main;
-	fmt = $packages["fmt"];
-	generators = $packages["github.com/golangchallenge/gc6/generators"];
-	sliceType = $sliceType($emptyInterface);
+	var $pkg = {}, $init, mazelib, dom, rand, time, renderData, ptrType, ptrType$1, main, setupEvents, render, fillCell, drawBorders;
+	mazelib = $packages["github.com/golangchallenge/gc6/mazelib"];
+	dom = $packages["honnef.co/go/js/dom"];
+	rand = $packages["math/rand"];
+	time = $packages["time"];
+	renderData = $pkg.renderData = $newType(0, $kindStruct, "main.renderData", "renderData", "main", function(maze_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.maze = ptrType$1.nil;
+			return;
+		}
+		this.maze = maze_;
+	});
+	ptrType = $ptrType(dom.HTMLCanvasElement);
+	ptrType$1 = $ptrType(mazelib.Maze);
 	main = function() {
 		var $ptr, _r, m, $s, $r;
 		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; m = $f.m; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
-		m = generators.DepthFirst();
-		_r = fmt.Println(new sliceType([m])); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
-		_r;
+		$r = rand.Seed(time.Now().UnixNano()); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = setupEvents(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		_r = mazelib.EmptyMaze(15, 10); /* */ $s = 3; case 3: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		m = _r;
+		$r = render(new renderData.ptr(m)); /* */ $s = 4; case 4: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: main }; } $f.$ptr = $ptr; $f._r = _r; $f.m = m; $f.$s = $s; $f.$r = $r; return $f;
 	};
+	setupEvents = function() {
+		var $ptr, _r, _r$1, _r$2, initButton, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; initButton = $f.initButton; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		_r = dom.GetWindow().Document(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		_r$1 = _r.GetElementByID("init"); /* */ $s = 2; case 2: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		initButton = _r$1;
+		_r$2 = initButton.AddEventListener("click", false, (function $b(param) {
+			var $ptr, _r$2, m, param, $s, $r;
+			/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$2 = $f._r$2; m = $f.m; param = $f.param; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+			_r$2 = mazelib.EmptyMaze(15, 10); /* */ $s = 1; case 1: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+			m = _r$2;
+			$r = render(new renderData.ptr(m)); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+			/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: $b }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f.m = m; $f.param = param; $f.$s = $s; $f.$r = $r; return $f;
+		})); /* */ $s = 3; case 3: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+		_r$2;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: setupEvents }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f.initButton = initButton; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	render = function(c) {
+		var $ptr, _r, _r$1, _r$2, _tuple, _tuple$1, c, ctx, endX, endY, startX, startY, x, y, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _tuple = $f._tuple; _tuple$1 = $f._tuple$1; c = $f.c; ctx = $f.ctx; endX = $f.endX; endY = $f.endY; startX = $f.startX; startY = $f.startY; x = $f.x; y = $f.y; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		c = $clone(c, renderData);
+		_r = dom.GetWindow().Document(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		_r$1 = _r.GetElementByID("dc"); /* */ $s = 2; case 2: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		_r$2 = $assertType(_r$1, ptrType).GetContext2d(); /* */ $s = 3; case 3: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+		ctx = _r$2;
+		_tuple = c.maze.Start(); startX = _tuple[0]; startY = _tuple[1];
+		_tuple$1 = c.maze.End(); endX = _tuple$1[0]; endY = _tuple$1[1];
+		y = 0;
+		while (true) {
+			if (!(y < c.maze.Height())) { break; }
+			x = 0;
+			while (true) {
+				if (!(x < c.maze.Width())) { break; }
+				fillCell(ctx, x, y, "white");
+				if ((x === startX) && (y === startY)) {
+					fillCell(ctx, x, y, "orange");
+				}
+				if ((x === endX) && (y === endY)) {
+					fillCell(ctx, x, y, "yellow");
+				}
+				drawBorders(c, ctx, x, y);
+				x = x + (1) >> 0;
+			}
+			y = y + (1) >> 0;
+		}
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: render }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._tuple = _tuple; $f._tuple$1 = _tuple$1; $f.c = c; $f.ctx = ctx; $f.endX = endX; $f.endY = endY; $f.startX = startX; $f.startY = startY; $f.x = x; $f.y = y; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	fillCell = function(ctx, x, y, color) {
+		var $ptr, color, ctx, x, y;
+		ctx.Object.fillStyle = $externalize(color, $String);
+		ctx.FillRect(x * 50 >> 0, y * 50 >> 0, 50, 50);
+	};
+	drawBorders = function(c, ctx, x, y) {
+		var $ptr, _tuple, c, cell, ctx, height, height$1, width, width$1, x, y;
+		c = $clone(c, renderData);
+		ctx.Object.fillStyle = $externalize("black", $String);
+		_tuple = c.maze.GetRoom(x, y); cell = _tuple[0];
+		if (cell.Walls.Top) {
+			height = 2;
+			if (y === 0) {
+				height = 4;
+			}
+			ctx.FillRect(x * 50 >> 0, y * 50 >> 0, 50, height);
+		}
+		if (cell.Walls.Bottom) {
+			height$1 = 2;
+			if (y === (c.maze.Height() - 1 >> 0)) {
+				height$1 = 4;
+			}
+			ctx.FillRect(x * 50 >> 0, (y * 50 >> 0) + ((50 - height$1 >> 0)) >> 0, 50, height$1);
+		}
+		if (cell.Walls.Left) {
+			width = 2;
+			if (x === 0) {
+				width = 4;
+			}
+			ctx.FillRect(x * 50 >> 0, y * 50 >> 0, width, 50);
+		}
+		if (cell.Walls.Right) {
+			width$1 = 2;
+			if (x === (c.maze.Width() - 1 >> 0)) {
+				width$1 = 4;
+			}
+			ctx.FillRect((x * 50 >> 0) + ((50 - width$1 >> 0)) >> 0, y * 50 >> 0, width$1, 50);
+		}
+	};
+	renderData.init([{prop: "maze", name: "maze", pkg: "main", typ: ptrType$1, tag: ""}]);
 	$init = function() {
 		$pkg.$init = function() {};
 		/* */ var $f, $c = false, $s = 0, $r; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
-		$r = fmt.$init(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		$r = generators.$init(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		/* */ if ($pkg === $mainPkg) { $s = 3; continue; }
-		/* */ $s = 4; continue;
-		/* if ($pkg === $mainPkg) { */ case 3:
-			$r = main(); /* */ $s = 5; case 5: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		/* } */ case 4:
+		$r = mazelib.$init(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = dom.$init(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = rand.$init(); /* */ $s = 3; case 3: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = time.$init(); /* */ $s = 4; case 4: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		/* */ if ($pkg === $mainPkg) { $s = 5; continue; }
+		/* */ $s = 6; continue;
+		/* if ($pkg === $mainPkg) { */ case 5:
+			$r = main(); /* */ $s = 7; case 7: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		/* } */ case 6:
 		/* */ } return; } if ($f === undefined) { $f = { $blk: $init }; } $f.$s = $s; $f.$r = $r; return $f;
 	};
 	$pkg.$init = $init;
