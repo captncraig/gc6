@@ -32,20 +32,15 @@ func idToGenerator() *mazelib.Maze {
 	val := dom.GetWindow().Document().GetElementByID("generator").(*dom.HTMLSelectElement).Value
 	switch val {
 	case "dfs":
-		generators.Bias = ""
-		return generators.DepthFirst()
+		return generators.DepthFirst(15, 10, "")
 	case "dfs-h":
-		generators.Bias = "H"
-		return generators.DepthFirst()
+		return generators.DepthFirst(15, 10, "H")
 	case "dfs-v":
-		generators.Bias = "V"
-		return generators.DepthFirst()
+		return generators.DepthFirst(15, 10, "V")
 	case "dfs-x":
-		generators.Bias = "X"
-		return generators.DepthFirst()
+		return generators.DepthFirst(15, 10, "X")
 	case "dfs-o":
-		generators.Bias = "O"
-		return generators.DepthFirst()
+		return generators.DepthFirst(15, 10, "O")
 	case "empty":
 		return mazelib.EmptyMaze(15, 10)
 	}

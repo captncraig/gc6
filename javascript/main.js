@@ -15962,8 +15962,8 @@ $packages["github.com/golangchallenge/gc6/mazelib"] = (function() {
 	};
 	Maze.prototype.MoveDown = function() { return this.$val.MoveDown(); };
 	EmptyMaze = function(xSize, ySize) {
-		var $ptr, _arg, _arg$1, _r, _r$1, _r$2, _r$3, _r$4, _tmp, _tmp$1, tX, tY, x, x$1, x$10, x$11, x$2, x$3, x$4, x$5, x$6, x$7, x$8, x$9, xSize, y, ySize, z, $s, $r;
-		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _arg = $f._arg; _arg$1 = $f._arg$1; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; _r$4 = $f._r$4; _tmp = $f._tmp; _tmp$1 = $f._tmp$1; tX = $f.tX; tY = $f.tY; x = $f.x; x$1 = $f.x$1; x$10 = $f.x$10; x$11 = $f.x$11; x$2 = $f.x$2; x$3 = $f.x$3; x$4 = $f.x$4; x$5 = $f.x$5; x$6 = $f.x$6; x$7 = $f.x$7; x$8 = $f.x$8; x$9 = $f.x$9; xSize = $f.xSize; y = $f.y; ySize = $f.ySize; z = $f.z; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		var $ptr, x, x$1, x$10, x$11, x$2, x$3, x$4, x$5, x$6, x$7, x$8, x$9, xSize, y, ySize, z, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; x = $f.x; x$1 = $f.x$1; x$10 = $f.x$10; x$11 = $f.x$11; x$2 = $f.x$2; x$3 = $f.x$3; x$4 = $f.x$4; x$5 = $f.x$5; x$6 = $f.x$6; x$7 = $f.x$7; x$8 = $f.x$8; x$9 = $f.x$9; xSize = $f.xSize; y = $f.y; ySize = $f.ySize; z = $f.z; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
 		z = [z];
 		z[0] = new Maze.ptr(sliceType$2.nil, new Coordinate.ptr(), new Coordinate.ptr(), new Coordinate.ptr(), 0);
 		z[0].rooms = $makeSlice(sliceType$2, ySize);
@@ -15991,26 +15991,34 @@ $packages["github.com/golangchallenge/gc6/mazelib"] = (function() {
 			}
 			y = y + (1) >> 0;
 		}
-		_r = rand.Intn(xSize); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
-		_arg = _r;
-		_r$1 = rand.Intn(ySize); /* */ $s = 2; case 2: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
-		_arg$1 = _r$1;
-		_r$2 = z[0].SetStartPoint(_arg, _arg$1); /* */ $s = 3; case 3: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
-		_r$2;
-		/* while (true) { */ case 4:
-			_r$3 = rand.Intn(xSize); /* */ $s = 6; case 6: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
-			_r$4 = rand.Intn(ySize); /* */ $s = 7; case 7: if($c) { $c = false; _r$4 = _r$4.$blk(); } if (_r$4 && _r$4.$blk !== undefined) { break s; }
-			_tmp = _r$3; _tmp$1 = _r$4; tX = _tmp; tY = _tmp$1;
-			if ((tX === z[0].start.X) && (tY === z[0].start.Y)) {
-				/* continue; */ $s = 4; continue;
-			}
-			z[0].SetTreasure(tX, tY);
-			/* break; */ $s = 5; continue;
-		/* } */ $s = 4; continue; case 5:
+		$r = z[0].RandomizeStartAndEnd(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		return z[0];
-		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: EmptyMaze }; } $f.$ptr = $ptr; $f._arg = _arg; $f._arg$1 = _arg$1; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._tmp = _tmp; $f._tmp$1 = _tmp$1; $f.tX = tX; $f.tY = tY; $f.x = x; $f.x$1 = x$1; $f.x$10 = x$10; $f.x$11 = x$11; $f.x$2 = x$2; $f.x$3 = x$3; $f.x$4 = x$4; $f.x$5 = x$5; $f.x$6 = x$6; $f.x$7 = x$7; $f.x$8 = x$8; $f.x$9 = x$9; $f.xSize = xSize; $f.y = y; $f.ySize = ySize; $f.z = z; $f.$s = $s; $f.$r = $r; return $f;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: EmptyMaze }; } $f.$ptr = $ptr; $f.x = x; $f.x$1 = x$1; $f.x$10 = x$10; $f.x$11 = x$11; $f.x$2 = x$2; $f.x$3 = x$3; $f.x$4 = x$4; $f.x$5 = x$5; $f.x$6 = x$6; $f.x$7 = x$7; $f.x$8 = x$8; $f.x$9 = x$9; $f.xSize = xSize; $f.y = y; $f.ySize = ySize; $f.z = z; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	$pkg.EmptyMaze = EmptyMaze;
+	Maze.ptr.prototype.RandomizeStartAndEnd = function() {
+		var $ptr, _arg, _arg$1, _r, _r$1, _r$2, _r$3, _r$4, _tmp, _tmp$1, tX, tY, z, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _arg = $f._arg; _arg$1 = $f._arg$1; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; _r$4 = $f._r$4; _tmp = $f._tmp; _tmp$1 = $f._tmp$1; tX = $f.tX; tY = $f.tY; z = $f.z; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		z = this;
+		_r = rand.Intn(z.Width()); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		_arg = _r;
+		_r$1 = rand.Intn(z.Height()); /* */ $s = 2; case 2: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		_arg$1 = _r$1;
+		_r$2 = z.SetStartPoint(_arg, _arg$1); /* */ $s = 3; case 3: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+		_r$2;
+		/* while (true) { */ case 4:
+			_r$3 = rand.Intn(z.Width()); /* */ $s = 6; case 6: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+			_r$4 = rand.Intn(z.Height()); /* */ $s = 7; case 7: if($c) { $c = false; _r$4 = _r$4.$blk(); } if (_r$4 && _r$4.$blk !== undefined) { break s; }
+			_tmp = _r$3; _tmp$1 = _r$4; tX = _tmp; tY = _tmp$1;
+			if ((tX === z.start.X) && (tY === z.start.Y)) {
+				/* continue; */ $s = 4; continue;
+			}
+			z.SetTreasure(tX, tY);
+			/* break; */ $s = 5; continue;
+		/* } */ $s = 4; continue; case 5:
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Maze.ptr.prototype.RandomizeStartAndEnd }; } $f.$ptr = $ptr; $f._arg = _arg; $f._arg$1 = _arg$1; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._tmp = _tmp; $f._tmp$1 = _tmp$1; $f.tX = tX; $f.tY = tY; $f.z = z; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	Maze.prototype.RandomizeStartAndEnd = function() { return this.$val.RandomizeStartAndEnd(); };
 	FullMaze = function(xSize, ySize) {
 		var $ptr, _r, x, x$1, x$2, xSize, y, ySize, z, $s, $r;
 		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; x = $f.x; x$1 = $f.x$1; x$2 = $f.x$2; xSize = $f.xSize; y = $f.y; ySize = $f.ySize; z = $f.z; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
@@ -16032,7 +16040,7 @@ $packages["github.com/golangchallenge/gc6/mazelib"] = (function() {
 	};
 	$pkg.FullMaze = FullMaze;
 	ptrType.methods = [{prop: "AddWall", name: "AddWall", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "RmWall", name: "RmWall", pkg: "", typ: $funcType([$Int], [], false)}];
-	ptrType$1.methods = [{prop: "GetRoom", name: "GetRoom", pkg: "", typ: $funcType([$Int, $Int], [ptrType, $error], false)}, {prop: "Width", name: "Width", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Height", name: "Height", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Icarus", name: "Icarus", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "End", name: "End", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "Start", name: "Start", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "SetStartPoint", name: "SetStartPoint", pkg: "", typ: $funcType([$Int, $Int], [$error], false)}, {prop: "SetTreasure", name: "SetTreasure", pkg: "", typ: $funcType([$Int, $Int], [$error], false)}, {prop: "LookAround", name: "LookAround", pkg: "", typ: $funcType([], [Survey, $error], false)}, {prop: "Discover", name: "Discover", pkg: "", typ: $funcType([$Int, $Int], [Survey, $error], false)}, {prop: "MoveLeft", name: "MoveLeft", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveRight", name: "MoveRight", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveUp", name: "MoveUp", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveDown", name: "MoveDown", pkg: "", typ: $funcType([], [$error], false)}];
+	ptrType$1.methods = [{prop: "GetRoom", name: "GetRoom", pkg: "", typ: $funcType([$Int, $Int], [ptrType, $error], false)}, {prop: "Width", name: "Width", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Height", name: "Height", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Icarus", name: "Icarus", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "End", name: "End", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "Start", name: "Start", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "SetStartPoint", name: "SetStartPoint", pkg: "", typ: $funcType([$Int, $Int], [$error], false)}, {prop: "SetTreasure", name: "SetTreasure", pkg: "", typ: $funcType([$Int, $Int], [$error], false)}, {prop: "LookAround", name: "LookAround", pkg: "", typ: $funcType([], [Survey, $error], false)}, {prop: "Discover", name: "Discover", pkg: "", typ: $funcType([$Int, $Int], [Survey, $error], false)}, {prop: "MoveLeft", name: "MoveLeft", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveRight", name: "MoveRight", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveUp", name: "MoveUp", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveDown", name: "MoveDown", pkg: "", typ: $funcType([], [$error], false)}, {prop: "RandomizeStartAndEnd", name: "RandomizeStartAndEnd", pkg: "", typ: $funcType([], [], false)}];
 	Coordinate.init([{prop: "X", name: "X", pkg: "", typ: $Int, tag: "json:\"x\""}, {prop: "Y", name: "Y", pkg: "", typ: $Int, tag: "json:\"y\""}]);
 	Survey.init([{prop: "Top", name: "Top", pkg: "", typ: $Bool, tag: "json:\"top\""}, {prop: "Right", name: "Right", pkg: "", typ: $Bool, tag: "json:\"right\""}, {prop: "Bottom", name: "Bottom", pkg: "", typ: $Bool, tag: "json:\"bottom\""}, {prop: "Left", name: "Left", pkg: "", typ: $Bool, tag: "json:\"left\""}]);
 	Room.init([{prop: "Treasure", name: "Treasure", pkg: "", typ: $Bool, tag: ""}, {prop: "Start", name: "Start", pkg: "", typ: $Bool, tag: ""}, {prop: "Visited", name: "Visited", pkg: "", typ: $Bool, tag: ""}, {prop: "Walls", name: "Walls", pkg: "", typ: Survey, tag: ""}]);
@@ -16068,11 +16076,9 @@ $packages["github.com/golangchallenge/gc6/generators"] = (function() {
 	});
 	sliceType = $sliceType(mazelib.Coordinate);
 	sliceType$1 = $sliceType(possibility);
-	DepthFirst = function() {
-		var $ptr, _entry, _entry$1, _entry$2, _entry$3, _key, _key$1, _key$2, _map, _r, _r$1, _r$2, _r$3, _r$4, _r$5, _r$6, _tuple, _tuple$1, current, dir, downCoord, goalX, goalY, height, leftCoord, m, newCoord, possible, rightCoord, startCoord, tip, upCoord, visited, width, x, x$1, y, $s, $r;
-		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _entry = $f._entry; _entry$1 = $f._entry$1; _entry$2 = $f._entry$2; _entry$3 = $f._entry$3; _key = $f._key; _key$1 = $f._key$1; _key$2 = $f._key$2; _map = $f._map; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; _r$4 = $f._r$4; _r$5 = $f._r$5; _r$6 = $f._r$6; _tuple = $f._tuple; _tuple$1 = $f._tuple$1; current = $f.current; dir = $f.dir; downCoord = $f.downCoord; goalX = $f.goalX; goalY = $f.goalY; height = $f.height; leftCoord = $f.leftCoord; m = $f.m; newCoord = $f.newCoord; possible = $f.possible; rightCoord = $f.rightCoord; startCoord = $f.startCoord; tip = $f.tip; upCoord = $f.upCoord; visited = $f.visited; width = $f.width; x = $f.x; x$1 = $f.x$1; y = $f.y; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
-		width = 15;
-		height = 10;
+	DepthFirst = function(width, height, bias) {
+		var $ptr, _entry, _entry$1, _entry$2, _entry$3, _key, _key$1, _key$2, _map, _r, _r$1, _r$2, _r$3, _r$4, _r$5, _r$6, _tuple, _tuple$1, bias, current, dir, downCoord, goalX, goalY, height, leftCoord, m, newCoord, possible, rightCoord, startCoord, tip, upCoord, visited, width, x, x$1, y, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _entry = $f._entry; _entry$1 = $f._entry$1; _entry$2 = $f._entry$2; _entry$3 = $f._entry$3; _key = $f._key; _key$1 = $f._key$1; _key$2 = $f._key$2; _map = $f._map; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; _r$4 = $f._r$4; _r$5 = $f._r$5; _r$6 = $f._r$6; _tuple = $f._tuple; _tuple$1 = $f._tuple$1; bias = $f.bias; current = $f.current; dir = $f.dir; downCoord = $f.downCoord; goalX = $f.goalX; goalY = $f.goalY; height = $f.height; leftCoord = $f.leftCoord; m = $f.m; newCoord = $f.newCoord; possible = $f.possible; rightCoord = $f.rightCoord; startCoord = $f.startCoord; tip = $f.tip; upCoord = $f.upCoord; visited = $f.visited; width = $f.width; x = $f.x; x$1 = $f.x$1; y = $f.y; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
 		_r = mazelib.FullMaze(width, height); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
 		m = _r;
 		_tuple = m.End(); x = _tuple[0]; y = _tuple[1];
@@ -16107,16 +16113,16 @@ $packages["github.com/golangchallenge/gc6/generators"] = (function() {
 				current = $subslice(current, 0, (current.$length - 1 >> 0));
 				/* continue; */ $s = 2; continue;
 			/* } */ case 5:
-			_r$1 = randomDir(possible, tip.X, tip.Y, goalX, goalY); /* */ $s = 6; case 6: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+			_r$1 = randomDir(possible, tip.X, tip.Y, goalX, goalY, bias); /* */ $s = 6; case 6: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
 			dir = _r$1;
 			_r$2 = digInto(dir, tip, m); /* */ $s = 7; case 7: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
 			newCoord = $clone(_r$2, mazelib.Coordinate);
 			_key$2 = $clone(newCoord, mazelib.Coordinate); (visited || $throwRuntimeError("assignment to entry in nil map"))[mazelib.Coordinate.keyFor(_key$2)] = { k: _key$2, v: true };
 			current = $append(current, newCoord);
 		/* } */ $s = 2; continue; case 3:
-		/* */ if ($pkg.Bias === "O") { $s = 8; continue; }
+		/* */ if (bias === "O") { $s = 8; continue; }
 		/* */ $s = 9; continue;
-		/* if ($pkg.Bias === "O") { */ case 8:
+		/* if (bias === "O") { */ case 8:
 			/* */ if (goalX > 0) { $s = 10; continue; }
 			/* */ $s = 11; continue;
 			/* if (goalX > 0) { */ case 10:
@@ -16143,12 +16149,12 @@ $packages["github.com/golangchallenge/gc6/generators"] = (function() {
 			/* } */ case 20:
 		/* } */ case 9:
 		return m;
-		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: DepthFirst }; } $f.$ptr = $ptr; $f._entry = _entry; $f._entry$1 = _entry$1; $f._entry$2 = _entry$2; $f._entry$3 = _entry$3; $f._key = _key; $f._key$1 = _key$1; $f._key$2 = _key$2; $f._map = _map; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._r$5 = _r$5; $f._r$6 = _r$6; $f._tuple = _tuple; $f._tuple$1 = _tuple$1; $f.current = current; $f.dir = dir; $f.downCoord = downCoord; $f.goalX = goalX; $f.goalY = goalY; $f.height = height; $f.leftCoord = leftCoord; $f.m = m; $f.newCoord = newCoord; $f.possible = possible; $f.rightCoord = rightCoord; $f.startCoord = startCoord; $f.tip = tip; $f.upCoord = upCoord; $f.visited = visited; $f.width = width; $f.x = x; $f.x$1 = x$1; $f.y = y; $f.$s = $s; $f.$r = $r; return $f;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: DepthFirst }; } $f.$ptr = $ptr; $f._entry = _entry; $f._entry$1 = _entry$1; $f._entry$2 = _entry$2; $f._entry$3 = _entry$3; $f._key = _key; $f._key$1 = _key$1; $f._key$2 = _key$2; $f._map = _map; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._r$5 = _r$5; $f._r$6 = _r$6; $f._tuple = _tuple; $f._tuple$1 = _tuple$1; $f.bias = bias; $f.current = current; $f.dir = dir; $f.downCoord = downCoord; $f.goalX = goalX; $f.goalY = goalY; $f.height = height; $f.leftCoord = leftCoord; $f.m = m; $f.newCoord = newCoord; $f.possible = possible; $f.rightCoord = rightCoord; $f.startCoord = startCoord; $f.tip = tip; $f.upCoord = upCoord; $f.visited = visited; $f.width = width; $f.x = x; $f.x$1 = x$1; $f.y = y; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	$pkg.DepthFirst = DepthFirst;
-	randomDir = function(possible, x, y, avoidX, avoidY) {
-		var $ptr, _i, _i$1, _r, _ref, _ref$1, avoidX, avoidY, dist, distx, disty, i, increaseWeight, maxAt, maxDist, minAt, minDist, newPossible, p, p$1, possible, x, x$1, y, $s, $r;
-		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _i = $f._i; _i$1 = $f._i$1; _r = $f._r; _ref = $f._ref; _ref$1 = $f._ref$1; avoidX = $f.avoidX; avoidY = $f.avoidY; dist = $f.dist; distx = $f.distx; disty = $f.disty; i = $f.i; increaseWeight = $f.increaseWeight; maxAt = $f.maxAt; maxDist = $f.maxDist; minAt = $f.minAt; minDist = $f.minDist; newPossible = $f.newPossible; p = $f.p; p$1 = $f.p$1; possible = $f.possible; x = $f.x; x$1 = $f.x$1; y = $f.y; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+	randomDir = function(possible, x, y, avoidX, avoidY, bias) {
+		var $ptr, _i, _i$1, _r, _ref, _ref$1, avoidX, avoidY, bias, dist, distx, disty, i, increaseWeight, maxAt, maxDist, minAt, minDist, newPossible, p, p$1, possible, x, x$1, y, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _i = $f._i; _i$1 = $f._i$1; _r = $f._r; _ref = $f._ref; _ref$1 = $f._ref$1; avoidX = $f.avoidX; avoidY = $f.avoidY; bias = $f.bias; dist = $f.dist; distx = $f.distx; disty = $f.disty; i = $f.i; increaseWeight = $f.increaseWeight; maxAt = $f.maxAt; maxDist = $f.maxDist; minAt = $f.minAt; minDist = $f.minDist; newPossible = $f.newPossible; p = $f.p; p$1 = $f.p$1; possible = $f.possible; x = $f.x; x$1 = $f.x$1; y = $f.y; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
 		newPossible = [newPossible];
 		newPossible[0] = possible;
 		increaseWeight = (function(newPossible) { return function(p) {
@@ -16158,28 +16164,28 @@ $packages["github.com/golangchallenge/gc6/generators"] = (function() {
 			newPossible[0] = $append(newPossible[0], p);
 			newPossible[0] = $append(newPossible[0], p);
 		}; })(newPossible);
-		/* */ if ($pkg.Bias === "H" || $pkg.Bias === "V") { $s = 1; continue; }
-		/* */ if ($pkg.Bias === "X" || $pkg.Bias === "O") { $s = 2; continue; }
+		/* */ if (bias === "H" || bias === "V") { $s = 1; continue; }
+		/* */ if (bias === "X" || bias === "O") { $s = 2; continue; }
 		/* */ $s = 3; continue;
-		/* if ($pkg.Bias === "H" || $pkg.Bias === "V") { */ case 1:
+		/* if (bias === "H" || bias === "V") { */ case 1:
 			_ref = possible;
 			_i = 0;
 			/* while (true) { */ case 4:
 				/* if (!(_i < _ref.$length)) { break; } */ if(!(_i < _ref.$length)) { $s = 5; continue; }
 				p = $clone(((_i < 0 || _i >= _ref.$length) ? $throwRuntimeError("index out of range") : _ref.$array[_ref.$offset + _i]), possibility);
-				/* */ if ($pkg.Bias === "V" && (p.dir === "up" || p.dir === "down")) { $s = 6; continue; }
-				/* */ if ($pkg.Bias === "H" && (p.dir === "left" || p.dir === "right")) { $s = 7; continue; }
+				/* */ if (bias === "V" && (p.dir === "up" || p.dir === "down")) { $s = 6; continue; }
+				/* */ if (bias === "H" && (p.dir === "left" || p.dir === "right")) { $s = 7; continue; }
 				/* */ $s = 8; continue;
-				/* if ($pkg.Bias === "V" && (p.dir === "up" || p.dir === "down")) { */ case 6:
+				/* if (bias === "V" && (p.dir === "up" || p.dir === "down")) { */ case 6:
 					$r = increaseWeight(p); /* */ $s = 9; case 9: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 					$s = 8; continue;
-				/* } else if ($pkg.Bias === "H" && (p.dir === "left" || p.dir === "right")) { */ case 7:
+				/* } else if (bias === "H" && (p.dir === "left" || p.dir === "right")) { */ case 7:
 					$r = increaseWeight(p); /* */ $s = 10; case 10: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 				/* } */ case 8:
 				_i++;
 			/* } */ $s = 4; continue; case 5:
 			$s = 3; continue;
-		/* } else if ($pkg.Bias === "X" || $pkg.Bias === "O") { */ case 2:
+		/* } else if (bias === "X" || bias === "O") { */ case 2:
 			maxDist = -1;
 			maxAt = 0;
 			minDist = 5000;
@@ -16205,14 +16211,14 @@ $packages["github.com/golangchallenge/gc6/generators"] = (function() {
 				}
 				_i$1++;
 			}
-			if ($pkg.Bias === "O") {
+			if (bias === "O") {
 				return ((minAt < 0 || minAt >= possible.$length) ? $throwRuntimeError("index out of range") : possible.$array[possible.$offset + minAt]).dir;
 			}
 			return ((maxAt < 0 || maxAt >= possible.$length) ? $throwRuntimeError("index out of range") : possible.$array[possible.$offset + maxAt]).dir;
 		/* } */ case 3:
 		_r = rand.Intn(newPossible[0].$length); /* */ $s = 11; case 11: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
 		return (x$1 = _r, ((x$1 < 0 || x$1 >= newPossible[0].$length) ? $throwRuntimeError("index out of range") : newPossible[0].$array[newPossible[0].$offset + x$1])).dir;
-		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: randomDir }; } $f.$ptr = $ptr; $f._i = _i; $f._i$1 = _i$1; $f._r = _r; $f._ref = _ref; $f._ref$1 = _ref$1; $f.avoidX = avoidX; $f.avoidY = avoidY; $f.dist = dist; $f.distx = distx; $f.disty = disty; $f.i = i; $f.increaseWeight = increaseWeight; $f.maxAt = maxAt; $f.maxDist = maxDist; $f.minAt = minAt; $f.minDist = minDist; $f.newPossible = newPossible; $f.p = p; $f.p$1 = p$1; $f.possible = possible; $f.x = x; $f.x$1 = x$1; $f.y = y; $f.$s = $s; $f.$r = $r; return $f;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: randomDir }; } $f.$ptr = $ptr; $f._i = _i; $f._i$1 = _i$1; $f._r = _r; $f._ref = _ref; $f._ref$1 = _ref$1; $f.avoidX = avoidX; $f.avoidY = avoidY; $f.bias = bias; $f.dist = dist; $f.distx = distx; $f.disty = disty; $f.i = i; $f.increaseWeight = increaseWeight; $f.maxAt = maxAt; $f.maxDist = maxDist; $f.minAt = minAt; $f.minDist = minDist; $f.newPossible = newPossible; $f.p = p; $f.p$1 = p$1; $f.possible = possible; $f.x = x; $f.x$1 = x$1; $f.y = y; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	digInto = function(dir, current, m) {
 		var $ptr, _ref, _tuple, _tuple$1, _tuple$2, _tuple$3, _tuple$4, _tuple$5, _tuple$6, _tuple$7, c, current, dir, m, roomA, roomA$1, roomA$2, roomA$3, roomB, roomB$1, roomB$2, roomB$3, $s, $r;
@@ -16261,7 +16267,6 @@ $packages["github.com/golangchallenge/gc6/generators"] = (function() {
 		$r = math.$init(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		$r = rand.$init(); /* */ $s = 3; case 3: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		$pkg.Animate = $throwNilPointerError;
-		$pkg.Bias = "H";
 		/* */ } return; } if ($f === undefined) { $f = { $blk: $init }; } $f.$s = $s; $f.$r = $r; return $f;
 	};
 	$pkg.$init = $init;
@@ -21037,28 +21042,23 @@ $packages["main"] = (function() {
 		/* */ if (_ref === "empty") { $s = 8; continue; }
 		/* */ $s = 9; continue;
 		/* if (_ref === "dfs") { */ case 3:
-			generators.Bias = "";
-			_r$2 = generators.DepthFirst(); /* */ $s = 10; case 10: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+			_r$2 = generators.DepthFirst(15, 10, ""); /* */ $s = 10; case 10: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
 			return _r$2;
 			$s = 9; continue;
 		/* } else if (_ref === "dfs-h") { */ case 4:
-			generators.Bias = "H";
-			_r$3 = generators.DepthFirst(); /* */ $s = 11; case 11: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+			_r$3 = generators.DepthFirst(15, 10, "H"); /* */ $s = 11; case 11: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
 			return _r$3;
 			$s = 9; continue;
 		/* } else if (_ref === "dfs-v") { */ case 5:
-			generators.Bias = "V";
-			_r$4 = generators.DepthFirst(); /* */ $s = 12; case 12: if($c) { $c = false; _r$4 = _r$4.$blk(); } if (_r$4 && _r$4.$blk !== undefined) { break s; }
+			_r$4 = generators.DepthFirst(15, 10, "V"); /* */ $s = 12; case 12: if($c) { $c = false; _r$4 = _r$4.$blk(); } if (_r$4 && _r$4.$blk !== undefined) { break s; }
 			return _r$4;
 			$s = 9; continue;
 		/* } else if (_ref === "dfs-x") { */ case 6:
-			generators.Bias = "X";
-			_r$5 = generators.DepthFirst(); /* */ $s = 13; case 13: if($c) { $c = false; _r$5 = _r$5.$blk(); } if (_r$5 && _r$5.$blk !== undefined) { break s; }
+			_r$5 = generators.DepthFirst(15, 10, "X"); /* */ $s = 13; case 13: if($c) { $c = false; _r$5 = _r$5.$blk(); } if (_r$5 && _r$5.$blk !== undefined) { break s; }
 			return _r$5;
 			$s = 9; continue;
 		/* } else if (_ref === "dfs-o") { */ case 7:
-			generators.Bias = "O";
-			_r$6 = generators.DepthFirst(); /* */ $s = 14; case 14: if($c) { $c = false; _r$6 = _r$6.$blk(); } if (_r$6 && _r$6.$blk !== undefined) { break s; }
+			_r$6 = generators.DepthFirst(15, 10, "O"); /* */ $s = 14; case 14: if($c) { $c = false; _r$6 = _r$6.$blk(); } if (_r$6 && _r$6.$blk !== undefined) { break s; }
 			return _r$6;
 			$s = 9; continue;
 		/* } else if (_ref === "empty") { */ case 8:
