@@ -15,7 +15,7 @@ The hope is that icarus will choose a wrong path initially, and then have to bac
 
 If we were doing perfect-knowledge solving, this would be an extremely poor strategy, but with icarus only seeing his current room, it works ok.
 
-![example](http://imgur.com/91lhPEO "Example maze")
+![example](http://imgur.com/91lhPEO)
 
 
 ### Cool Visualization
