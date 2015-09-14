@@ -75,6 +75,7 @@ func init() {
 	RootCmd.PersistentFlags().IntP("max-steps", "m", 500, "Maximum steps before giving up")
 
 	RootCmd.PersistentFlags().Bool("mouse", false, "Use random mouse solver")
+	RootCmd.PersistentFlags().String("bias", "O", "Bias for maze generator. H,V,X,O or D")
 
 	// Bind viper to these flags so viper can read flag values along with config, env, etc.
 	viper.BindPFlag("width", RootCmd.PersistentFlags().Lookup("width"))
@@ -84,6 +85,7 @@ func init() {
 	viper.BindPFlag("max-steps", RootCmd.PersistentFlags().Lookup("max-steps"))
 
 	viper.BindPFlag("mouse", RootCmd.PersistentFlags().Lookup("mouse"))
+	viper.BindPFlag("bias", RootCmd.PersistentFlags().Lookup("bias"))
 }
 
 // Read in config file and ENV variables if set.

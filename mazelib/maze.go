@@ -365,16 +365,20 @@ func EmptyMaze(xSize, ySize int) *Maze {
 			}
 		}
 	}
-	z.SetStartPoint(rand.Intn(xSize), rand.Intn(ySize))
-	for {
-		tX, tY := rand.Intn(xSize), rand.Intn(ySize)
-		if tX != z.start.X && tY != z.start.Y {
-			z.SetTreasure(tX, tY)
-			break
-		}
-	}
-
+	z.RandomizeStartAndEnd()
 	return &z
+}
+
+func (z *Maze) RandomizeStartAndEnd() {
+	z.SetStartPoint(rand.Intn(z.Width()), rand.Intn(z.Height()))
+	for {
+		tX, tY := rand.Intn(z.Width()), rand.Intn(z.Height())
+		if tX == z.start.X && tY == z.start.Y {
+			continue
+		}
+		z.SetTreasure(tX, tY)
+		break
+	}
 }
 
 // Creates a maze with all walls

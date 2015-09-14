@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golangchallenge/gc6/generators"
 	"github.com/golangchallenge/gc6/mazelib"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -81,7 +82,8 @@ func RunServer() {
 	}()
 
 	// Using gin-gonic/gin to handle our routing
-	r := gin.Default()
+	r := gin.New()
+
 	v1 := r.Group("/")
 	{
 		v1.GET("/awake", GetStartingPoint)
@@ -110,7 +112,6 @@ func GetStartingPoint(c *gin.Context) {
 		os.Exit(-1)
 	}
 	mazelib.PrintMaze(currentMaze)
-
 	c.JSON(http.StatusOK, mazelib.Reply{Survey: startRoom})
 }
 
@@ -180,7 +181,8 @@ func FullMaze() *mazelib.Maze {
 	return mazelib.FullMaze(xSize, ySize)
 }
 
-// TODO: Write your maze creator function here
 func createMaze() *mazelib.Maze {
-	return EmptyMaze()
+	ySize := viper.GetInt("height")
+	xSize := viper.GetInt("width")
+	return generators.DepthFirst(xSize, ySize, viper.GetString("bias"))
 }

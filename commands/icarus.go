@@ -53,7 +53,6 @@ func RunIcarus() {
 	// Run the solver as many times as the user desires.
 	fmt.Println("Solving", viper.GetInt("times"), "times")
 	for x := 0; x < viper.GetInt("times"); x++ {
-
 		solveMaze()
 	}
 
@@ -85,7 +84,6 @@ func Move(direction string) (mazelib.Survey, error) {
 		rep := ToReply(contents)
 		if rep.Victory == true {
 			fmt.Println(rep.Message)
-			// os.Exit(1)
 			return rep.Survey, mazelib.ErrVictory
 		} else {
 			return rep.Survey, errors.New(rep.Message)
@@ -117,10 +115,20 @@ func ToReply(in []byte) mazelib.Reply {
 }
 
 func solveMaze() {
-	initial := awake()
+
 	var solver solvers.MazeSolver
 	if viper.GetBool("mouse") {
-		solver = solvers.NewMouse(Move)
+		solver = solvers.NewMouse()
+	} else {
+		solver = solvers.NewDFS()
 	}
-	solver.Solve(initial)
+	current := awake()
+	var err error
+	for {
+		dir := solver.Step(current)
+		current, err = Move(dir)
+		if err == mazelib.ErrVictory || err.Error() != "" {
+			break
+		}
+	}
 }

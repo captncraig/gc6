@@ -2760,7 +2760,7 @@ $packages["io"] = (function() {
 	return $pkg;
 })();
 $packages["math"] = (function() {
-	var $pkg = {}, $init, js, arrayType, arrayType$1, arrayType$2, structType, arrayType$3, math, zero, posInf, negInf, nan, buf, pow10tab, Exp, IsInf, Log, init, Float32bits, Float64bits, init$1;
+	var $pkg = {}, $init, js, arrayType, arrayType$1, arrayType$2, structType, arrayType$3, math, zero, posInf, negInf, nan, buf, pow10tab, Exp, IsInf, Log, Sqrt, init, Float32bits, Float64bits, init$1;
 	js = $packages["github.com/gopherjs/gopherjs/js"];
 	arrayType = $arrayType($Uint32, 2);
 	arrayType$1 = $arrayType($Float32, 2);
@@ -2791,6 +2791,11 @@ $packages["math"] = (function() {
 		return $parseFloat(math.log(x));
 	};
 	$pkg.Log = Log;
+	Sqrt = function(x) {
+		var $ptr, x;
+		return $parseFloat(math.sqrt(x));
+	};
+	$pkg.Sqrt = Sqrt;
 	init = function() {
 		var $ptr, ab;
 		ab = new ($global.ArrayBuffer)(8);
@@ -4118,7 +4123,7 @@ $packages["strings"] = (function() {
 	return $pkg;
 })();
 $packages["time"] = (function() {
-	var $pkg = {}, $init, errors, js, nosync, runtime, strings, syscall, ParseError, Time, Month, Weekday, Duration, Location, zone, zoneTrans, sliceType, sliceType$1, sliceType$2, ptrType, arrayType, sliceType$3, arrayType$1, arrayType$2, ptrType$1, arrayType$4, ptrType$3, ptrType$6, std0x, longDayNames, shortDayNames, shortMonthNames, longMonthNames, atoiError, errBad, errLeadingInt, months, days, daysBefore, utcLoc, utcLoc$ptr, localLoc, localLoc$ptr, localOnce, zoneinfo, badData, _tuple, _r, init, initLocal, runtimeNano, now, startsWithLowerCase, nextStdChunk, match, lookup, appendInt, atoi, formatNano, quote, isDigit, getnum, cutspace, skip, Parse, parse, parseTimeZone, parseGMT, parseNanoseconds, leadingInt, absWeekday, absClock, fmtFrac, fmtInt, absDate, Now, Unix, isLeap, norm, Date, div, FixedZone;
+	var $pkg = {}, $init, errors, js, nosync, runtime, strings, syscall, ParseError, Time, Month, Weekday, Duration, Location, zone, zoneTrans, sliceType, sliceType$1, sliceType$2, ptrType, structType, chanType, funcType, arrayType, sliceType$3, arrayType$1, arrayType$2, ptrType$1, arrayType$4, ptrType$3, ptrType$6, std0x, longDayNames, shortDayNames, shortMonthNames, longMonthNames, atoiError, errBad, errLeadingInt, months, days, daysBefore, utcLoc, utcLoc$ptr, localLoc, localLoc$ptr, localOnce, zoneinfo, badData, _tuple, _r, init, initLocal, runtimeNano, now, Sleep, startsWithLowerCase, nextStdChunk, match, lookup, appendInt, atoi, formatNano, quote, isDigit, getnum, cutspace, skip, Parse, parse, parseTimeZone, parseGMT, parseNanoseconds, leadingInt, absWeekday, absClock, fmtFrac, fmtInt, absDate, Now, Unix, isLeap, norm, Date, div, FixedZone;
 	errors = $packages["errors"];
 	js = $packages["github.com/gopherjs/gopherjs/js"];
 	nosync = $packages["github.com/gopherjs/gopherjs/nosync"];
@@ -4204,6 +4209,9 @@ $packages["time"] = (function() {
 	sliceType$1 = $sliceType(zone);
 	sliceType$2 = $sliceType(zoneTrans);
 	ptrType = $ptrType(zone);
+	structType = $structType([]);
+	chanType = $chanType(structType, false, false);
+	funcType = $funcType([], [], false);
 	arrayType = $arrayType($Uint8, 20);
 	sliceType$3 = $sliceType($Uint8);
 	arrayType$1 = $arrayType($Uint8, 9);
@@ -4241,6 +4249,20 @@ $packages["time"] = (function() {
 		_tmp = $div64(n, new $Int64(0, 1000000000), false); _tmp$1 = ((x = $div64(n, new $Int64(0, 1000000000), true), x.$low + ((x.$high >> 31) * 4294967296)) >> 0); sec = _tmp; nsec = _tmp$1;
 		return [sec, nsec];
 	};
+	Sleep = function(d) {
+		var $ptr, _r$1, c, d, x, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$1 = $f._r$1; c = $f.c; d = $f.d; x = $f.x; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		c = [c];
+		c[0] = new chanType(0);
+		$global.setTimeout($externalize((function(c) { return function() {
+			var $ptr;
+			$close(c[0]);
+		}; })(c), funcType), ((x = $div64(d, new Duration(0, 1000000), false), x.$low + ((x.$high >> 31) * 4294967296)) >> 0));
+		_r$1 = $recv(c[0]); /* */ $s = 1; case 1: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		_r$1[0];
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Sleep }; } $f.$ptr = $ptr; $f._r$1 = _r$1; $f.c = c; $f.d = d; $f.x = x; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.Sleep = Sleep;
 	startsWithLowerCase = function(str) {
 		var $ptr, c, str;
 		if (str.length === 0) {
@@ -10121,22 +10143,22 @@ $packages["reflect"] = (function() {
 			if (i[0] < 0 || i[0] > (tt.len >> 0)) {
 				$panic(new $String("reflect: array index out of range"));
 			}
-			typ$1[0] = tt.elem;
+			typ[0] = tt.elem;
 			fl = (v.flag & 224) >>> 0;
-			fl = (fl | ((typ$1[0].Kind() >>> 0))) >>> 0;
+			fl = (fl | ((typ[0].Kind() >>> 0))) >>> 0;
 			a[0] = v.ptr;
-			/* */ if (!((((fl & 64) >>> 0) === 0)) && !((typ$1[0].Kind() === 17)) && !((typ$1[0].Kind() === 25))) { $s = 6; continue; }
+			/* */ if (!((((fl & 64) >>> 0) === 0)) && !((typ[0].Kind() === 17)) && !((typ[0].Kind() === 25))) { $s = 6; continue; }
 			/* */ $s = 7; continue;
-			/* if (!((((fl & 64) >>> 0) === 0)) && !((typ$1[0].Kind() === 17)) && !((typ$1[0].Kind() === 25))) { */ case 6:
-				return new Value.ptr(typ$1[0], new (jsType(PtrTo(typ$1[0])))((function(a, a$1, c, i, typ, typ$1) { return function() {
+			/* if (!((((fl & 64) >>> 0) === 0)) && !((typ[0].Kind() === 17)) && !((typ[0].Kind() === 25))) { */ case 6:
+				return new Value.ptr(typ[0], new (jsType(PtrTo(typ[0])))((function(a, a$1, c, i, typ, typ$1) { return function() {
 					var $ptr;
-					return wrapJsObject(typ$1[0], a[0][i[0]]);
+					return wrapJsObject(typ[0], a[0][i[0]]);
 				}; })(a, a$1, c, i, typ, typ$1), (function(a, a$1, c, i, typ, typ$1) { return function(x) {
 					var $ptr, x;
-					a[0][i[0]] = unwrapJsObject(typ$1[0], x);
+					a[0][i[0]] = unwrapJsObject(typ[0], x);
 				}; })(a, a$1, c, i, typ, typ$1)), fl);
 			/* } */ case 7:
-			_r = makeValue(typ$1[0], wrapJsObject(typ$1[0], a[0][i[0]]), fl); /* */ $s = 8; case 8: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+			_r = makeValue(typ[0], wrapJsObject(typ[0], a[0][i[0]]), fl); /* */ $s = 8; case 8: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
 			return _r;
 			$s = 5; continue;
 		/* } else if (_ref === 23) { */ case 2:
@@ -10145,23 +10167,23 @@ $packages["reflect"] = (function() {
 				$panic(new $String("reflect: slice index out of range"));
 			}
 			tt$1 = v.typ.kindType;
-			typ[0] = tt$1.elem;
+			typ$1[0] = tt$1.elem;
 			fl$1 = (192 | ((v.flag & 32) >>> 0)) >>> 0;
-			fl$1 = (fl$1 | ((typ[0].Kind() >>> 0))) >>> 0;
+			fl$1 = (fl$1 | ((typ$1[0].Kind() >>> 0))) >>> 0;
 			i[0] = i[0] + (($parseInt(s.$offset) >> 0)) >> 0;
 			a$1[0] = s.$array;
-			/* */ if (!((((fl$1 & 64) >>> 0) === 0)) && !((typ[0].Kind() === 17)) && !((typ[0].Kind() === 25))) { $s = 9; continue; }
+			/* */ if (!((((fl$1 & 64) >>> 0) === 0)) && !((typ$1[0].Kind() === 17)) && !((typ$1[0].Kind() === 25))) { $s = 9; continue; }
 			/* */ $s = 10; continue;
-			/* if (!((((fl$1 & 64) >>> 0) === 0)) && !((typ[0].Kind() === 17)) && !((typ[0].Kind() === 25))) { */ case 9:
-				return new Value.ptr(typ[0], new (jsType(PtrTo(typ[0])))((function(a, a$1, c, i, typ, typ$1) { return function() {
+			/* if (!((((fl$1 & 64) >>> 0) === 0)) && !((typ$1[0].Kind() === 17)) && !((typ$1[0].Kind() === 25))) { */ case 9:
+				return new Value.ptr(typ$1[0], new (jsType(PtrTo(typ$1[0])))((function(a, a$1, c, i, typ, typ$1) { return function() {
 					var $ptr;
-					return wrapJsObject(typ[0], a$1[0][i[0]]);
+					return wrapJsObject(typ$1[0], a$1[0][i[0]]);
 				}; })(a, a$1, c, i, typ, typ$1), (function(a, a$1, c, i, typ, typ$1) { return function(x) {
 					var $ptr, x;
-					a$1[0][i[0]] = unwrapJsObject(typ[0], x);
+					a$1[0][i[0]] = unwrapJsObject(typ$1[0], x);
 				}; })(a, a$1, c, i, typ, typ$1)), fl$1);
 			/* } */ case 10:
-			_r$1 = makeValue(typ[0], wrapJsObject(typ[0], a$1[0][i[0]]), fl$1); /* */ $s = 11; case 11: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+			_r$1 = makeValue(typ$1[0], wrapJsObject(typ$1[0], a$1[0][i[0]]), fl$1); /* */ $s = 11; case 11: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
 			return _r$1;
 			$s = 5; continue;
 		/* } else if (_ref === 24) { */ case 3:
@@ -12598,7 +12620,7 @@ $packages["reflect"] = (function() {
 	return $pkg;
 })();
 $packages["fmt"] = (function() {
-	var $pkg = {}, $init, errors, io, math, os, reflect, strconv, sync, utf8, fmtFlags, fmt, State, Formatter, Stringer, GoStringer, buffer, pp, runeUnreader, scanError, ss, ssave, sliceType, sliceType$1, arrayType, sliceType$2, ptrType, ptrType$1, ptrType$2, ptrType$5, arrayType$1, arrayType$2, ptrType$25, funcType, padZeroBytes, padSpaceBytes, trueBytes, falseBytes, commaSpaceBytes, nilAngleBytes, nilParenBytes, nilBytes, mapBytes, percentBangBytes, missingBytes, badIndexBytes, panicBytes, extraBytes, irparenBytes, bytesBytes, badWidthBytes, badPrecBytes, noVerbBytes, ppFree, intBits, uintptrBits, byteType, space, ssFree, complexError, boolError, _r, _r$1, init, doPrec, newPrinter, Fprintf, Printf, getField, tooLarge, parsenum, intFromArg, parseArgNumber, isSpace, notSpace, indexRune;
+	var $pkg = {}, $init, errors, io, math, os, reflect, strconv, sync, utf8, fmtFlags, fmt, State, Formatter, Stringer, GoStringer, buffer, pp, runeUnreader, scanError, ss, ssave, sliceType, sliceType$1, arrayType, sliceType$2, ptrType, ptrType$1, ptrType$2, ptrType$5, arrayType$1, arrayType$2, ptrType$25, funcType, padZeroBytes, padSpaceBytes, trueBytes, falseBytes, commaSpaceBytes, nilAngleBytes, nilParenBytes, nilBytes, mapBytes, percentBangBytes, missingBytes, badIndexBytes, panicBytes, extraBytes, irparenBytes, bytesBytes, badWidthBytes, badPrecBytes, noVerbBytes, ppFree, intBits, uintptrBits, byteType, space, ssFree, complexError, boolError, _r, _r$1, init, doPrec, newPrinter, Fprintf, Printf, Sprint, Fprintln, Println, getField, tooLarge, parsenum, intFromArg, parseArgNumber, isSpace, notSpace, indexRune;
 	errors = $packages["errors"];
 	io = $packages["io"];
 	math = $packages["math"];
@@ -13398,6 +13420,44 @@ $packages["fmt"] = (function() {
 		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Printf }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f._tuple = _tuple; $f.a = a; $f.err = err; $f.format = format; $f.n = n; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	$pkg.Printf = Printf;
+	Sprint = function(a) {
+		var $ptr, _r$2, a, p, s, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$2 = $f._r$2; a = $f.a; p = $f.p; s = $f.s; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		_r$2 = newPrinter(); /* */ $s = 1; case 1: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+		p = _r$2;
+		$r = p.doPrint(a, false, false); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		s = $bytesToString(p.buf);
+		p.free();
+		return s;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Sprint }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f.a = a; $f.p = p; $f.s = s; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.Sprint = Sprint;
+	Fprintln = function(w, a) {
+		var $ptr, _r$2, _r$3, _tuple, a, err, n, p, w, x, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$2 = $f._r$2; _r$3 = $f._r$3; _tuple = $f._tuple; a = $f.a; err = $f.err; n = $f.n; p = $f.p; w = $f.w; x = $f.x; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		n = 0;
+		err = $ifaceNil;
+		_r$2 = newPrinter(); /* */ $s = 1; case 1: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+		p = _r$2;
+		$r = p.doPrint(a, true, true); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		_r$3 = w.Write((x = p.buf, $subslice(new sliceType(x.$array), x.$offset, x.$offset + x.$length))); /* */ $s = 3; case 3: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+		_tuple = _r$3; n = _tuple[0]; err = _tuple[1];
+		p.free();
+		return [n, err];
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Fprintln }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._tuple = _tuple; $f.a = a; $f.err = err; $f.n = n; $f.p = p; $f.w = w; $f.x = x; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.Fprintln = Fprintln;
+	Println = function(a) {
+		var $ptr, _r$2, _tuple, a, err, n, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$2 = $f._r$2; _tuple = $f._tuple; a = $f.a; err = $f.err; n = $f.n; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		n = 0;
+		err = $ifaceNil;
+		_r$2 = Fprintln(os.Stdout, a); /* */ $s = 1; case 1: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+		_tuple = _r$2; n = _tuple[0]; err = _tuple[1];
+		return [n, err];
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: Println }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f._tuple = _tuple; $f.a = a; $f.err = err; $f.n = n; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.Println = Println;
 	getField = function(v, i) {
 		var $ptr, _r$2, _r$3, i, v, val, $s, $r;
 		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$2 = $f._r$2; _r$3 = $f._r$3; i = $f.i; v = $f.v; val = $f.val; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
@@ -14820,6 +14880,37 @@ $packages["fmt"] = (function() {
 		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: pp.ptr.prototype.doPrintf }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._r$5 = _r$5; $f._ref = _ref; $f._tuple = _tuple; $f._tuple$1 = _tuple$1; $f._tuple$2 = _tuple$2; $f._tuple$3 = _tuple$3; $f._tuple$4 = _tuple$4; $f._tuple$5 = _tuple$5; $f._tuple$6 = _tuple$6; $f._tuple$7 = _tuple$7; $f.a = a; $f.afterIndex = afterIndex; $f.arg = arg; $f.arg$1 = arg$1; $f.argNum = argNum; $f.c = c; $f.end = end; $f.format = format; $f.i = i; $f.lasti = lasti; $f.p = p; $f.w = w; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	pp.prototype.doPrintf = function(format, a) { return this.$val.doPrintf(format, a); };
+	pp.ptr.prototype.doPrint = function(a, addspace, addnewline) {
+		var $ptr, _r$2, _r$3, _v, a, addnewline, addspace, arg, argNum, isString, p, prevString, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$2 = $f._r$2; _r$3 = $f._r$3; _v = $f._v; a = $f.a; addnewline = $f.addnewline; addspace = $f.addspace; arg = $f.arg; argNum = $f.argNum; isString = $f.isString; p = $f.p; prevString = $f.prevString; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		p = this;
+		prevString = false;
+		argNum = 0;
+		/* while (true) { */ case 1:
+			/* if (!(argNum < a.$length)) { break; } */ if(!(argNum < a.$length)) { $s = 2; continue; }
+			p.fmt.clearflags();
+			arg = ((argNum < 0 || argNum >= a.$length) ? $throwRuntimeError("index out of range") : a.$array[a.$offset + argNum]);
+			/* */ if (argNum > 0) { $s = 3; continue; }
+			/* */ $s = 4; continue;
+			/* if (argNum > 0) { */ case 3:
+				if (!(!($interfaceIsEqual(arg, $ifaceNil)))) { _v = false; $s = 5; continue s; }
+				_r$2 = reflect.TypeOf(arg).Kind(); /* */ $s = 6; case 6: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+				_v = _r$2 === 24; case 5:
+				isString = _v;
+				if (addspace || !isString && !prevString) {
+					(p.$ptr_buf || (p.$ptr_buf = new ptrType$1(function() { return this.$target.buf; }, function($v) { this.$target.buf = $v; }, p))).WriteByte(32);
+				}
+			/* } */ case 4:
+			_r$3 = p.printArg(arg, 118, 0); /* */ $s = 7; case 7: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+			prevString = _r$3;
+			argNum = argNum + (1) >> 0;
+		/* } */ $s = 1; continue; case 2:
+		if (addnewline) {
+			(p.$ptr_buf || (p.$ptr_buf = new ptrType$1(function() { return this.$target.buf; }, function($v) { this.$target.buf = $v; }, p))).WriteByte(10);
+		}
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: pp.ptr.prototype.doPrint }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._v = _v; $f.a = a; $f.addnewline = addnewline; $f.addspace = addspace; $f.arg = arg; $f.argNum = argNum; $f.isString = isString; $f.p = p; $f.prevString = prevString; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	pp.prototype.doPrint = function(a, addspace, addnewline) { return this.$val.doPrint(a, addspace, addnewline); };
 	ss.ptr.prototype.Read = function(buf) {
 		var $ptr, _tmp, _tmp$1, buf, err, n, s;
 		n = 0;
@@ -15578,7 +15669,7 @@ $packages["math/rand"] = (function() {
 	return $pkg;
 })();
 $packages["github.com/golangchallenge/gc6/mazelib"] = (function() {
-	var $pkg = {}, $init, errors, fmt, rand, os, strings, Coordinate, Survey, Room, Maze, sliceType, sliceType$1, sliceType$2, ptrType, ptrType$1, EmptyMaze;
+	var $pkg = {}, $init, errors, fmt, rand, os, strings, Coordinate, Survey, Room, Maze, sliceType, sliceType$1, sliceType$2, ptrType, ptrType$1, EmptyMaze, FullMaze;
 	errors = $packages["errors"];
 	fmt = $packages["fmt"];
 	rand = $packages["math/rand"];
@@ -15910,15 +16001,36 @@ $packages["github.com/golangchallenge/gc6/mazelib"] = (function() {
 			_r$3 = rand.Intn(xSize); /* */ $s = 6; case 6: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
 			_r$4 = rand.Intn(ySize); /* */ $s = 7; case 7: if($c) { $c = false; _r$4 = _r$4.$blk(); } if (_r$4 && _r$4.$blk !== undefined) { break s; }
 			_tmp = _r$3; _tmp$1 = _r$4; tX = _tmp; tY = _tmp$1;
-			if (!((tX === z[0].start.X)) && !((tY === z[0].start.Y))) {
-				z[0].SetTreasure(tX, tY);
-				/* break; */ $s = 5; continue;
+			if ((tX === z[0].start.X) && (tY === z[0].start.Y)) {
+				/* continue; */ $s = 4; continue;
 			}
+			z[0].SetTreasure(tX, tY);
+			/* break; */ $s = 5; continue;
 		/* } */ $s = 4; continue; case 5:
 		return z[0];
 		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: EmptyMaze }; } $f.$ptr = $ptr; $f._arg = _arg; $f._arg$1 = _arg$1; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._tmp = _tmp; $f._tmp$1 = _tmp$1; $f.tX = tX; $f.tY = tY; $f.x = x; $f.x$1 = x$1; $f.x$10 = x$10; $f.x$11 = x$11; $f.x$2 = x$2; $f.x$3 = x$3; $f.x$4 = x$4; $f.x$5 = x$5; $f.x$6 = x$6; $f.x$7 = x$7; $f.x$8 = x$8; $f.x$9 = x$9; $f.xSize = xSize; $f.y = y; $f.ySize = ySize; $f.z = z; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	$pkg.EmptyMaze = EmptyMaze;
+	FullMaze = function(xSize, ySize) {
+		var $ptr, _r, x, x$1, x$2, xSize, y, ySize, z, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; x = $f.x; x$1 = $f.x$1; x$2 = $f.x$2; xSize = $f.xSize; y = $f.y; ySize = $f.ySize; z = $f.z; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		_r = EmptyMaze(xSize, ySize); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		z = _r;
+		y = 0;
+		while (true) {
+			if (!(y < ySize)) { break; }
+			x = 0;
+			while (true) {
+				if (!(x < xSize)) { break; }
+				$copy((x$1 = (x$2 = z.rooms, ((y < 0 || y >= x$2.$length) ? $throwRuntimeError("index out of range") : x$2.$array[x$2.$offset + y])), ((x < 0 || x >= x$1.$length) ? $throwRuntimeError("index out of range") : x$1.$array[x$1.$offset + x])).Walls, new Survey.ptr(true, true, true, true), Survey);
+				x = x + (1) >> 0;
+			}
+			y = y + (1) >> 0;
+		}
+		return z;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: FullMaze }; } $f.$ptr = $ptr; $f._r = _r; $f.x = x; $f.x$1 = x$1; $f.x$2 = x$2; $f.xSize = xSize; $f.y = y; $f.ySize = ySize; $f.z = z; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.FullMaze = FullMaze;
 	ptrType.methods = [{prop: "AddWall", name: "AddWall", pkg: "", typ: $funcType([$Int], [], false)}, {prop: "RmWall", name: "RmWall", pkg: "", typ: $funcType([$Int], [], false)}];
 	ptrType$1.methods = [{prop: "GetRoom", name: "GetRoom", pkg: "", typ: $funcType([$Int, $Int], [ptrType, $error], false)}, {prop: "Width", name: "Width", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Height", name: "Height", pkg: "", typ: $funcType([], [$Int], false)}, {prop: "Icarus", name: "Icarus", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "End", name: "End", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "Start", name: "Start", pkg: "", typ: $funcType([], [$Int, $Int], false)}, {prop: "SetStartPoint", name: "SetStartPoint", pkg: "", typ: $funcType([$Int, $Int], [$error], false)}, {prop: "SetTreasure", name: "SetTreasure", pkg: "", typ: $funcType([$Int, $Int], [$error], false)}, {prop: "LookAround", name: "LookAround", pkg: "", typ: $funcType([], [Survey, $error], false)}, {prop: "Discover", name: "Discover", pkg: "", typ: $funcType([$Int, $Int], [Survey, $error], false)}, {prop: "MoveLeft", name: "MoveLeft", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveRight", name: "MoveRight", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveUp", name: "MoveUp", pkg: "", typ: $funcType([], [$error], false)}, {prop: "MoveDown", name: "MoveDown", pkg: "", typ: $funcType([], [$error], false)}];
 	Coordinate.init([{prop: "X", name: "X", pkg: "", typ: $Int, tag: "json:\"x\""}, {prop: "Y", name: "Y", pkg: "", typ: $Int, tag: "json:\"y\""}]);
@@ -15934,6 +16046,321 @@ $packages["github.com/golangchallenge/gc6/mazelib"] = (function() {
 		$r = os.$init(); /* */ $s = 4; case 4: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		$r = strings.$init(); /* */ $s = 5; case 5: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		$pkg.ErrVictory = errors.New("Victory");
+		/* */ } return; } if ($f === undefined) { $f = { $blk: $init }; } $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.$init = $init;
+	return $pkg;
+})();
+$packages["github.com/golangchallenge/gc6/generators"] = (function() {
+	var $pkg = {}, $init, mazelib, math, rand, possibility, sliceType, sliceType$1, DepthFirst, randomDir, digInto;
+	mazelib = $packages["github.com/golangchallenge/gc6/mazelib"];
+	math = $packages["math"];
+	rand = $packages["math/rand"];
+	possibility = $pkg.possibility = $newType(0, $kindStruct, "generators.possibility", "possibility", "github.com/golangchallenge/gc6/generators", function(dir_, coord_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.dir = "";
+			this.coord = new mazelib.Coordinate.ptr();
+			return;
+		}
+		this.dir = dir_;
+		this.coord = coord_;
+	});
+	sliceType = $sliceType(mazelib.Coordinate);
+	sliceType$1 = $sliceType(possibility);
+	DepthFirst = function() {
+		var $ptr, _entry, _entry$1, _entry$2, _entry$3, _key, _key$1, _key$2, _map, _r, _r$1, _r$2, _r$3, _r$4, _r$5, _r$6, _tuple, _tuple$1, current, dir, downCoord, goalX, goalY, height, leftCoord, m, newCoord, possible, rightCoord, startCoord, tip, upCoord, visited, width, x, x$1, y, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _entry = $f._entry; _entry$1 = $f._entry$1; _entry$2 = $f._entry$2; _entry$3 = $f._entry$3; _key = $f._key; _key$1 = $f._key$1; _key$2 = $f._key$2; _map = $f._map; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; _r$4 = $f._r$4; _r$5 = $f._r$5; _r$6 = $f._r$6; _tuple = $f._tuple; _tuple$1 = $f._tuple$1; current = $f.current; dir = $f.dir; downCoord = $f.downCoord; goalX = $f.goalX; goalY = $f.goalY; height = $f.height; leftCoord = $f.leftCoord; m = $f.m; newCoord = $f.newCoord; possible = $f.possible; rightCoord = $f.rightCoord; startCoord = $f.startCoord; tip = $f.tip; upCoord = $f.upCoord; visited = $f.visited; width = $f.width; x = $f.x; x$1 = $f.x$1; y = $f.y; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		width = 15;
+		height = 10;
+		_r = mazelib.FullMaze(width, height); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		m = _r;
+		_tuple = m.End(); x = _tuple[0]; y = _tuple[1];
+		startCoord = new mazelib.Coordinate.ptr(x, y);
+		visited = (_map = new $Map(), _map);
+		_key$1 = $clone(startCoord, mazelib.Coordinate); (visited || $throwRuntimeError("assignment to entry in nil map"))[mazelib.Coordinate.keyFor(_key$1)] = { k: _key$1, v: true };
+		current = new sliceType([$clone(startCoord, mazelib.Coordinate)]);
+		_tuple$1 = m.Start(); goalX = _tuple$1[0]; goalY = _tuple$1[1];
+		/* while (true) { */ case 2:
+			/* if (!(current.$length > 0)) { break; } */ if(!(current.$length > 0)) { $s = 3; continue; }
+			possible = new sliceType$1([]);
+			tip = $clone((x$1 = current.$length - 1 >> 0, ((x$1 < 0 || x$1 >= current.$length) ? $throwRuntimeError("index out of range") : current.$array[current.$offset + x$1])), mazelib.Coordinate);
+			leftCoord = new mazelib.Coordinate.ptr(tip.X - 1 >> 0, tip.Y);
+			if (tip.X > 0 && !(_entry = visited[mazelib.Coordinate.keyFor(leftCoord)], _entry !== undefined ? _entry.v : false)) {
+				possible = $append(possible, new possibility.ptr("left", $clone(leftCoord, mazelib.Coordinate)));
+			}
+			rightCoord = new mazelib.Coordinate.ptr(tip.X + 1 >> 0, tip.Y);
+			if (tip.X < (width - 1 >> 0) && !(_entry$1 = visited[mazelib.Coordinate.keyFor(rightCoord)], _entry$1 !== undefined ? _entry$1.v : false)) {
+				possible = $append(possible, new possibility.ptr("right", $clone(rightCoord, mazelib.Coordinate)));
+			}
+			upCoord = new mazelib.Coordinate.ptr(tip.X, tip.Y - 1 >> 0);
+			if (tip.Y > 0 && !(_entry$2 = visited[mazelib.Coordinate.keyFor(upCoord)], _entry$2 !== undefined ? _entry$2.v : false)) {
+				possible = $append(possible, new possibility.ptr("up", $clone(upCoord, mazelib.Coordinate)));
+			}
+			downCoord = new mazelib.Coordinate.ptr(tip.X, tip.Y + 1 >> 0);
+			if (tip.Y < (height - 1 >> 0) && !(_entry$3 = visited[mazelib.Coordinate.keyFor(downCoord)], _entry$3 !== undefined ? _entry$3.v : false)) {
+				possible = $append(possible, new possibility.ptr("down", $clone(downCoord, mazelib.Coordinate)));
+			}
+			/* */ if (possible.$length === 0) { $s = 4; continue; }
+			/* */ $s = 5; continue;
+			/* if (possible.$length === 0) { */ case 4:
+				current = $subslice(current, 0, (current.$length - 1 >> 0));
+				/* continue; */ $s = 2; continue;
+			/* } */ case 5:
+			_r$1 = randomDir(possible, tip.X, tip.Y, goalX, goalY); /* */ $s = 6; case 6: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+			dir = _r$1;
+			_r$2 = digInto(dir, tip, m); /* */ $s = 7; case 7: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+			newCoord = $clone(_r$2, mazelib.Coordinate);
+			_key$2 = $clone(newCoord, mazelib.Coordinate); (visited || $throwRuntimeError("assignment to entry in nil map"))[mazelib.Coordinate.keyFor(_key$2)] = { k: _key$2, v: true };
+			current = $append(current, newCoord);
+		/* } */ $s = 2; continue; case 3:
+		/* */ if ($pkg.Bias === "O") { $s = 8; continue; }
+		/* */ $s = 9; continue;
+		/* if ($pkg.Bias === "O") { */ case 8:
+			/* */ if (goalX > 0) { $s = 10; continue; }
+			/* */ $s = 11; continue;
+			/* if (goalX > 0) { */ case 10:
+				_r$3 = digInto("left", new mazelib.Coordinate.ptr(goalX, goalY), m); /* */ $s = 12; case 12: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+				_r$3;
+			/* } */ case 11:
+			/* */ if (goalX < (width - 1 >> 0)) { $s = 13; continue; }
+			/* */ $s = 14; continue;
+			/* if (goalX < (width - 1 >> 0)) { */ case 13:
+				_r$4 = digInto("right", new mazelib.Coordinate.ptr(goalX, goalY), m); /* */ $s = 15; case 15: if($c) { $c = false; _r$4 = _r$4.$blk(); } if (_r$4 && _r$4.$blk !== undefined) { break s; }
+				_r$4;
+			/* } */ case 14:
+			/* */ if (goalY > 0) { $s = 16; continue; }
+			/* */ $s = 17; continue;
+			/* if (goalY > 0) { */ case 16:
+				_r$5 = digInto("up", new mazelib.Coordinate.ptr(goalX, goalY), m); /* */ $s = 18; case 18: if($c) { $c = false; _r$5 = _r$5.$blk(); } if (_r$5 && _r$5.$blk !== undefined) { break s; }
+				_r$5;
+			/* } */ case 17:
+			/* */ if (goalY < (height - 1 >> 0)) { $s = 19; continue; }
+			/* */ $s = 20; continue;
+			/* if (goalY < (height - 1 >> 0)) { */ case 19:
+				_r$6 = digInto("down", new mazelib.Coordinate.ptr(goalX, goalY), m); /* */ $s = 21; case 21: if($c) { $c = false; _r$6 = _r$6.$blk(); } if (_r$6 && _r$6.$blk !== undefined) { break s; }
+				_r$6;
+			/* } */ case 20:
+		/* } */ case 9:
+		return m;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: DepthFirst }; } $f.$ptr = $ptr; $f._entry = _entry; $f._entry$1 = _entry$1; $f._entry$2 = _entry$2; $f._entry$3 = _entry$3; $f._key = _key; $f._key$1 = _key$1; $f._key$2 = _key$2; $f._map = _map; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._r$5 = _r$5; $f._r$6 = _r$6; $f._tuple = _tuple; $f._tuple$1 = _tuple$1; $f.current = current; $f.dir = dir; $f.downCoord = downCoord; $f.goalX = goalX; $f.goalY = goalY; $f.height = height; $f.leftCoord = leftCoord; $f.m = m; $f.newCoord = newCoord; $f.possible = possible; $f.rightCoord = rightCoord; $f.startCoord = startCoord; $f.tip = tip; $f.upCoord = upCoord; $f.visited = visited; $f.width = width; $f.x = x; $f.x$1 = x$1; $f.y = y; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.DepthFirst = DepthFirst;
+	randomDir = function(possible, x, y, avoidX, avoidY) {
+		var $ptr, _i, _i$1, _r, _ref, _ref$1, avoidX, avoidY, dist, distx, disty, i, increaseWeight, maxAt, maxDist, minAt, minDist, newPossible, p, p$1, possible, x, x$1, y, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _i = $f._i; _i$1 = $f._i$1; _r = $f._r; _ref = $f._ref; _ref$1 = $f._ref$1; avoidX = $f.avoidX; avoidY = $f.avoidY; dist = $f.dist; distx = $f.distx; disty = $f.disty; i = $f.i; increaseWeight = $f.increaseWeight; maxAt = $f.maxAt; maxDist = $f.maxDist; minAt = $f.minAt; minDist = $f.minDist; newPossible = $f.newPossible; p = $f.p; p$1 = $f.p$1; possible = $f.possible; x = $f.x; x$1 = $f.x$1; y = $f.y; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		newPossible = [newPossible];
+		newPossible[0] = possible;
+		increaseWeight = (function(newPossible) { return function(p) {
+			var $ptr, p;
+			p = $clone(p, possibility);
+			newPossible[0] = $append(newPossible[0], p);
+			newPossible[0] = $append(newPossible[0], p);
+			newPossible[0] = $append(newPossible[0], p);
+		}; })(newPossible);
+		/* */ if ($pkg.Bias === "H" || $pkg.Bias === "V") { $s = 1; continue; }
+		/* */ if ($pkg.Bias === "X" || $pkg.Bias === "O") { $s = 2; continue; }
+		/* */ $s = 3; continue;
+		/* if ($pkg.Bias === "H" || $pkg.Bias === "V") { */ case 1:
+			_ref = possible;
+			_i = 0;
+			/* while (true) { */ case 4:
+				/* if (!(_i < _ref.$length)) { break; } */ if(!(_i < _ref.$length)) { $s = 5; continue; }
+				p = $clone(((_i < 0 || _i >= _ref.$length) ? $throwRuntimeError("index out of range") : _ref.$array[_ref.$offset + _i]), possibility);
+				/* */ if ($pkg.Bias === "V" && (p.dir === "up" || p.dir === "down")) { $s = 6; continue; }
+				/* */ if ($pkg.Bias === "H" && (p.dir === "left" || p.dir === "right")) { $s = 7; continue; }
+				/* */ $s = 8; continue;
+				/* if ($pkg.Bias === "V" && (p.dir === "up" || p.dir === "down")) { */ case 6:
+					$r = increaseWeight(p); /* */ $s = 9; case 9: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+					$s = 8; continue;
+				/* } else if ($pkg.Bias === "H" && (p.dir === "left" || p.dir === "right")) { */ case 7:
+					$r = increaseWeight(p); /* */ $s = 10; case 10: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+				/* } */ case 8:
+				_i++;
+			/* } */ $s = 4; continue; case 5:
+			$s = 3; continue;
+		/* } else if ($pkg.Bias === "X" || $pkg.Bias === "O") { */ case 2:
+			maxDist = -1;
+			maxAt = 0;
+			minDist = 5000;
+			minAt = 0;
+			_ref$1 = possible;
+			_i$1 = 0;
+			while (true) {
+				if (!(_i$1 < _ref$1.$length)) { break; }
+				i = _i$1;
+				p$1 = $clone(((_i$1 < 0 || _i$1 >= _ref$1.$length) ? $throwRuntimeError("index out of range") : _ref$1.$array[_ref$1.$offset + _i$1]), possibility);
+				distx = (p$1.coord.X - avoidX >> 0);
+				distx = distx * (distx);
+				disty = (p$1.coord.Y - avoidY >> 0);
+				disty = disty * (disty);
+				dist = math.Sqrt(distx + disty);
+				if (dist > maxDist) {
+					maxDist = dist;
+					maxAt = i;
+				}
+				if (dist < minDist) {
+					minDist = dist;
+					minAt = i;
+				}
+				_i$1++;
+			}
+			if ($pkg.Bias === "O") {
+				return ((minAt < 0 || minAt >= possible.$length) ? $throwRuntimeError("index out of range") : possible.$array[possible.$offset + minAt]).dir;
+			}
+			return ((maxAt < 0 || maxAt >= possible.$length) ? $throwRuntimeError("index out of range") : possible.$array[possible.$offset + maxAt]).dir;
+		/* } */ case 3:
+		_r = rand.Intn(newPossible[0].$length); /* */ $s = 11; case 11: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		return (x$1 = _r, ((x$1 < 0 || x$1 >= newPossible[0].$length) ? $throwRuntimeError("index out of range") : newPossible[0].$array[newPossible[0].$offset + x$1])).dir;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: randomDir }; } $f.$ptr = $ptr; $f._i = _i; $f._i$1 = _i$1; $f._r = _r; $f._ref = _ref; $f._ref$1 = _ref$1; $f.avoidX = avoidX; $f.avoidY = avoidY; $f.dist = dist; $f.distx = distx; $f.disty = disty; $f.i = i; $f.increaseWeight = increaseWeight; $f.maxAt = maxAt; $f.maxDist = maxDist; $f.minAt = minAt; $f.minDist = minDist; $f.newPossible = newPossible; $f.p = p; $f.p$1 = p$1; $f.possible = possible; $f.x = x; $f.x$1 = x$1; $f.y = y; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	digInto = function(dir, current, m) {
+		var $ptr, _ref, _tuple, _tuple$1, _tuple$2, _tuple$3, _tuple$4, _tuple$5, _tuple$6, _tuple$7, c, current, dir, m, roomA, roomA$1, roomA$2, roomA$3, roomB, roomB$1, roomB$2, roomB$3, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _ref = $f._ref; _tuple = $f._tuple; _tuple$1 = $f._tuple$1; _tuple$2 = $f._tuple$2; _tuple$3 = $f._tuple$3; _tuple$4 = $f._tuple$4; _tuple$5 = $f._tuple$5; _tuple$6 = $f._tuple$6; _tuple$7 = $f._tuple$7; c = $f.c; current = $f.current; dir = $f.dir; m = $f.m; roomA = $f.roomA; roomA$1 = $f.roomA$1; roomA$2 = $f.roomA$2; roomA$3 = $f.roomA$3; roomB = $f.roomB; roomB$1 = $f.roomB$1; roomB$2 = $f.roomB$2; roomB$3 = $f.roomB$3; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		current = $clone(current, mazelib.Coordinate);
+		c = $clone(new mazelib.Coordinate.ptr(), mazelib.Coordinate);
+		_ref = dir;
+		if (_ref === "left") {
+			$copy(c, new mazelib.Coordinate.ptr(current.X - 1 >> 0, current.Y), mazelib.Coordinate);
+			_tuple = m.GetRoom(current.X, current.Y); roomA = _tuple[0];
+			_tuple$1 = m.GetRoom(c.X, c.Y); roomB = _tuple$1[0];
+			roomA.RmWall(4);
+			roomB.RmWall(3);
+		} else if (_ref === "right") {
+			$copy(c, new mazelib.Coordinate.ptr(current.X + 1 >> 0, current.Y), mazelib.Coordinate);
+			_tuple$2 = m.GetRoom(current.X, current.Y); roomA$1 = _tuple$2[0];
+			_tuple$3 = m.GetRoom(c.X, c.Y); roomB$1 = _tuple$3[0];
+			roomA$1.RmWall(3);
+			roomB$1.RmWall(4);
+		} else if (_ref === "up") {
+			$copy(c, new mazelib.Coordinate.ptr(current.X, current.Y - 1 >> 0), mazelib.Coordinate);
+			_tuple$4 = m.GetRoom(current.X, current.Y); roomA$2 = _tuple$4[0];
+			_tuple$5 = m.GetRoom(c.X, c.Y); roomB$2 = _tuple$5[0];
+			roomA$2.RmWall(1);
+			roomB$2.RmWall(2);
+		} else if (_ref === "down") {
+			$copy(c, new mazelib.Coordinate.ptr(current.X, current.Y + 1 >> 0), mazelib.Coordinate);
+			_tuple$6 = m.GetRoom(current.X, current.Y); roomA$3 = _tuple$6[0];
+			_tuple$7 = m.GetRoom(c.X, c.Y); roomB$3 = _tuple$7[0];
+			roomA$3.RmWall(2);
+			roomB$3.RmWall(1);
+		}
+		/* */ if (!($pkg.Animate === $throwNilPointerError)) { $s = 1; continue; }
+		/* */ $s = 2; continue;
+		/* if (!($pkg.Animate === $throwNilPointerError)) { */ case 1:
+			$r = $pkg.Animate(m); /* */ $s = 3; case 3: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		/* } */ case 2:
+		return c;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: digInto }; } $f.$ptr = $ptr; $f._ref = _ref; $f._tuple = _tuple; $f._tuple$1 = _tuple$1; $f._tuple$2 = _tuple$2; $f._tuple$3 = _tuple$3; $f._tuple$4 = _tuple$4; $f._tuple$5 = _tuple$5; $f._tuple$6 = _tuple$6; $f._tuple$7 = _tuple$7; $f.c = c; $f.current = current; $f.dir = dir; $f.m = m; $f.roomA = roomA; $f.roomA$1 = roomA$1; $f.roomA$2 = roomA$2; $f.roomA$3 = roomA$3; $f.roomB = roomB; $f.roomB$1 = roomB$1; $f.roomB$2 = roomB$2; $f.roomB$3 = roomB$3; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	possibility.init([{prop: "dir", name: "dir", pkg: "github.com/golangchallenge/gc6/generators", typ: $String, tag: ""}, {prop: "coord", name: "coord", pkg: "github.com/golangchallenge/gc6/generators", typ: mazelib.Coordinate, tag: ""}]);
+	$init = function() {
+		$pkg.$init = function() {};
+		/* */ var $f, $c = false, $s = 0, $r; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		$r = mazelib.$init(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = math.$init(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = rand.$init(); /* */ $s = 3; case 3: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$pkg.Animate = $throwNilPointerError;
+		$pkg.Bias = "H";
+		/* */ } return; } if ($f === undefined) { $f = { $blk: $init }; } $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.$init = $init;
+	return $pkg;
+})();
+$packages["github.com/golangchallenge/gc6/solvers"] = (function() {
+	var $pkg = {}, $init, mazelib, rand, dfs, dfsSegment, MazeSolver, ptrType, sliceType, ptrType$1, mapType, NewDFS, reverseDir;
+	mazelib = $packages["github.com/golangchallenge/gc6/mazelib"];
+	rand = $packages["math/rand"];
+	dfs = $pkg.dfs = $newType(0, $kindStruct, "solvers.dfs", "dfs", "github.com/golangchallenge/gc6/solvers", function(visited_, current_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.visited = false;
+			this.current = sliceType.nil;
+			return;
+		}
+		this.visited = visited_;
+		this.current = current_;
+	});
+	dfsSegment = $pkg.dfsSegment = $newType(0, $kindStruct, "solvers.dfsSegment", "dfsSegment", "github.com/golangchallenge/gc6/solvers", function(coord_, dir_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.coord = new mazelib.Coordinate.ptr();
+			this.dir = "";
+			return;
+		}
+		this.coord = coord_;
+		this.dir = dir_;
+	});
+	MazeSolver = $pkg.MazeSolver = $newType(8, $kindInterface, "solvers.MazeSolver", "MazeSolver", "github.com/golangchallenge/gc6/solvers", null);
+	ptrType = $ptrType(dfsSegment);
+	sliceType = $sliceType(ptrType);
+	ptrType$1 = $ptrType(dfs);
+	mapType = $mapType(mazelib.Coordinate, $Bool);
+	NewDFS = function() {
+		var $ptr, _key, _map, zero;
+		zero = new mazelib.Coordinate.ptr(0, 0);
+		return new dfs.ptr((_map = new $Map(), _key = $clone(zero, mazelib.Coordinate), _map[mazelib.Coordinate.keyFor(_key)] = { k: _key, v: true }, _map), new sliceType([new dfsSegment.ptr(new mazelib.Coordinate.ptr(), "")]));
+	};
+	$pkg.NewDFS = NewDFS;
+	dfs.ptr.prototype.Step = function(s) {
+		var $ptr, _entry, _entry$1, _entry$2, _entry$3, _key, _r, _tmp, _tmp$1, chosen, d, downCoord, leftCoord, possibleDirections, presentCell, rightCoord, s, upCoord, x, x$1, x$2, x$3, y, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _entry = $f._entry; _entry$1 = $f._entry$1; _entry$2 = $f._entry$2; _entry$3 = $f._entry$3; _key = $f._key; _r = $f._r; _tmp = $f._tmp; _tmp$1 = $f._tmp$1; chosen = $f.chosen; d = $f.d; downCoord = $f.downCoord; leftCoord = $f.leftCoord; possibleDirections = $f.possibleDirections; presentCell = $f.presentCell; rightCoord = $f.rightCoord; s = $f.s; upCoord = $f.upCoord; x = $f.x; x$1 = $f.x$1; x$2 = $f.x$2; x$3 = $f.x$3; y = $f.y; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		s = $clone(s, mazelib.Survey);
+		d = this;
+		presentCell = (x = d.current, x$1 = d.current.$length - 1 >> 0, ((x$1 < 0 || x$1 >= x.$length) ? $throwRuntimeError("index out of range") : x.$array[x.$offset + x$1]));
+		_tmp = presentCell.coord.X; _tmp$1 = presentCell.coord.Y; x$2 = _tmp; y = _tmp$1;
+		possibleDirections = new sliceType([]);
+		leftCoord = new mazelib.Coordinate.ptr(x$2 - 1 >> 0, y);
+		rightCoord = new mazelib.Coordinate.ptr(x$2 + 1 >> 0, y);
+		upCoord = new mazelib.Coordinate.ptr(x$2, y - 1 >> 0);
+		downCoord = new mazelib.Coordinate.ptr(x$2, y + 1 >> 0);
+		if (!s.Left && !(_entry = d.visited[mazelib.Coordinate.keyFor(leftCoord)], _entry !== undefined ? _entry.v : false)) {
+			possibleDirections = $append(possibleDirections, new dfsSegment.ptr($clone(leftCoord, mazelib.Coordinate), "left"));
+		}
+		if (!s.Right && !(_entry$1 = d.visited[mazelib.Coordinate.keyFor(rightCoord)], _entry$1 !== undefined ? _entry$1.v : false)) {
+			possibleDirections = $append(possibleDirections, new dfsSegment.ptr($clone(rightCoord, mazelib.Coordinate), "right"));
+		}
+		if (!s.Top && !(_entry$2 = d.visited[mazelib.Coordinate.keyFor(upCoord)], _entry$2 !== undefined ? _entry$2.v : false)) {
+			possibleDirections = $append(possibleDirections, new dfsSegment.ptr($clone(upCoord, mazelib.Coordinate), "up"));
+		}
+		if (!s.Bottom && !(_entry$3 = d.visited[mazelib.Coordinate.keyFor(downCoord)], _entry$3 !== undefined ? _entry$3.v : false)) {
+			possibleDirections = $append(possibleDirections, new dfsSegment.ptr($clone(downCoord, mazelib.Coordinate), "down"));
+		}
+		if (possibleDirections.$length === 0) {
+			d.current = $subslice(d.current, 0, (d.current.$length - 1 >> 0));
+			return reverseDir(presentCell.dir);
+		}
+		_r = rand.Intn(possibleDirections.$length); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		chosen = (x$3 = _r, ((x$3 < 0 || x$3 >= possibleDirections.$length) ? $throwRuntimeError("index out of range") : possibleDirections.$array[possibleDirections.$offset + x$3]));
+		d.current = $append(d.current, chosen);
+		_key = $clone(chosen.coord, mazelib.Coordinate); (d.visited || $throwRuntimeError("assignment to entry in nil map"))[mazelib.Coordinate.keyFor(_key)] = { k: _key, v: true };
+		return chosen.dir;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: dfs.ptr.prototype.Step }; } $f.$ptr = $ptr; $f._entry = _entry; $f._entry$1 = _entry$1; $f._entry$2 = _entry$2; $f._entry$3 = _entry$3; $f._key = _key; $f._r = _r; $f._tmp = _tmp; $f._tmp$1 = _tmp$1; $f.chosen = chosen; $f.d = d; $f.downCoord = downCoord; $f.leftCoord = leftCoord; $f.possibleDirections = possibleDirections; $f.presentCell = presentCell; $f.rightCoord = rightCoord; $f.s = s; $f.upCoord = upCoord; $f.x = x; $f.x$1 = x$1; $f.x$2 = x$2; $f.x$3 = x$3; $f.y = y; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	dfs.prototype.Step = function(s) { return this.$val.Step(s); };
+	reverseDir = function(dir) {
+		var $ptr, _ref, dir;
+		_ref = dir;
+		if (_ref === "left") {
+			return "right";
+		} else if (_ref === "right") {
+			return "left";
+		} else if (_ref === "up") {
+			return "down";
+		} else if (_ref === "down") {
+			return "up";
+		}
+		$panic(new $String("can't reverse unknown dir"));
+	};
+	ptrType$1.methods = [{prop: "Step", name: "Step", pkg: "", typ: $funcType([mazelib.Survey], [$String], false)}];
+	dfs.init([{prop: "visited", name: "visited", pkg: "github.com/golangchallenge/gc6/solvers", typ: mapType, tag: ""}, {prop: "current", name: "current", pkg: "github.com/golangchallenge/gc6/solvers", typ: sliceType, tag: ""}]);
+	dfsSegment.init([{prop: "coord", name: "coord", pkg: "github.com/golangchallenge/gc6/solvers", typ: mazelib.Coordinate, tag: ""}, {prop: "dir", name: "dir", pkg: "github.com/golangchallenge/gc6/solvers", typ: $String, tag: ""}]);
+	MazeSolver.init([{prop: "Step", name: "Step", pkg: "", typ: $funcType([mazelib.Survey], [$String], false)}]);
+	$init = function() {
+		$pkg.$init = function() {};
+		/* */ var $f, $c = false, $s = 0, $r; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		$r = mazelib.$init(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = rand.$init(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		/* */ } return; } if ($f === undefined) { $f = { $blk: $init }; } $f.$s = $s; $f.$r = $r; return $f;
 	};
 	$pkg.$init = $init;
@@ -20550,58 +20977,210 @@ $packages["honnef.co/go/js/dom"] = (function() {
 	return $pkg;
 })();
 $packages["main"] = (function() {
-	var $pkg = {}, $init, mazelib, dom, rand, time, renderData, ptrType, ptrType$1, main, setupEvents, render, fillCell, drawBorders;
+	var $pkg = {}, $init, fmt, generators, mazelib, solvers, dom, rand, time, renderData, ptrType, ptrType$1, ptrType$2, sliceType, ptrType$3, ptrType$4, currentContext, main, initialize, idToGenerator, setupEvents, AnimateGeneration, step, run, render, fillCell, drawBorders;
+	fmt = $packages["fmt"];
+	generators = $packages["github.com/golangchallenge/gc6/generators"];
 	mazelib = $packages["github.com/golangchallenge/gc6/mazelib"];
+	solvers = $packages["github.com/golangchallenge/gc6/solvers"];
 	dom = $packages["honnef.co/go/js/dom"];
 	rand = $packages["math/rand"];
 	time = $packages["time"];
-	renderData = $pkg.renderData = $newType(0, $kindStruct, "main.renderData", "renderData", "main", function(maze_) {
+	renderData = $pkg.renderData = $newType(0, $kindStruct, "main.renderData", "renderData", "main", function(maze_, solver_, count_) {
 		this.$val = this;
 		if (arguments.length === 0) {
 			this.maze = ptrType$1.nil;
+			this.solver = $ifaceNil;
+			this.count = 0;
 			return;
 		}
 		this.maze = maze_;
+		this.solver = solver_;
+		this.count = count_;
 	});
-	ptrType = $ptrType(dom.HTMLCanvasElement);
+	ptrType = $ptrType(renderData);
 	ptrType$1 = $ptrType(mazelib.Maze);
+	ptrType$2 = $ptrType(dom.HTMLSelectElement);
+	sliceType = $sliceType($emptyInterface);
+	ptrType$3 = $ptrType(dom.HTMLSpanElement);
+	ptrType$4 = $ptrType(dom.HTMLCanvasElement);
 	main = function() {
-		var $ptr, _r, m, $s, $r;
-		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; m = $f.m; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		var $ptr, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
 		$r = rand.Seed(time.Now().UnixNano()); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		$r = setupEvents(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		_r = mazelib.EmptyMaze(15, 10); /* */ $s = 3; case 3: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
-		m = _r;
-		$r = render(new renderData.ptr(m)); /* */ $s = 4; case 4: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: main }; } $f.$ptr = $ptr; $f._r = _r; $f.m = m; $f.$s = $s; $f.$r = $r; return $f;
+		$r = initialize(); /* */ $s = 3; case 3: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		generators.Animate = AnimateGeneration;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: main }; } $f.$ptr = $ptr; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	initialize = function() {
+		var $ptr, _r, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		currentContext = new renderData.ptr(ptrType$1.nil, $ifaceNil, 0);
+		_r = idToGenerator(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		currentContext.maze = _r;
+		currentContext.solver = solvers.NewDFS();
+		$r = render(currentContext); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: initialize }; } $f.$ptr = $ptr; $f._r = _r; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	idToGenerator = function() {
+		var $ptr, _r, _r$1, _r$2, _r$3, _r$4, _r$5, _r$6, _r$7, _ref, val, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; _r$4 = $f._r$4; _r$5 = $f._r$5; _r$6 = $f._r$6; _r$7 = $f._r$7; _ref = $f._ref; val = $f.val; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		_r = dom.GetWindow().Document(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		_r$1 = _r.GetElementByID("generator"); /* */ $s = 2; case 2: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		val = $internalize($assertType(_r$1, ptrType$2).BasicHTMLElement.BasicElement.BasicNode.Object.value, $String);
+		_ref = val;
+		/* */ if (_ref === "dfs") { $s = 3; continue; }
+		/* */ if (_ref === "dfs-h") { $s = 4; continue; }
+		/* */ if (_ref === "dfs-v") { $s = 5; continue; }
+		/* */ if (_ref === "dfs-x") { $s = 6; continue; }
+		/* */ if (_ref === "dfs-o") { $s = 7; continue; }
+		/* */ if (_ref === "empty") { $s = 8; continue; }
+		/* */ $s = 9; continue;
+		/* if (_ref === "dfs") { */ case 3:
+			generators.Bias = "";
+			_r$2 = generators.DepthFirst(); /* */ $s = 10; case 10: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+			return _r$2;
+			$s = 9; continue;
+		/* } else if (_ref === "dfs-h") { */ case 4:
+			generators.Bias = "H";
+			_r$3 = generators.DepthFirst(); /* */ $s = 11; case 11: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+			return _r$3;
+			$s = 9; continue;
+		/* } else if (_ref === "dfs-v") { */ case 5:
+			generators.Bias = "V";
+			_r$4 = generators.DepthFirst(); /* */ $s = 12; case 12: if($c) { $c = false; _r$4 = _r$4.$blk(); } if (_r$4 && _r$4.$blk !== undefined) { break s; }
+			return _r$4;
+			$s = 9; continue;
+		/* } else if (_ref === "dfs-x") { */ case 6:
+			generators.Bias = "X";
+			_r$5 = generators.DepthFirst(); /* */ $s = 13; case 13: if($c) { $c = false; _r$5 = _r$5.$blk(); } if (_r$5 && _r$5.$blk !== undefined) { break s; }
+			return _r$5;
+			$s = 9; continue;
+		/* } else if (_ref === "dfs-o") { */ case 7:
+			generators.Bias = "O";
+			_r$6 = generators.DepthFirst(); /* */ $s = 14; case 14: if($c) { $c = false; _r$6 = _r$6.$blk(); } if (_r$6 && _r$6.$blk !== undefined) { break s; }
+			return _r$6;
+			$s = 9; continue;
+		/* } else if (_ref === "empty") { */ case 8:
+			_r$7 = mazelib.EmptyMaze(15, 10); /* */ $s = 15; case 15: if($c) { $c = false; _r$7 = _r$7.$blk(); } if (_r$7 && _r$7.$blk !== undefined) { break s; }
+			return _r$7;
+		/* } */ case 9:
+		$panic(new $String("unknown generator"));
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: idToGenerator }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._r$5 = _r$5; $f._r$6 = _r$6; $f._r$7 = _r$7; $f._ref = _ref; $f.val = val; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	setupEvents = function() {
-		var $ptr, _r, _r$1, _r$2, initButton, $s, $r;
-		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; initButton = $f.initButton; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		var $ptr, _r, _r$1, _r$2, _r$3, _r$4, _r$5, _r$6, _r$7, _r$8, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; _r$4 = $f._r$4; _r$5 = $f._r$5; _r$6 = $f._r$6; _r$7 = $f._r$7; _r$8 = $f._r$8; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
 		_r = dom.GetWindow().Document(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
 		_r$1 = _r.GetElementByID("init"); /* */ $s = 2; case 2: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
-		initButton = _r$1;
-		_r$2 = initButton.AddEventListener("click", false, (function $b(param) {
-			var $ptr, _r$2, m, param, $s, $r;
-			/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$2 = $f._r$2; m = $f.m; param = $f.param; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
-			_r$2 = mazelib.EmptyMaze(15, 10); /* */ $s = 1; case 1: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
-			m = _r$2;
-			$r = render(new renderData.ptr(m)); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-			/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: $b }; } $f.$ptr = $ptr; $f._r$2 = _r$2; $f.m = m; $f.param = param; $f.$s = $s; $f.$r = $r; return $f;
+		_r$2 = _r$1.AddEventListener("click", false, (function(param) {
+			var $ptr, param;
+			$go(initialize, []);
 		})); /* */ $s = 3; case 3: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
 		_r$2;
-		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: setupEvents }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f.initButton = initButton; $f.$s = $s; $f.$r = $r; return $f;
+		_r$3 = dom.GetWindow().Document(); /* */ $s = 4; case 4: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+		_r$4 = _r$3.GetElementByID("step"); /* */ $s = 5; case 5: if($c) { $c = false; _r$4 = _r$4.$blk(); } if (_r$4 && _r$4.$blk !== undefined) { break s; }
+		_r$5 = _r$4.AddEventListener("click", false, (function $b(param) {
+			var $ptr, _r$5, param, $s, $r;
+			/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r$5 = $f._r$5; param = $f.param; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+			_r$5 = step(); /* */ $s = 1; case 1: if($c) { $c = false; _r$5 = _r$5.$blk(); } if (_r$5 && _r$5.$blk !== undefined) { break s; }
+			_r$5;
+			/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: $b }; } $f.$ptr = $ptr; $f._r$5 = _r$5; $f.param = param; $f.$s = $s; $f.$r = $r; return $f;
+		})); /* */ $s = 6; case 6: if($c) { $c = false; _r$5 = _r$5.$blk(); } if (_r$5 && _r$5.$blk !== undefined) { break s; }
+		_r$5;
+		_r$6 = dom.GetWindow().Document(); /* */ $s = 7; case 7: if($c) { $c = false; _r$6 = _r$6.$blk(); } if (_r$6 && _r$6.$blk !== undefined) { break s; }
+		_r$7 = _r$6.GetElementByID("run"); /* */ $s = 8; case 8: if($c) { $c = false; _r$7 = _r$7.$blk(); } if (_r$7 && _r$7.$blk !== undefined) { break s; }
+		_r$8 = _r$7.AddEventListener("click", false, (function(param) {
+			var $ptr, param;
+			$go(run, []);
+		})); /* */ $s = 9; case 9: if($c) { $c = false; _r$8 = _r$8.$blk(); } if (_r$8 && _r$8.$blk !== undefined) { break s; }
+		_r$8;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: setupEvents }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._r$5 = _r$5; $f._r$6 = _r$6; $f._r$7 = _r$7; $f._r$8 = _r$8; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	AnimateGeneration = function(m) {
+		var $ptr, m, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; m = $f.m; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		$r = render(new renderData.ptr(m, $ifaceNil, 0)); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = time.Sleep(new time.Duration(0, 15000000)); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: AnimateGeneration }; } $f.$ptr = $ptr; $f.m = m; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.AnimateGeneration = AnimateGeneration;
+	step = function() {
+		var $ptr, _r, _r$1, _r$2, _r$3, _r$4, _r$5, _r$6, _r$7, _ref, _tuple, c, dir, err, surv, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; _r$4 = $f._r$4; _r$5 = $f._r$5; _r$6 = $f._r$6; _r$7 = $f._r$7; _ref = $f._ref; _tuple = $f._tuple; c = $f.c; dir = $f.dir; err = $f.err; surv = $f.surv; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		c = currentContext;
+		_r = c.maze.LookAround(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		_tuple = _r; surv = $clone(_tuple[0], mazelib.Survey); err = _tuple[1];
+		/* */ if (!($interfaceIsEqual(err, $ifaceNil))) { $s = 2; continue; }
+		/* */ $s = 3; continue;
+		/* if (!($interfaceIsEqual(err, $ifaceNil))) { */ case 2:
+			_r$1 = fmt.Println(new sliceType([err])); /* */ $s = 4; case 4: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+			_r$1;
+			return err;
+		/* } */ case 3:
+		_r$2 = c.solver.Step(surv); /* */ $s = 5; case 5: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+		dir = _r$2;
+		_ref = dir;
+		/* */ if (_ref === "left") { $s = 6; continue; }
+		/* */ if (_ref === "right") { $s = 7; continue; }
+		/* */ if (_ref === "down") { $s = 8; continue; }
+		/* */ if (_ref === "up") { $s = 9; continue; }
+		/* */ $s = 10; continue;
+		/* if (_ref === "left") { */ case 6:
+			_r$3 = c.maze.MoveLeft(); /* */ $s = 11; case 11: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+			err = _r$3;
+			$s = 10; continue;
+		/* } else if (_ref === "right") { */ case 7:
+			_r$4 = c.maze.MoveRight(); /* */ $s = 12; case 12: if($c) { $c = false; _r$4 = _r$4.$blk(); } if (_r$4 && _r$4.$blk !== undefined) { break s; }
+			err = _r$4;
+			$s = 10; continue;
+		/* } else if (_ref === "down") { */ case 8:
+			_r$5 = c.maze.MoveDown(); /* */ $s = 13; case 13: if($c) { $c = false; _r$5 = _r$5.$blk(); } if (_r$5 && _r$5.$blk !== undefined) { break s; }
+			err = _r$5;
+			$s = 10; continue;
+		/* } else if (_ref === "up") { */ case 9:
+			_r$6 = c.maze.MoveUp(); /* */ $s = 14; case 14: if($c) { $c = false; _r$6 = _r$6.$blk(); } if (_r$6 && _r$6.$blk !== undefined) { break s; }
+			err = _r$6;
+		/* } */ case 10:
+		/* */ if (!($interfaceIsEqual(err, $ifaceNil))) { $s = 15; continue; }
+		/* */ $s = 16; continue;
+		/* if (!($interfaceIsEqual(err, $ifaceNil))) { */ case 15:
+			_r$7 = fmt.Println(new sliceType([err])); /* */ $s = 17; case 17: if($c) { $c = false; _r$7 = _r$7.$blk(); } if (_r$7 && _r$7.$blk !== undefined) { break s; }
+			_r$7;
+			return err;
+		/* } */ case 16:
+		currentContext.count = currentContext.count + (1) >> 0;
+		$r = render(currentContext); /* */ $s = 18; case 18: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		return $ifaceNil;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: step }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._r$5 = _r$5; $f._r$6 = _r$6; $f._r$7 = _r$7; $f._ref = _ref; $f._tuple = _tuple; $f.c = c; $f.dir = dir; $f.err = err; $f.surv = surv; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	run = function() {
+		var $ptr, _r, err, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; err = $f.err; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		err = $ifaceNil;
+		/* while (true) { */ case 1:
+			/* if (!($interfaceIsEqual(err, $ifaceNil))) { break; } */ if(!($interfaceIsEqual(err, $ifaceNil))) { $s = 2; continue; }
+			_r = step(); /* */ $s = 3; case 3: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+			err = _r;
+			$r = time.Sleep(new time.Duration(0, 20000000)); /* */ $s = 4; case 4: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		/* } */ $s = 1; continue; case 2:
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: run }; } $f.$ptr = $ptr; $f._r = _r; $f.err = err; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	render = function(c) {
-		var $ptr, _r, _r$1, _r$2, _tuple, _tuple$1, c, ctx, endX, endY, startX, startY, x, y, $s, $r;
-		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _tuple = $f._tuple; _tuple$1 = $f._tuple$1; c = $f.c; ctx = $f.ctx; endX = $f.endX; endY = $f.endY; startX = $f.startX; startY = $f.startY; x = $f.x; y = $f.y; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
-		c = $clone(c, renderData);
+		var $ptr, _r, _r$1, _r$2, _r$3, _r$4, _r$5, _tuple, _tuple$1, _tuple$2, c, ctx, curX, curY, endX, endY, startX, startY, x, y, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _r$2 = $f._r$2; _r$3 = $f._r$3; _r$4 = $f._r$4; _r$5 = $f._r$5; _tuple = $f._tuple; _tuple$1 = $f._tuple$1; _tuple$2 = $f._tuple$2; c = $f.c; ctx = $f.ctx; curX = $f.curX; curY = $f.curY; endX = $f.endX; endY = $f.endY; startX = $f.startX; startY = $f.startY; x = $f.x; y = $f.y; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
 		_r = dom.GetWindow().Document(); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
-		_r$1 = _r.GetElementByID("dc"); /* */ $s = 2; case 2: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
-		_r$2 = $assertType(_r$1, ptrType).GetContext2d(); /* */ $s = 3; case 3: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
-		ctx = _r$2;
+		_r$1 = _r.GetElementByID("stepCount"); /* */ $s = 2; case 2: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+		_r$2 = fmt.Sprint(new sliceType([new $Int(c.count)])); /* */ $s = 3; case 3: if($c) { $c = false; _r$2 = _r$2.$blk(); } if (_r$2 && _r$2.$blk !== undefined) { break s; }
+		$r = $assertType(_r$1, ptrType$3).BasicHTMLElement.BasicElement.BasicNode.SetTextContent(_r$2); /* */ $s = 4; case 4: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		_r$3 = dom.GetWindow().Document(); /* */ $s = 5; case 5: if($c) { $c = false; _r$3 = _r$3.$blk(); } if (_r$3 && _r$3.$blk !== undefined) { break s; }
+		_r$4 = _r$3.GetElementByID("dc"); /* */ $s = 6; case 6: if($c) { $c = false; _r$4 = _r$4.$blk(); } if (_r$4 && _r$4.$blk !== undefined) { break s; }
+		_r$5 = $assertType(_r$4, ptrType$4).GetContext2d(); /* */ $s = 7; case 7: if($c) { $c = false; _r$5 = _r$5.$blk(); } if (_r$5 && _r$5.$blk !== undefined) { break s; }
+		ctx = _r$5;
+		ctx.ClearRect(0, 0, 10000, 10000);
 		_tuple = c.maze.Start(); startX = _tuple[0]; startY = _tuple[1];
 		_tuple$1 = c.maze.End(); endX = _tuple$1[0]; endY = _tuple$1[1];
+		_tuple$2 = c.maze.Icarus(); curX = _tuple$2[0]; curY = _tuple$2[1];
 		y = 0;
 		while (true) {
 			if (!(y < c.maze.Height())) { break; }
@@ -20609,10 +21188,11 @@ $packages["main"] = (function() {
 			while (true) {
 				if (!(x < c.maze.Width())) { break; }
 				fillCell(ctx, x, y, "white");
-				if ((x === startX) && (y === startY)) {
+				if ((x === curX) && (y === curY)) {
+					fillCell(ctx, x, y, "pink");
+				} else if ((x === startX) && (y === startY)) {
 					fillCell(ctx, x, y, "orange");
-				}
-				if ((x === endX) && (y === endY)) {
+				} else if ((x === endX) && (y === endY)) {
 					fillCell(ctx, x, y, "yellow");
 				}
 				drawBorders(c, ctx, x, y);
@@ -20620,16 +21200,15 @@ $packages["main"] = (function() {
 			}
 			y = y + (1) >> 0;
 		}
-		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: render }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._tuple = _tuple; $f._tuple$1 = _tuple$1; $f.c = c; $f.ctx = ctx; $f.endX = endX; $f.endY = endY; $f.startX = startX; $f.startY = startY; $f.x = x; $f.y = y; $f.$s = $s; $f.$r = $r; return $f;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: render }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._r$2 = _r$2; $f._r$3 = _r$3; $f._r$4 = _r$4; $f._r$5 = _r$5; $f._tuple = _tuple; $f._tuple$1 = _tuple$1; $f._tuple$2 = _tuple$2; $f.c = c; $f.ctx = ctx; $f.curX = curX; $f.curY = curY; $f.endX = endX; $f.endY = endY; $f.startX = startX; $f.startY = startY; $f.x = x; $f.y = y; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	fillCell = function(ctx, x, y, color) {
 		var $ptr, color, ctx, x, y;
 		ctx.Object.fillStyle = $externalize(color, $String);
-		ctx.FillRect(x * 50 >> 0, y * 50 >> 0, 50, 50);
+		ctx.FillRect((x * 50 >> 0) + 2 >> 0, (y * 50 >> 0) + 2 >> 0, 46, 46);
 	};
 	drawBorders = function(c, ctx, x, y) {
 		var $ptr, _tuple, c, cell, ctx, height, height$1, width, width$1, x, y;
-		c = $clone(c, renderData);
 		ctx.Object.fillStyle = $externalize("black", $String);
 		_tuple = c.maze.GetRoom(x, y); cell = _tuple[0];
 		if (cell.Walls.Top) {
@@ -20637,43 +21216,47 @@ $packages["main"] = (function() {
 			if (y === 0) {
 				height = 4;
 			}
-			ctx.FillRect(x * 50 >> 0, y * 50 >> 0, 50, height);
+			ctx.FillRect((x * 50 >> 0) - 2 >> 0, y * 50 >> 0, 54, height);
 		}
 		if (cell.Walls.Bottom) {
 			height$1 = 2;
 			if (y === (c.maze.Height() - 1 >> 0)) {
 				height$1 = 4;
 			}
-			ctx.FillRect(x * 50 >> 0, (y * 50 >> 0) + ((50 - height$1 >> 0)) >> 0, 50, height$1);
+			ctx.FillRect((x * 50 >> 0) - 2 >> 0, (y * 50 >> 0) + ((50 - height$1 >> 0)) >> 0, 54, height$1);
 		}
 		if (cell.Walls.Left) {
 			width = 2;
 			if (x === 0) {
 				width = 4;
 			}
-			ctx.FillRect(x * 50 >> 0, y * 50 >> 0, width, 50);
+			ctx.FillRect(x * 50 >> 0, (y * 50 >> 0) - 2 >> 0, width, 54);
 		}
 		if (cell.Walls.Right) {
 			width$1 = 2;
 			if (x === (c.maze.Width() - 1 >> 0)) {
 				width$1 = 4;
 			}
-			ctx.FillRect((x * 50 >> 0) + ((50 - width$1 >> 0)) >> 0, y * 50 >> 0, width$1, 50);
+			ctx.FillRect((x * 50 >> 0) + ((50 - width$1 >> 0)) >> 0, (y * 50 >> 0) - 2 >> 0, width$1, 54);
 		}
 	};
-	renderData.init([{prop: "maze", name: "maze", pkg: "main", typ: ptrType$1, tag: ""}]);
+	renderData.init([{prop: "maze", name: "maze", pkg: "main", typ: ptrType$1, tag: ""}, {prop: "solver", name: "solver", pkg: "main", typ: solvers.MazeSolver, tag: ""}, {prop: "count", name: "count", pkg: "main", typ: $Int, tag: ""}]);
 	$init = function() {
 		$pkg.$init = function() {};
 		/* */ var $f, $c = false, $s = 0, $r; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
-		$r = mazelib.$init(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		$r = dom.$init(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		$r = rand.$init(); /* */ $s = 3; case 3: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		$r = time.$init(); /* */ $s = 4; case 4: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		/* */ if ($pkg === $mainPkg) { $s = 5; continue; }
-		/* */ $s = 6; continue;
-		/* if ($pkg === $mainPkg) { */ case 5:
-			$r = main(); /* */ $s = 7; case 7: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		/* } */ case 6:
+		$r = fmt.$init(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = generators.$init(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = mazelib.$init(); /* */ $s = 3; case 3: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = solvers.$init(); /* */ $s = 4; case 4: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = dom.$init(); /* */ $s = 5; case 5: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = rand.$init(); /* */ $s = 6; case 6: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = time.$init(); /* */ $s = 7; case 7: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		currentContext = ptrType.nil;
+		/* */ if ($pkg === $mainPkg) { $s = 8; continue; }
+		/* */ $s = 9; continue;
+		/* if ($pkg === $mainPkg) { */ case 8:
+			$r = main(); /* */ $s = 10; case 10: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		/* } */ case 9:
 		/* */ } return; } if ($f === undefined) { $f = { $blk: $init }; } $f.$s = $s; $f.$r = $r; return $f;
 	};
 	$pkg.$init = $init;
