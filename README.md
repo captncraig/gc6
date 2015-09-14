@@ -15,6 +15,9 @@ The hope is that icarus will choose a wrong path initially, and then have to bac
 
 If we were doing perfect-knowledge solving, this would be an extremely poor strategy, but with icarus only seeing his current room, it works ok.
 
+![example](http://imgur.com/91lhPEO "Example maze")
+
+
 ### Cool Visualization
 
 I used this as an opportunity to play with gopherjs. I made a simple page to visualize my various generator options and solvers, complete with animation. Demo can be viewed at http://captncraig.github.io/gc6/javascript/test.html
